@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use Database\Seeders\Demo\AppUserSeeder;
 use Database\Seeders\Demo\BehaviourSeeder;
+use Database\Seeders\Demo\NotificationSeeder;
 use Database\Seeders\Demo\PhotoSeeder;
 use Database\Seeders\Demo\RiskSeeder;
 use Database\Seeders\Demo\TrustAndSafetySeeder;
@@ -62,6 +63,7 @@ class DemoDataSeeder extends Seeder
         $this->runSeeder(new BehaviourSeeder($scale));
         $this->runSeeder(new TrustAndSafetySeeder($scale));
         $this->runSeeder(new RiskSeeder);
+        $this->runSeeder(new NotificationSeeder($scale));
 
         $this->command?->info('Demo data complete.');
     }

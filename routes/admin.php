@@ -10,6 +10,7 @@ use App\Livewire\Conversations;
 use App\Livewire\Dashboard;
 use App\Livewire\Enforcement;
 use App\Livewire\Matches;
+use App\Livewire\Notifications;
 use App\Livewire\Roles;
 use App\Livewire\Settings;
 use App\Livewire\Staff;
@@ -135,6 +136,24 @@ Route::middleware(['auth', 'staff.active'])->group(function (): void {
         Route::get('/', Appeals\Index::class)->name('index');
         Route::get('{appeal:uuid}', Appeals\Show::class)->name('show');
     });
+
+    /*
+    |----------------------------------------------------------------------
+    | Notifications
+    |----------------------------------------------------------------------
+    */
+    Route::middleware('permission:notifications')
+        ->prefix('notifications')
+        ->name('notifications.')
+        ->group(function (): void {
+            Route::get('/', Notifications\Campaigns::class)->name('campaigns');
+
+            Route::get('templates', Notifications\Templates::class)
+                ->middleware('permission:notification_templates')->name('templates');
+
+            Route::get('logs', Notifications\Logs::class)
+                ->middleware('permission:push_logs')->name('logs');
+        });
 
     /*
     |----------------------------------------------------------------------

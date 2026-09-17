@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             GeographySeeder::class,
             InterestSeeder::class,
             RiskFactorDefinitionSeeder::class,
+            NotificationTemplateSeeder::class,
         ]);
 
         /*

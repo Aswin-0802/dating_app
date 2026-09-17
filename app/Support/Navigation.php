@@ -112,6 +112,7 @@ final class Navigation
                             ['label' => 'Templates', 'route' => 'admin.notifications.templates', 'permission' => 'notification_templates'],
                             ['label' => 'Delivery logs', 'route' => 'admin.notifications.logs', 'permission' => 'push_logs'],
                         ],
+                        'active' => ['admin.notifications.*'],
                     ],
                     [
                         'label' => 'Analytics',
