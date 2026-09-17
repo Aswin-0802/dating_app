@@ -3,7 +3,16 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\VerificationSelfieController;
+use App\Livewire\Appeals;
+use App\Livewire\Audit;
 use App\Livewire\Cases;
+use App\Livewire\Conversations;
+use App\Livewire\Dashboard;
+use App\Livewire\Enforcement;
+use App\Livewire\Matches;
+use App\Livewire\Roles;
+use App\Livewire\Settings;
+use App\Livewire\Staff;
 use App\Livewire\Users;
 use App\Livewire\Verifications;
 use Illuminate\Support\Facades\Route;
@@ -15,15 +24,15 @@ use Illuminate\Support\Facades\Route;
 |
 | Prefixed with /admin and named admin.* by bootstrap/app.php.
 |
-| Every route carries the permission it needs. Routes are added module by
-| module; App\Support\Navigation tolerates ones that do not exist yet, so the
-| sidebar stays correct throughout the build.
+| Every route carries the permission it needs. App\Support\Navigation filters
+| the sidebar by the same permissions, so an area a user cannot reach is not
+| rendered rather than rendered-and-refused.
 |
 */
 
 Route::middleware(['auth', 'staff.active'])->group(function (): void {
 
-    Route::view('/', 'admin.dashboard')
+    Route::get('/', Dashboard\Overview::class)
         ->middleware('permission:dashboard')
         ->name('dashboard');
 
@@ -50,20 +59,40 @@ Route::middleware(['auth', 'staff.active'])->group(function (): void {
         ->group(function (): void {
             Route::get('/', Verifications\Queue::class)->name('index');
 
-            // The restricted queue carries its own permission. Its Livewire
-            // component 404s rather than 403s without it, so its existence is
-            // not advertised to staff who cannot open it.
+            // The restricted queue 404s rather than 403s without its own
+            // permission, so its existence is not advertised to staff who
+            // cannot open it.
             Route::get('restricted', Verifications\Queue::class)
                 ->defaults('queue', 'restricted_minor')
                 ->name('restricted');
 
             Route::get('{verification:uuid}', Verifications\Review::class)->name('review');
 
-            // Selfies live on a private disk; this serves them through a signed,
-            // expiring URL rather than exposing the storage path.
             Route::get('{verification:uuid}/selfie', VerificationSelfieController::class)
                 ->middleware('signed')
                 ->name('selfie');
+        });
+
+    /*
+    |----------------------------------------------------------------------
+    | Matches
+    |----------------------------------------------------------------------
+    */
+    Route::middleware('permission:matches')->prefix('matches')->name('matches.')->group(function (): void {
+        Route::get('/', Matches\Index::class)->name('index');
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | Conversations
+    |----------------------------------------------------------------------
+    */
+    Route::middleware('permission:conversations')
+        ->prefix('conversations')
+        ->name('conversations.')
+        ->group(function (): void {
+            Route::get('/', Conversations\Index::class)->name('index');
+            Route::get('{conversation:uuid}', Conversations\Show::class)->name('show');
         });
 
     /*
@@ -74,6 +103,76 @@ Route::middleware(['auth', 'staff.active'])->group(function (): void {
     Route::middleware('permission:cases')->prefix('cases')->name('cases.')->group(function (): void {
         Route::get('/', Cases\Index::class)->name('index');
         Route::get('{reportCase:case_number}', Cases\Show::class)->name('show');
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | Enforcement
+    |----------------------------------------------------------------------
+    */
+    Route::prefix('enforcement')->name('enforcement.')->group(function (): void {
+        Route::get('bans', Enforcement\Bans::class)
+            ->middleware('permission:bans')->name('bans');
+
+        // The safeguard that stops a shadow ban becoming a permanent,
+        // invisible, never-revisited punishment.
+        Route::get('shadow-reviews', Enforcement\ShadowBanReviews::class)
+            ->middleware('permission:shadow_ban_users')->name('shadow-reviews');
+
+        Route::get('devices', Enforcement\Devices::class)
+            ->middleware('permission:device_ban_users')->name('devices');
+
+        Route::get('blocks', Enforcement\Blocks::class)
+            ->middleware('permission:blocks')->name('blocks');
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | Appeals
+    |----------------------------------------------------------------------
+    */
+    Route::middleware('permission:appeals')->prefix('appeals')->name('appeals.')->group(function (): void {
+        Route::get('/', Appeals\Index::class)->name('index');
+        Route::get('{appeal:uuid}', Appeals\Show::class)->name('show');
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | Analytics
+    |----------------------------------------------------------------------
+    */
+    Route::middleware('permission:analytics')->prefix('analytics')->name('analytics.')->group(function (): void {
+        Route::get('funnel', Dashboard\Funnel::class)->name('funnel');
+        Route::get('matching', Dashboard\MatchingHealth::class)->name('matching');
+        Route::get('safety', Dashboard\SafetyTrends::class)->name('safety');
+        Route::get('retention', Dashboard\Retention::class)->name('retention');
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | Administration
+    |----------------------------------------------------------------------
+    */
+    Route::middleware('permission:staff')->prefix('staff')->name('staff.')->group(function (): void {
+        Route::get('/', Staff\Index::class)->name('index');
+        Route::get('performance', Staff\Performance::class)
+            ->middleware('permission:view_staff_performance')->name('performance');
+    });
+
+    Route::middleware('permission:roles')->prefix('roles')->name('roles.')->group(function (): void {
+        Route::get('/', Roles\Index::class)->name('index');
+        Route::get('{role}/permissions', Roles\PermissionMatrix::class)->name('permissions');
+    });
+
+    Route::middleware('permission:activity_log')->prefix('audit')->name('audit.')->group(function (): void {
+        Route::get('/', Audit\Index::class)->name('index');
+        Route::get('message-access', Audit\MessageAccess::class)
+            ->middleware('permission:message_access_log')->name('message-access');
+    });
+
+    Route::middleware('permission:settings')->prefix('settings')->name('settings.')->group(function (): void {
+        Route::get('/', Settings\Index::class)->name('general');
+        Route::get('{group}', Settings\Index::class)->name('group');
     });
 
     /*

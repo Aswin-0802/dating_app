@@ -73,8 +73,15 @@ if (! function_exists('veyra_compact_number')) {
 
         // One decimal only while it adds information: 1.2k, but 12k not 12.0k.
         $decimals = $suffix !== '' && abs($scaled) < 10 ? 1 : 0;
+        $formatted = number_format($scaled, $decimals, '.', ',');
 
-        return rtrim(rtrim(number_format($scaled, $decimals, '.', ','), '0'), '.').$suffix;
+        // Trim only a trailing fractional zero ("1.0k" -> "1k"). Trimming
+        // unconditionally also eats the real zeros in "890", turning it into 89.
+        if (str_contains($formatted, '.')) {
+            $formatted = rtrim(rtrim($formatted, '0'), '.');
+        }
+
+        return $formatted.$suffix;
     }
 }
 

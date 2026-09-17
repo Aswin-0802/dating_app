@@ -296,7 +296,20 @@ class TrustAndSafetySeeder extends Seeder
 
     private function seedReports($faker): int
     {
-        $target = (int) round(2450 * $this->scale);
+        /*
+         * Report volume is proportional to matches rather than a fixed number.
+         *
+         * A fixed count makes "report rate per 1,000 matches" nonsense at any
+         * scale but the one it was tuned for — 2,450 reports against 1,100
+         * matches reads as 2,200 per thousand, which is not a number any real
+         * platform could survive.
+         *
+         * 8% is above a real platform's rate, which is nearer 1-3%. That is a
+         * deliberate trade: at a realistic rate a demo dataset produces a couple
+         * of dozen reports and every moderation screen opens empty.
+         */
+        $matches = DB::table('matches')->count();
+        $target = max(150, (int) round($matches * 0.08));
 
         // Weight report subjects towards accounts that look bad already: heavily
         // blocked members, flagged senders, and restricted accounts. Reports
