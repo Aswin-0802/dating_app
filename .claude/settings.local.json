@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(composer dump-autoload *)",
+      "Bash(php artisan *)",
+      "Bash(mv 2026_09_17_090425_create_permission_tables.php 2026_01_01_000000_create_permission_tables.php)",
+      "Bash(mv 2026_09_17_090425_create_personal_access_tokens_table.php 2026_01_01_000006_create_personal_access_tokens_table.php)"
+    ]
+  }
+}

@@ -1,0 +1,288 @@
+/*
+|--------------------------------------------------------------------------
+| Veyra Design Tokens
+|--------------------------------------------------------------------------
+|
+| Every semantic surface token has a `-foreground` partner: the base token is
+| what you put on a background or border utility, the -foreground is the
+| text/icon colour guaranteed to be legible on it. Components never write
+| `dark:` for colour — they write `bg-card text-card-foreground` and the token
+| swaps underneath them.
+|
+| The sidebar has its own parallel namespace so the rail stays dark plum-navy
+| while the content canvas is light. That independence is deliberate.
+|
+| Colours are oklch: perceptually even lightness means two status colours at
+| the same L read with the same visual weight.
+|
+*/
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+    /* ---- surfaces ---- */
+    --background: oklch(0.995 0.003 20);
+    --foreground: oklch(0.21 0.02 315);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.21 0.02 315);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.21 0.02 315);
+    --muted: oklch(0.968 0.006 20);
+    --muted-foreground: oklch(0.52 0.02 315);
+    --border: oklch(0.922 0.008 20);
+    --input: oklch(0.922 0.008 20);
+
+    /*
+     * Each semantic colour carries FOUR tokens, not two:
+     *
+     *   --x                    solid fill
+     *   --x-foreground         legible on the solid fill
+     *   --x-subtle             tinted fill (the default for status badges)
+     *   --x-subtle-foreground  legible on the TINT
+     *
+     * The last one is the one that is easy to forget and impossible to fake.
+     * Pairing `bg-warning-subtle` with `text-warning-foreground` looks fine in
+     * light mode and becomes dark-on-dark the moment the theme flips, because
+     * `-foreground` is only ever a promise about the solid fill.
+     */
+
+    /* ---- brand ---- */
+    --primary: oklch(0.55 0.2 15);
+    --primary-foreground: oklch(0.99 0.01 20);
+    --primary-subtle: oklch(0.955 0.025 15);
+    --primary-subtle-foreground: oklch(0.45 0.18 15);
+    --accent: oklch(0.52 0.16 320);
+    --accent-foreground: oklch(0.99 0.01 320);
+    --accent-subtle: oklch(0.955 0.022 320);
+    --accent-subtle-foreground: oklch(0.43 0.15 320);
+    --secondary: oklch(0.965 0.008 320);
+    --secondary-foreground: oklch(0.3 0.04 315);
+    --ring: oklch(0.55 0.2 15);
+
+    /* ---- semantic ---- */
+    --success: oklch(0.58 0.15 155);
+    --success-foreground: oklch(0.99 0.01 155);
+    --success-subtle: oklch(0.955 0.03 155);
+    --success-subtle-foreground: oklch(0.42 0.12 155);
+    --warning: oklch(0.72 0.16 75);
+    --warning-foreground: oklch(0.25 0.05 75);
+    --warning-subtle: oklch(0.965 0.04 75);
+    --warning-subtle-foreground: oklch(0.47 0.12 75);
+    --info: oklch(0.58 0.14 240);
+    --info-foreground: oklch(0.99 0.01 240);
+    --info-subtle: oklch(0.955 0.028 240);
+    --info-subtle-foreground: oklch(0.45 0.14 240);
+    --destructive: oklch(0.56 0.21 27);
+    --destructive-foreground: oklch(0.99 0.01 27);
+    --destructive-subtle: oklch(0.955 0.03 27);
+    --destructive-subtle-foreground: oklch(0.45 0.18 27);
+
+    /* ---- domain: risk bands ---- */
+    --risk-low: oklch(0.58 0.15 155);
+    --risk-low-subtle: oklch(0.955 0.03 155);
+    --risk-low-subtle-foreground: oklch(0.42 0.12 155);
+    --risk-elevated: oklch(0.72 0.16 75);
+    --risk-elevated-subtle: oklch(0.965 0.04 75);
+    --risk-elevated-subtle-foreground: oklch(0.47 0.12 75);
+    --risk-high: oklch(0.65 0.18 45);
+    --risk-high-subtle: oklch(0.96 0.04 45);
+    --risk-high-subtle-foreground: oklch(0.46 0.15 45);
+    --risk-critical: oklch(0.56 0.21 27);
+    --risk-critical-subtle: oklch(0.955 0.03 27);
+    --risk-critical-subtle-foreground: oklch(0.45 0.18 27);
+
+    /* ---- sidebar: independent namespace, dark rail on a light canvas ---- */
+    --sidebar: oklch(0.21 0.035 315);
+    --sidebar-foreground: oklch(0.9 0.012 315);
+    --sidebar-muted-foreground: oklch(0.65 0.02 315);
+    --sidebar-primary: oklch(0.62 0.19 15);
+    --sidebar-primary-foreground: oklch(0.99 0.01 20);
+    --sidebar-accent: oklch(0.27 0.04 315);
+    --sidebar-accent-foreground: oklch(0.97 0.01 315);
+    --sidebar-border: oklch(0.3 0.04 315);
+    --sidebar-ring: oklch(0.62 0.19 15);
+
+    /* ---- charts ---- */
+    --chart-1: oklch(0.55 0.2 15);
+    --chart-2: oklch(0.52 0.16 320);
+    --chart-3: oklch(0.58 0.14 240);
+    --chart-4: oklch(0.58 0.15 155);
+    --chart-5: oklch(0.72 0.16 75);
+    --chart-grid: oklch(0.922 0.008 20);
+}
+
+.dark {
+    /* ---- surfaces ---- */
+    --background: oklch(0.16 0.02 315);
+    --foreground: oklch(0.95 0.008 315);
+    --card: oklch(0.2 0.022 315);
+    --card-foreground: oklch(0.95 0.008 315);
+    --popover: oklch(0.22 0.024 315);
+    --popover-foreground: oklch(0.95 0.008 315);
+    --muted: oklch(0.26 0.022 315);
+    --muted-foreground: oklch(0.68 0.018 315);
+    --border: oklch(0.3 0.025 315);
+    --input: oklch(0.32 0.026 315);
+
+    /* ---- brand ---- */
+    --primary: oklch(0.65 0.19 15);
+    --primary-foreground: oklch(0.15 0.02 20);
+    --primary-subtle: oklch(0.29 0.055 15);
+    --primary-subtle-foreground: oklch(0.84 0.1 15);
+    --accent: oklch(0.63 0.15 320);
+    --accent-foreground: oklch(0.15 0.02 320);
+    --accent-subtle: oklch(0.29 0.05 320);
+    --accent-subtle-foreground: oklch(0.85 0.09 320);
+    --secondary: oklch(0.27 0.025 320);
+    --secondary-foreground: oklch(0.92 0.01 315);
+    --ring: oklch(0.65 0.19 15);
+
+    /* ---- semantic ---- */
+    --success: oklch(0.7 0.15 155);
+    --success-foreground: oklch(0.15 0.02 155);
+    --success-subtle: oklch(0.28 0.05 155);
+    --success-subtle-foreground: oklch(0.84 0.13 155);
+    --warning: oklch(0.79 0.15 75);
+    --warning-foreground: oklch(0.18 0.03 75);
+    --warning-subtle: oklch(0.3 0.055 75);
+    --warning-subtle-foreground: oklch(0.88 0.13 75);
+    --info: oklch(0.68 0.14 240);
+    --info-foreground: oklch(0.15 0.02 240);
+    --info-subtle: oklch(0.28 0.05 240);
+    --info-subtle-foreground: oklch(0.83 0.1 240);
+    --destructive: oklch(0.67 0.19 27);
+    --destructive-foreground: oklch(0.15 0.02 27);
+    --destructive-subtle: oklch(0.29 0.06 27);
+    --destructive-subtle-foreground: oklch(0.83 0.13 27);
+
+    /* ---- domain: risk bands ---- */
+    --risk-low: oklch(0.7 0.15 155);
+    --risk-low-subtle: oklch(0.28 0.05 155);
+    --risk-low-subtle-foreground: oklch(0.84 0.13 155);
+    --risk-elevated: oklch(0.79 0.15 75);
+    --risk-elevated-subtle: oklch(0.3 0.055 75);
+    --risk-elevated-subtle-foreground: oklch(0.88 0.13 75);
+    --risk-high: oklch(0.74 0.17 45);
+    --risk-high-subtle: oklch(0.3 0.06 45);
+    --risk-high-subtle-foreground: oklch(0.86 0.13 45);
+    --risk-critical: oklch(0.67 0.19 27);
+    --risk-critical-subtle: oklch(0.29 0.06 27);
+    --risk-critical-subtle-foreground: oklch(0.83 0.13 27);
+
+    /* ---- sidebar ---- */
+    --sidebar: oklch(0.15 0.025 315);
+    --sidebar-foreground: oklch(0.88 0.012 315);
+    --sidebar-muted-foreground: oklch(0.62 0.02 315);
+    --sidebar-primary: oklch(0.65 0.19 15);
+    --sidebar-primary-foreground: oklch(0.15 0.02 20);
+    --sidebar-accent: oklch(0.23 0.03 315);
+    --sidebar-accent-foreground: oklch(0.96 0.01 315);
+    --sidebar-border: oklch(0.26 0.03 315);
+    --sidebar-ring: oklch(0.65 0.19 15);
+
+    /* ---- charts ---- */
+    --chart-1: oklch(0.65 0.19 15);
+    --chart-2: oklch(0.63 0.15 320);
+    --chart-3: oklch(0.68 0.14 240);
+    --chart-4: oklch(0.7 0.15 155);
+    --chart-5: oklch(0.79 0.15 75);
+    --chart-grid: oklch(0.3 0.025 315);
+}
+
+/*
+| Map the CSS variables into Tailwind's theme so `bg-card`, `text-muted-foreground`,
+| `border-sidebar-border`, `bg-risk-high-subtle` etc. all exist as real utilities.
+*/
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary-subtle: var(--primary-subtle);
+    --color-primary-subtle-foreground: var(--primary-subtle-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent-subtle: var(--accent-subtle);
+    --color-accent-subtle-foreground: var(--accent-subtle-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-subtle: var(--success-subtle);
+    --color-success-subtle-foreground: var(--success-subtle-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-subtle: var(--warning-subtle);
+    --color-warning-subtle-foreground: var(--warning-subtle-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-info-subtle: var(--info-subtle);
+    --color-info-subtle-foreground: var(--info-subtle-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-destructive-subtle: var(--destructive-subtle);
+    --color-destructive-subtle-foreground: var(--destructive-subtle-foreground);
+
+    --color-risk-low: var(--risk-low);
+    --color-risk-low-subtle: var(--risk-low-subtle);
+    --color-risk-low-subtle-foreground: var(--risk-low-subtle-foreground);
+    --color-risk-elevated: var(--risk-elevated);
+    --color-risk-elevated-subtle: var(--risk-elevated-subtle);
+    --color-risk-elevated-subtle-foreground: var(--risk-elevated-subtle-foreground);
+    --color-risk-high: var(--risk-high);
+    --color-risk-high-subtle: var(--risk-high-subtle);
+    --color-risk-high-subtle-foreground: var(--risk-high-subtle-foreground);
+    --color-risk-critical: var(--risk-critical);
+    --color-risk-critical-subtle: var(--risk-critical-subtle);
+    --color-risk-critical-subtle-foreground: var(--risk-critical-subtle-foreground);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-muted-foreground: var(--sidebar-muted-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-chart-grid: var(--chart-grid);
+}
+
+@theme {
+    /* One base radius, everything derived from it. */
+    --radius: 0.75rem;
+    --radius-xs: calc(var(--radius) * 0.35); /*  4px */
+    --radius-sm: calc(var(--radius) * 0.6); /*  7px */
+    --radius-md: calc(var(--radius) * 0.8); /* 10px */
+    --radius-lg: var(--radius); /* 12px */
+    --radius-xl: calc(var(--radius) * 1.4); /* 17px */
+    --radius-2xl: calc(var(--radius) * 1.8); /* 22px */
+
+    /* Shell geometry. Referenced by the layout, not hardcoded in markup. */
+    --spacing-sidebar: 16.5rem; /* 264px expanded  */
+    --spacing-sidebar-rail: 4.5rem; /*  72px icon rail */
+    --spacing-sidebar-sheet: 18rem; /* 288px mobile    */
+    --spacing-header: 4rem; /*  64px           */
+
+    --font-sans:
+        'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji';
+    --font-mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono', monospace;
+}
