@@ -34,7 +34,7 @@ return [
     |
     */
     'seed' => [
-        'scale' => env('VEYRA_SEED_SCALE', 'demo'),
+        'scale' => env('VEYRA_SEED_SCALE', 'small'),
         'photos' => env('VEYRA_SEED_PHOTOS', 'generated'),
         // Fixed so analytics screenshots and assertions do not drift between runs.
         'faker_seed' => 20260917,

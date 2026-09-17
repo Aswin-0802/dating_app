@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             InterestSeeder::class,
             RiskFactorDefinitionSeeder::class,
             NotificationTemplateSeeder::class,
+            SystemSeeder::class,
         ]);
 
         /*

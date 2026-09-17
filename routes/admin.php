@@ -14,6 +14,7 @@ use App\Livewire\Notifications;
 use App\Livewire\Roles;
 use App\Livewire\Settings;
 use App\Livewire\Staff;
+use App\Livewire\System;
 use App\Livewire\Users;
 use App\Livewire\Verifications;
 use Illuminate\Support\Facades\Route;
@@ -165,6 +166,31 @@ Route::middleware(['auth', 'staff.active'])->group(function (): void {
         Route::get('matching', Dashboard\MatchingHealth::class)->name('matching');
         Route::get('safety', Dashboard\SafetyTrends::class)->name('safety');
         Route::get('retention', Dashboard\Retention::class)->name('retention');
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | System — platform integrations, kept apart from the dating-app settings
+    |----------------------------------------------------------------------
+    |
+    | Mail, payment and SMS providers plus their delivery logs. Separated from
+    | Settings on purpose: those are product and safety policy, these are
+    | infrastructure, and the people who own them are rarely the same.
+    |
+    */
+    Route::middleware('permission:settings')->prefix('system')->name('system.')->group(function (): void {
+        Route::get('mail', System\Mail::class)->name('mail');
+
+        Route::get('payments', System\Gateways::class)
+            ->defaults('kind', 'payment')->name('payments');
+
+        Route::get('sms', System\Gateways::class)
+            ->defaults('kind', 'sms')->name('sms');
+
+        Route::get('logs/{kind?}', System\Logs::class)->name('logs');
+
+        Route::get('backup', System\Backup::class)
+            ->middleware('permission:run_maintenance_jobs')->name('backup');
     });
 
     /*

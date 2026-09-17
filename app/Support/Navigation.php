@@ -158,6 +158,28 @@ final class Navigation
                         'permission' => 'settings',
                         'active' => ['admin.settings.*'],
                     ],
+                    /*
+                     * System sits apart from Settings on purpose.
+                     *
+                     * Settings is product and safety policy; System is
+                     * infrastructure — mail, payment and SMS providers and
+                     * their delivery logs. The people who own them are rarely
+                     * the same, and mixing the two puts "switch the payment
+                     * provider" next to "change what counts as a ban".
+                     */
+                    [
+                        'label' => 'System',
+                        'icon' => 'adjustments',
+                        'permission' => 'settings',
+                        'active' => ['admin.system.*'],
+                        'children' => [
+                            ['label' => 'Mail / SMTP', 'route' => 'admin.system.mail', 'permission' => 'settings'],
+                            ['label' => 'Payment gateways', 'route' => 'admin.system.payments', 'permission' => 'settings'],
+                            ['label' => 'SMS gateways', 'route' => 'admin.system.sms', 'permission' => 'settings'],
+                            ['label' => 'Delivery logs', 'route' => 'admin.system.logs', 'permission' => 'settings'],
+                            ['label' => 'Database backup', 'route' => 'admin.system.backup', 'permission' => 'run_maintenance_jobs'],
+                        ],
+                    ],
                 ],
             ],
         ];

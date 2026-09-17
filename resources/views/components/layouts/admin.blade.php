@@ -89,6 +89,10 @@
         </div>
     </div>
 
+    @auth
+        <livewire:shell.command-palette />
+    @endauth
+
     <x-ui.toasts />
 
     @livewireScripts

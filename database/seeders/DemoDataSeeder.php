@@ -9,6 +9,7 @@ use Database\Seeders\Demo\BehaviourSeeder;
 use Database\Seeders\Demo\NotificationSeeder;
 use Database\Seeders\Demo\PhotoSeeder;
 use Database\Seeders\Demo\RiskSeeder;
+use Database\Seeders\Demo\SystemLogSeeder;
 use Database\Seeders\Demo\TrustAndSafetySeeder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -64,6 +65,7 @@ class DemoDataSeeder extends Seeder
         $this->runSeeder(new TrustAndSafetySeeder($scale));
         $this->runSeeder(new RiskSeeder);
         $this->runSeeder(new NotificationSeeder($scale));
+        $this->runSeeder(new SystemLogSeeder($scale));
 
         $this->command?->info('Demo data complete.');
     }

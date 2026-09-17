@@ -47,9 +47,13 @@ rather than present and refused.
 
 | Value | Members | Roughly |
 |---|---|---|
-| `small` | 1,200 | ~1 minute |
-| `demo` | 12,000 | ~10 minutes |
+| `small` | 1,200 | ~2 minutes — **the default** |
+| `demo` | 12,000 | ~12 minutes |
 | `large` | 48,000 | considerably longer |
+
+`small` is the default deliberately: it is enough to fill every queue, chart and
+filter while staying quick to rebuild. Every screen has content at this size —
+38 open cases, 43 pending verifications, 2 shadow bans overdue for review.
 
 `VEYRA_SEED_PHOTOS=none` skips image generation entirely and falls back to
 initials tiles, which makes a rebuild much faster. The default, `generated`,
@@ -71,7 +75,9 @@ draws placeholder imagery locally with GD and needs no network access.
 | Cases | Reports aggregated by subject, evidence in context, the enforcement ladder |
 | Enforcement | Bans, the shadow-ban review queue, shared devices, blocks |
 | Appeals | Routed away from the original decider |
+| Notifications | Campaigns needing second-person approval, templates, delivery logs |
 | Staff, Roles, Audit, Settings | Permission matrix, immutable audit trail, operator-tunable settings |
+| System | Mail/SMTP, payment and SMS gateways, delivery and payment logs, database backup |
 
 ### The API
 
@@ -114,6 +120,16 @@ badge, including for a score calculated months ago under weights since retuned.
 **Appeals are never decided by the original decider.** Enforced in the model,
 the assignment action, and the seeder. That last one matters: a seeder allowed
 to violate the rule would let the test guarding it pass against bad data.
+
+**Settings and System are separate menus.** Settings is product and safety
+policy — SLA windows, risk weights, matching rules. System is infrastructure —
+SMTP, payment and SMS providers. The people who own them are rarely the same,
+and mixing them puts "switch the payment provider" next to "change what counts
+as a ban".
+
+**Integration credentials are write-only.** Stored encrypted, never rendered
+back into the page, and a blank field on save keeps what is already there — so
+toggling a provider on cannot silently wipe its keys.
 
 **Admin and T&S Lead are deliberately different.** Admin runs the platform but
 cannot read message content, decide appeals, or change moderation policy. That

@@ -53,9 +53,11 @@
                                     <div class="flex flex-wrap items-center gap-1.5">
                                         <span class="text-xs text-muted-foreground">Available:</span>
                                         @foreach ($template->placeholders as $placeholder)
-                                            <code class="rounded bg-card px-1.5 py-0.5 text-[11px]">
-                                                {{ '{{ '.$placeholder.' }}' }}
-                                            </code>
+                                            {{-- Built in PHP: Blade cannot parse a literal
+                                                 double-brace inside an interpolation. --}}
+                                            @php $token = sprintf('{{ %s }}', $placeholder); @endphp
+
+                                            <code class="rounded bg-card px-1.5 py-0.5 text-[11px]">{{ $token }}</code>
                                         @endforeach
                                     </div>
                                 @endif

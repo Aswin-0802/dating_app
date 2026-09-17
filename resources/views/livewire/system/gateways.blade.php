@@ -1,0 +1,124 @@
+<div class="space-y-4 md:space-y-6">
+
+    <div class="flex items-start gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3">
+        <x-ui.icon name="lock" size="sm" class="mt-0.5 shrink-0 text-muted-foreground" />
+        <div class="min-w-0 text-sm">
+            <p class="font-medium">Credentials are write-only</p>
+            <p class="mt-0.5 text-muted-foreground">
+                Stored secrets are encrypted and never rendered back into this page. Leave a
+                field blank to keep what is already saved; fill it in to replace it.
+            </p>
+        </div>
+    </div>
+
+    <div class="grid gap-4 md:gap-6 lg:grid-cols-2">
+        @foreach ($gateways as $gateway)
+            <x-ui.card>
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0 space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h3 class="text-base font-semibold">{{ $gateway->name }}</h3>
+
+                            @if ($gateway->is_active)
+                                <x-ui.badge variant="success" size="sm">Active</x-ui.badge>
+                            @else
+                                <x-ui.badge variant="muted" size="sm">Off</x-ui.badge>
+                            @endif
+
+                            @if ($kind === 'payment' && $gateway->is_test_mode)
+                                <x-ui.badge variant="warning" size="sm">Test mode</x-ui.badge>
+                            @endif
+                        </div>
+
+                        <p class="font-mono text-[11px] text-muted-foreground">{{ $gateway->slug }}</p>
+                    </div>
+
+                    @if ($canEdit && $editing !== $gateway->id)
+                        <div class="flex shrink-0 items-center gap-1">
+                            <x-ui.button size="xs" variant="outline" wire:click="edit({{ $gateway->id }})">
+                                Configure
+                            </x-ui.button>
+                            <x-ui.button size="xs" variant="ghost" wire:click="toggleActive({{ $gateway->id }})">
+                                {{ $gateway->is_active ? 'Disable' : 'Enable' }}
+                            </x-ui.button>
+                        </div>
+                    @endif
+                </div>
+
+                {{-- A gateway switched on but not configured, or live in test
+                     mode, takes real money nowhere. Said plainly. --}}
+                @if ($gateway->hasConfigurationWarning() ?? false)
+                    <div class="mt-3 flex items-start gap-2 rounded-md border border-warning/30 bg-warning-subtle p-2.5">
+                        <x-ui.icon name="warning" size="xs" class="mt-0.5 shrink-0 text-warning-subtle-foreground" />
+                        <p class="text-xs text-warning-subtle-foreground">
+                            {{ $gateway->isConfigured()
+                                ? 'This gateway is live but still in test mode.'
+                                : 'This gateway is enabled but missing credentials.' }}
+                        </p>
+                    </div>
+                @endif
+
+                @if ($editing === $gateway->id)
+                    <div class="mt-4 space-y-3 border-t border-border pt-4">
+                        @foreach ($gateway->credentialFields() as $field)
+                            <x-ui.input
+                                :label="str($field)->headline()->toString()"
+                                type="password"
+                                wire:model="credentials.{{ $field }}"
+                                :placeholder="($gateway->credentialStatus()[$field] ?? false) ? '•••••••• (saved — leave blank to keep)' : 'Not set'"
+                                autocomplete="off"
+                            />
+                        @endforeach
+
+                        @if ($kind === 'sms')
+                            <x-ui.input label="Sender ID" wire:model="senderId"
+                                hint="Shown as the sender on delivered messages." />
+                        @endif
+
+                        <div class="space-y-2">
+                            <x-ui.toggle size="lg" label="Active" wire:model="isActive" :checked="$isActive" />
+
+                            @if ($kind === 'payment')
+                                <x-ui.toggle
+                                    size="lg"
+                                    label="Test mode"
+                                    description="Transactions are simulated and no money moves."
+                                    wire:model="isTestMode"
+                                    :checked="$isTestMode"
+                                />
+                            @endif
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <x-ui.button size="sm" wire:click="save">Save</x-ui.button>
+                            <x-ui.button size="sm" variant="ghost" wire:click="cancel">Cancel</x-ui.button>
+                        </div>
+                    </div>
+                @else
+                    <dl class="mt-3 space-y-1.5">
+                        @foreach ($gateway->credentialStatus() as $field => $isSet)
+                            <div class="flex items-center justify-between gap-3 text-sm">
+                                <dt class="text-muted-foreground">{{ str($field)->headline() }}</dt>
+                                <dd>
+                                    @if ($isSet)
+                                        <span class="inline-flex items-center gap-1 text-xs text-success-subtle-foreground">
+                                            <x-ui.icon name="check" size="xs" /> Saved
+                                        </span>
+                                    @else
+                                        <span class="text-xs text-muted-foreground">Not set</span>
+                                    @endif
+                                </dd>
+                            </div>
+                        @endforeach
+                    </dl>
+
+                    @if ($gateway->updatedBy)
+                        <p class="mt-3 text-xs text-muted-foreground">
+                            Last changed by {{ $gateway->updatedBy->name }}, {{ veyra_date($gateway->updated_at) }}
+                        </p>
+                    @endif
+                @endif
+            </x-ui.card>
+        @endforeach
+    </div>
+</div>

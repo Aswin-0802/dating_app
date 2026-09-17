@@ -22,6 +22,24 @@
         text-rendering: optimizeLegibility;
     }
 
+    /*
+     * Tailwind v4's preflight sets buttons to `cursor: default`, which makes
+     * every button in the interface feel unclickable. Restored here rather than
+     * adding `cursor-pointer` to forty components.
+     */
+    button:not(:disabled),
+    [role='button']:not([aria-disabled='true']),
+    label[for],
+    summary,
+    a[href] {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    [aria-disabled='true'] {
+        cursor: not-allowed;
+    }
+
     /* Focus ring: 3px, brand-tinted, never a browser default outline. */
     :focus-visible {
         outline: none;
