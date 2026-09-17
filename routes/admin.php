@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\VerificationSelfieController;
+use App\Livewire\Cases;
 use App\Livewire\Users;
+use App\Livewire\Verifications;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -34,6 +37,43 @@ Route::middleware(['auth', 'staff.active'])->group(function (): void {
     Route::middleware('permission:users')->prefix('users')->name('users.')->group(function (): void {
         Route::get('/', Users\Index::class)->name('index');
         Route::get('{appUser:uuid}', Users\Show::class)->name('show');
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | Photo & identity verification
+    |----------------------------------------------------------------------
+    */
+    Route::middleware('permission:verifications')
+        ->prefix('verifications')
+        ->name('verifications.')
+        ->group(function (): void {
+            Route::get('/', Verifications\Queue::class)->name('index');
+
+            // The restricted queue carries its own permission. Its Livewire
+            // component 404s rather than 403s without it, so its existence is
+            // not advertised to staff who cannot open it.
+            Route::get('restricted', Verifications\Queue::class)
+                ->defaults('queue', 'restricted_minor')
+                ->name('restricted');
+
+            Route::get('{verification:uuid}', Verifications\Review::class)->name('review');
+
+            // Selfies live on a private disk; this serves them through a signed,
+            // expiring URL rather than exposing the storage path.
+            Route::get('{verification:uuid}/selfie', VerificationSelfieController::class)
+                ->middleware('signed')
+                ->name('selfie');
+        });
+
+    /*
+    |----------------------------------------------------------------------
+    | Reports & moderation
+    |----------------------------------------------------------------------
+    */
+    Route::middleware('permission:cases')->prefix('cases')->name('cases.')->group(function (): void {
+        Route::get('/', Cases\Index::class)->name('index');
+        Route::get('{reportCase:case_number}', Cases\Show::class)->name('show');
     });
 
     /*

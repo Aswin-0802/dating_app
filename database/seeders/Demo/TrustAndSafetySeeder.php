@@ -106,9 +106,24 @@ class TrustAndSafetySeeder extends Seeder
                 $submittedAt = Carbon::parse($member->created_at)
                     ->addHours($faker->numberBetween(1, 240));
 
-                // Open items are recent, so the queue looks live.
-                if (in_array($status, ['pending', 'in_review'], true)) {
-                    $submittedAt = now()->subHours($faker->numberBetween(1, 96));
+                $isOpen = in_array($status, ['pending', 'in_review', 'escalated'], true);
+                $windowHours = $minorSuspected
+                    ? (int) config('veyra.sla.restricted_verification_hours', 4)
+                    : $slaHours;
+
+                /*
+                 * Anything still in a queue is recent, and its age is a fraction
+                 * of its OWN SLA window.
+                 *
+                 * Two bugs this avoids: escalations inheriting a signup-era date
+                 * and showing as "471 days overdue", and ageing everything by a
+                 * flat number of hours so that most of the queue breaches a
+                 * shorter window automatically.
+                 */
+                if ($isOpen) {
+                    $submittedAt = $faker->boolean(14)
+                        ? now()->subMinutes((int) ($windowHours * 60 * $faker->randomFloat(2, 1.1, 2.5)))
+                        : now()->subMinutes((int) ($windowHours * 60 * $faker->randomFloat(2, 0.05, 0.9)));
                 }
 
                 $rows[] = [
@@ -139,10 +154,10 @@ class TrustAndSafetySeeder extends Seeder
                         ? $faker->randomElement(ReasonCode::forVerificationRejection())->value : null,
                     'internal_note' => null,
                     'submitted_at' => $submittedAt,
-                    // ~14% of open items are deliberately past due.
-                    'sla_due_at' => $faker->boolean(14)
-                        ? now()->subHours($faker->numberBetween(1, 30))
-                        : $submittedAt->copy()->addHours($slaHours),
+                    // The deadline always follows from the submission, so which
+                    // items breach is decided by the age drawn above rather than
+                    // by a second independent roll.
+                    'sla_due_at' => $submittedAt->copy()->addHours($windowHours),
                     'created_at' => $submittedAt,
                     'updated_at' => $submittedAt,
                 ];
@@ -161,8 +176,48 @@ class TrustAndSafetySeeder extends Seeder
         }
 
         $this->seedSignals();
+        $this->generateOpenSelfies();
 
         return $total;
+    }
+
+    /**
+     * Render selfies for open submissions only.
+     *
+     * This mirrors real practice as much as it saves time: platforms delete the
+     * verification capture shortly after review and keep only a derived face
+     * signature. A decided submission having no image is correct behaviour, not
+     * missing data, and the review screen says so.
+     */
+    private function generateOpenSelfies(): void
+    {
+        if (config('veyra.seed.photos') === 'none') {
+            return;
+        }
+
+        $open = DB::table('verifications')
+            ->whereIn('status', ['pending', 'in_review', 'escalated'])
+            ->get(['id', 'app_user_id', 'gesture_code']);
+
+        if ($open->isEmpty()) {
+            return;
+        }
+
+        $generator = new \App\Services\Media\PlaceholderPhotoGenerator();
+
+        foreach ($open as $verification) {
+            $file = $generator->selfie(
+                (int) $verification->app_user_id,
+                (string) $verification->gesture_code,
+            );
+
+            DB::table('verifications')->where('id', $verification->id)->update([
+                'selfie_disk' => $file['disk'],
+                'selfie_path' => $file['path'],
+            ]);
+        }
+
+        $this->command?->info("Rendered {$open->count()} verification selfies.");
     }
 
     private function statusFor(string $memberStatus, $faker): string
@@ -171,7 +226,13 @@ class TrustAndSafetySeeder extends Seeder
             'approved' => 'approved',
             'rejected' => 'rejected',
             'expired' => 'expired',
-            default => $faker->randomElement(['pending', 'pending', 'in_review', 'escalated']),
+            // Escalation is rare by design — it is the minor-safety path, not a
+            // routine outcome, and a queue full of it would be meaningless.
+            default => $faker->randomElement(array_merge(
+                array_fill(0, 7, 'pending'),
+                array_fill(0, 4, 'in_review'),
+                ['escalated'],
+            )),
         };
     }
 
@@ -256,11 +317,24 @@ class TrustAndSafetySeeder extends Seeder
         $everyone = DB::table('app_users')->pluck('id')->all();
         $reporters = DB::table('app_users')->inRandomOrder()->limit(min(2000, count($everyone)))->pluck('id')->all();
 
-        $flaggedMessages = DB::table('messages')
-            ->where('is_flagged', true)
+        /*
+         * Evidence must be the SUBJECT'S OWN message, indexed by sender.
+         *
+         * Anchoring to any flagged message produces a case whose evidence pane
+         * shows a conversation the reported member is not part of — which reads
+         * as a bug to any moderator who looks, and would be one in production.
+         */
+        $messagesBySender = DB::table('messages')
+            ->where(function ($q): void {
+                $q->where('is_flagged', true)
+                    ->orWhere('contains_contact_info', true)
+                    ->orWhere('contains_link', true);
+            })
             ->select('id', 'conversation_id', 'sender_app_user_id')
-            ->limit(2000)
-            ->get();
+            ->get()
+            ->groupBy('sender_app_user_id');
+
+        $senders = $messagesBySender->keys()->all();
 
         $categories = $this->categoryWeights();
         $rows = [];
@@ -269,19 +343,24 @@ class TrustAndSafetySeeder extends Seeder
         for ($i = 0; $i < $target; $i++) {
             $roll = $faker->randomFloat(4, 0, 1);
 
+            // Weighted towards members who already look bad: heavily blocked,
+            // already restricted, or senders of flagged messages. Reports spread
+            // uniformly across the base would give the queue no signal at all.
             $reported = match (true) {
-                $roll < 0.35 && $suspects !== [] => $faker->randomElement($suspects),
-                $roll < 0.55 && $restricted !== [] => $faker->randomElement($restricted),
+                $roll < 0.30 && $senders !== [] => $faker->randomElement($senders),
+                $roll < 0.50 && $suspects !== [] => $faker->randomElement($suspects),
+                $roll < 0.62 && $restricted !== [] => $faker->randomElement($restricted),
                 default => $faker->randomElement($everyone),
             };
 
             $category = ReportCategory::from($this->weighted($faker, $categories));
             $severity = $category->defaultSeverity();
 
-            // 64% of reports anchor to a message, so the evidence pane has
-            // something to show with context either side.
-            $anchor = $faker->boolean(64) && $flaggedMessages->isNotEmpty()
-                ? $flaggedMessages->random()
+            // Anchor to something the reported member actually sent, when they
+            // have sent anything worth anchoring to.
+            $candidates = $messagesBySender->get($reported);
+            $anchor = $candidates !== null && $candidates->isNotEmpty() && $faker->boolean(80)
+                ? $candidates->random()
                 : null;
 
             $rows[] = [
