@@ -8,6 +8,7 @@ use App\Enums\LadderStep;
 use App\Enums\ReasonCode;
 use App\Enums\ReportCategory;
 use App\Enums\Severity;
+use App\Services\Media\PlaceholderPhotoGenerator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -203,7 +204,7 @@ class TrustAndSafetySeeder extends Seeder
             return;
         }
 
-        $generator = new \App\Services\Media\PlaceholderPhotoGenerator();
+        $generator = new PlaceholderPhotoGenerator;
 
         foreach ($open as $verification) {
             $file = $generator->selfie(
@@ -546,10 +547,6 @@ class TrustAndSafetySeeder extends Seeder
             ->whereIn('status', ['actioned', 'appealed'])
             ->select('id', 'subject_app_user_id', 'severity', 'created_at')
             ->get();
-
-
-
-
 
         $actions = [];
         $bans = [];

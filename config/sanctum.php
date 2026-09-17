@@ -37,7 +37,20 @@ return [
     |
     */
 
-    'guard' => ['web'],
+    /*
+     * Deliberately empty, so `auth:sanctum` authenticates by bearer token ONLY.
+     *
+     * With `['web']` here, Sanctum tries the session guard first. A staff member
+     * signed into the console in the same browser would then be authenticated on
+     * mobile API routes as a `User` rather than an `AppUser` — every `$request->
+     * user()` in those controllers would be the wrong kind of account entirely,
+     * and the conversation-ownership checks would compare staff ids against
+     * member ids.
+     *
+     * The mobile clients are not browser-based and have no session to share, so
+     * there is nothing to lose by removing it.
+     */
+    'guard' => [],
 
     /*
     |--------------------------------------------------------------------------

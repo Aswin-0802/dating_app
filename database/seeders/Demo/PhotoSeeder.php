@@ -37,7 +37,7 @@ class PhotoSeeder extends Seeder
         $generator = null;
 
         if ($mode === 'generated') {
-            $generator = new PlaceholderPhotoGenerator();
+            $generator = new PlaceholderPhotoGenerator;
             $this->command?->info('Rendering the shared image pool…');
             $generator->buildPool(900);
         }

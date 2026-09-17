@@ -7,6 +7,7 @@ namespace App\Livewire\Staff;
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\Audit\ActivityLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
@@ -99,7 +100,7 @@ class Index extends Component
         $before = $user->status;
         $user->forceFill(['status' => $before === 'active' ? 'suspended' : 'active'])->save();
 
-        app(\App\Services\Audit\ActivityLogger::class)->log(
+        app(ActivityLogger::class)->log(
             module: 'staff',
             action: 'status_changed',
             subject: $user,

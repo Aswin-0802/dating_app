@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Enums\AccountStatus;
 use App\Enums\Gender;
+use App\Enums\RiskBand;
 use App\Enums\VerificationStatus;
 use App\Models\AppUser;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -84,7 +85,7 @@ class AppUserFactory extends Factory
     {
         return $this->state(fn (): array => [
             'risk_score' => $score,
-            'risk_band' => \App\Enums\RiskBand::fromScore($score),
+            'risk_band' => RiskBand::fromScore($score),
             'risk_calculated_at' => now(),
         ]);
     }

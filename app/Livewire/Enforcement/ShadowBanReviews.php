@@ -9,6 +9,7 @@ use App\Enums\BanType;
 use App\Enums\ReasonCode;
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\Ban;
+use App\Services\Audit\ActivityLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
@@ -145,7 +146,7 @@ class ShadowBanReviews extends Component
             'internal_note' => trim($ban->internal_note."\n\n".now()->toDateString().': '.$this->extendNote),
         ])->save();
 
-        app(\App\Services\Audit\ActivityLogger::class)->log(
+        app(ActivityLogger::class)->log(
             module: 'enforcement',
             action: 'extended_shadow_ban',
             subject: $ban->appUser,

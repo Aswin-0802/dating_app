@@ -197,7 +197,7 @@ final class ApplyEnforcement
 
         if ($step === LadderStep::ShadowBan && $durationHours !== null && $durationHours > $maxHours) {
             throw new InvalidArgumentException(
-                "A shadow ban cannot exceed ".veyra_hours_label($maxHours).'.',
+                'A shadow ban cannot exceed '.veyra_hours_label($maxHours).'.',
             );
         }
     }

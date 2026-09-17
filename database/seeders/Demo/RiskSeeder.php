@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo;
 
+use App\Enums\RiskBand;
 use App\Models\AppUser;
 use App\Services\Risk\RiskEngine;
 use Illuminate\Database\Seeder;
@@ -20,7 +21,7 @@ class RiskSeeder extends Seeder
 {
     public function run(): void
     {
-        $engine = new RiskEngine();
+        $engine = new RiskEngine;
 
         $this->command?->info('Computing bulk risk context…');
         $context = $engine->bulkContext();
@@ -41,7 +42,7 @@ class RiskSeeder extends Seeder
                 $factors = $engine->evaluate($member, $context[$member->id] ?? []);
                 $points = array_sum(array_column($factors, 'points'));
                 $total = max(0, min(100, (int) round($points)));
-                $band = \App\Enums\RiskBand::fromScore($total);
+                $band = RiskBand::fromScore($total);
 
                 $scoreId = $nextScoreId++;
 

@@ -7,6 +7,7 @@ namespace Database\Seeders\Demo;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Swipes, matches, conversations and messages.
@@ -312,7 +313,7 @@ class BehaviourSeeder extends Seeder
             );
 
             $rows[] = [
-                'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                'uuid' => (string) Str::uuid(),
                 'app_user_one_id' => $pair->one,
                 'app_user_two_id' => $pair->two,
                 'matched_at' => $matchedAt,
@@ -369,7 +370,7 @@ class BehaviourSeeder extends Seeder
             $startedAt = Carbon::parse($match->matched_at)->addMinutes($faker->numberBetween(2, 2880));
 
             $rows[] = [
-                'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                'uuid' => (string) Str::uuid(),
                 'match_id' => $match->id,
                 'started_at' => $startedAt,
                 'last_message_at' => $startedAt,
@@ -453,7 +454,7 @@ class BehaviourSeeder extends Seeder
                 $flagged = $faker->boolean(1.9);
 
                 $rows[] = [
-                    'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                    'uuid' => (string) Str::uuid(),
                     'conversation_id' => $conversation->id,
                     'sender_app_user_id' => $sender,
                     'type' => $type,

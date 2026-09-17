@@ -11,6 +11,7 @@ use App\Models\Appeal;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -63,7 +64,7 @@ class Show extends Component
      * submit: an option you can pick and then be refused teaches nothing, while
      * an absence prompts the question and the answer is on the page.
      *
-     * @return \Illuminate\Support\Collection<int, User>
+     * @return Collection<int, User>
      */
     private function eligibleReviewers()
     {

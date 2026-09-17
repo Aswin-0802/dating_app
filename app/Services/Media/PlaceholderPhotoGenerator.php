@@ -60,11 +60,25 @@ final class PlaceholderPhotoGenerator
 
         for ($i = 0; $i < $size; $i++) {
             $path = "photos/_pool/{$i}.jpg";
+            $thumbPath = "photos/_pool/{$i}-thumb.jpg";
 
             if (! Storage::disk($this->disk)->exists($path)) {
                 $image = $this->renderPlate(self::PHOTO_WIDTH, self::PHOTO_HEIGHT, $i, $this->initialsFor($i));
                 $this->writeJpeg($image, $path);
                 imagedestroy($image);
+            }
+
+            /*
+             * Thumbnails are pooled too.
+             *
+             * Every assigned photo is a copy of a pool image, so its thumbnail
+             * is a copy of that pool image's thumbnail. Resampling one per photo
+             * instead turns a one-minute stage into half an hour: the decode,
+             * resample and re-encode costs ~25ms each, and there are tens of
+             * thousands of them.
+             */
+            if (! Storage::disk($this->disk)->exists($thumbPath)) {
+                $this->writeThumbnail(Storage::disk($this->disk)->path($path), $thumbPath);
             }
 
             $this->pool[] = $path;
@@ -92,7 +106,9 @@ final class PlaceholderPhotoGenerator
         }
 
         $seed = $poolIndexOverride ?? (int) sprintf('%u', crc32("{$appUserId}:{$position}"));
-        $source = $this->pool[$seed % count($this->pool)];
+        $index = $seed % count($this->pool);
+        $source = $this->pool[$index];
+        $sourceThumb = str_replace('.jpg', '-thumb.jpg', $source);
 
         $shard = substr(md5("{$appUserId}:{$position}"), 0, 4);
         $path = "photos/{$shard[0]}{$shard[1]}/{$shard[2]}{$shard[3]}/{$appUserId}-{$position}.jpg";
@@ -100,12 +116,14 @@ final class PlaceholderPhotoGenerator
 
         $storage = Storage::disk($this->disk);
 
+        // Both files are plain copies. Nothing is re-encoded per photo, which is
+        // what keeps this stage to seconds rather than half an hour.
         if (! $storage->exists($path)) {
             $storage->put($path, $storage->get($source));
         }
 
         if (! $storage->exists($thumbPath)) {
-            $this->writeThumbnail($storage->path($path), $thumbPath);
+            $storage->put($thumbPath, $storage->get($sourceThumb));
         }
 
         return [

@@ -28,19 +28,25 @@ if (! function_exists('veyra_setting')) {
      */
     function veyra_setting(string $key, mixed $default = null): mixed
     {
-        static $cache = null;
-
-        if ($cache === null) {
-            try {
-                $cache = Schema::hasTable('settings')
-                    ? Setting::query()->pluck('value', 'key')->all()
-                    : [];
-            } catch (\Throwable) {
-                $cache = [];
+        /*
+         * Delegates to Setting::allValues(), which caches through the cache
+         * store and busts on write.
+         *
+         * A static cache local to this function would be faster but would not
+         * see a change made during the same process — so an operator saving a
+         * setting would not see it take effect, and neither would a test.
+         */
+        try {
+            if (! Schema::hasTable('settings')) {
+                return $default ?? config("veyra.{$key}");
             }
+
+            $values = Setting::allValues();
+        } catch (Throwable) {
+            return $default ?? config("veyra.{$key}");
         }
 
-        return $cache[$key] ?? $default ?? config("veyra.{$key}");
+        return $values[$key] ?? $default ?? config("veyra.{$key}");
     }
 }
 

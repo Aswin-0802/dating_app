@@ -58,10 +58,10 @@ class DemoDataSeeder extends Seeder
          * and its scores reflect the whole dataset.
          */
         $this->runSeeder(new AppUserSeeder($members));
-        $this->runSeeder(new PhotoSeeder());
+        $this->runSeeder(new PhotoSeeder);
         $this->runSeeder(new BehaviourSeeder($scale));
         $this->runSeeder(new TrustAndSafetySeeder($scale));
-        $this->runSeeder(new RiskSeeder());
+        $this->runSeeder(new RiskSeeder);
 
         $this->command?->info('Demo data complete.');
     }

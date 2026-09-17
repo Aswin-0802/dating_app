@@ -1,59 +1,165 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Veyra — Trust & Safety Console
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Admin console for a dating platform, plus the REST API its mobile clients use.
 
-## About Laravel
+Laravel 12 · Livewire 3 · Tailwind v4 · MySQL · Sanctum
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Getting it running
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Requires PHP 8.2+, Composer, Node 20+, and MySQL. On XAMPP everything below
+works as-is.
 
-## Learning Laravel
+```bash
+git clone <repo> && cd dating_app
+cp .env.example .env
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+# Create the databases (the second one is for the test suite).
+mysql -u root -e "CREATE DATABASE dating_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -e "CREATE DATABASE dating_app_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+composer setup   # install, key, storage link, migrate, seed, npm install, build
+composer dev     # serve + queue + scheduler + vite
+```
 
-## Laravel Sponsors
+Then open <http://localhost:8000> and sign in.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| Account | Role | What it can do |
+|---|---|---|
+| `admin@veyra.test` | Super Admin | Everything |
+| `ops@veyra.test` | Admin | Platform operations — but not message content, appeals, or safety policy |
+| `lead@veyra.test` | T&S Lead | Safety policy, the restricted queue, appeals |
+| `senior1@veyra.test` | Senior Moderator | Full enforcement ladder, appeals |
+| `mod1@veyra.test` | Moderator | Cases and enforcement up to suspension |
+| `support1@veyra.test` | Support | Member PII, no enforcement, no message content |
+| `analyst1@veyra.test` | Analyst | Aggregates only, no PII |
 
-### Premium Partners
+Password for all of them: `password`.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Signing in as more than one of these is the quickest way to see how much of the
+console is permission-shaped — restricted areas are absent from the navigation
+rather than present and refused.
 
-## Contributing
+### Seeding
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+`VEYRA_SEED_SCALE` controls the demo population:
 
-## Code of Conduct
+| Value | Members | Roughly |
+|---|---|---|
+| `small` | 1,200 | ~1 minute |
+| `demo` | 12,000 | ~10 minutes |
+| `large` | 48,000 | considerably longer |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+`VEYRA_SEED_PHOTOS=none` skips image generation entirely and falls back to
+initials tiles, which makes a rebuild much faster. The default, `generated`,
+draws placeholder imagery locally with GD and needs no network access.
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## What is here
 
-## License
+### The console
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Area | Notes |
+|---|---|
+| Dashboard | Funnel, per-city gender balance, attention concentration, cold start, retention by verification |
+| Users | 11 filters, bulk actions, per-member detail with photos and enforcement history |
+| Verification | Queue sorted by deadline; side-by-side comparator; enumerated rejection reasons; restricted minor-safety queue |
+| Matches | Derived from real mutual likes, with engagement state |
+| Conversations | Metadata only by default; revealing content is gated and logged |
+| Cases | Reports aggregated by subject, evidence in context, the enforcement ladder |
+| Enforcement | Bans, the shadow-ban review queue, shared devices, blocks |
+| Appeals | Routed away from the original decider |
+| Staff, Roles, Audit, Settings | Permission matrix, immutable audit trail, operator-tunable settings |
+
+### The API
+
+28 endpoints under `/api/v1`, authenticated with Sanctum bearer tokens. Auth,
+profile, discovery deck, swipes, matches, conversations, messages, reports,
+blocks and verification. Every list endpoint is cursor-paginated.
+
+---
+
+## Decisions worth knowing about
+
+These are the ones that would be surprising to inherit without explanation.
+
+**Staff and members are separate tables.** `users` is staff; `app_users` is
+dating-app members. They share almost no columns, and keeping them apart means
+no policy ever has to ask which kind of account it is looking at.
+
+**A shadow ban must be invisible to the member and visible to staff.** The API
+reports a shadow-banned account as `active`, keeps its token abilities, and
+serves it a normal deck — the restriction lives only in discovery ranking. In
+the console it is an ordinary status with a mandatory review date, and
+`/admin/enforcement/shadow-reviews` exists specifically to stop one becoming a
+permanent punishment nobody revisits. A shadow ban without a review date is
+refused by `ApplyEnforcement`.
+
+**Message content is gated structurally, not procedurally.** `body` is in
+`Message::$hidden`, so no controller, view or JSON response can leak it by
+accident. Reading it means going through `MessageRevealService`, which requires
+the permission, a reason from a fixed list and a written justification, and
+writes two immutable records.
+
+**Moderation actions, activity logs and message access logs are append-only.**
+Updates and deletes throw. A reversal is recorded as a new action linked to the
+original rather than an edit of it.
+
+**Every risk score stores its own factors.** The breakdown the UI renders is
+those stored rows, never recomputed — so it always sums to the number on the
+badge, including for a score calculated months ago under weights since retuned.
+
+**Appeals are never decided by the original decider.** Enforced in the model,
+the assignment action, and the seeder. That last one matters: a seeder allowed
+to violate the rule would let the test guarding it pass against bad data.
+
+**Admin and T&S Lead are deliberately different.** Admin runs the platform but
+cannot read message content, decide appeals, or change moderation policy. That
+separation is what makes the audit log meaningful.
+
+**Tests run against MySQL, not SQLite.** The analytics use `DATE_ADD`, the
+severity ranking uses `FIELD()`, the risk engine uses `JSON_EXTRACT`, and the
+seeders use multi-table `UPDATE JOIN`s. Testing on SQLite would skip all of it.
+
+**Dynamic Tailwind classes are never assembled at runtime.** Tailwind v4 scans
+source files for literal strings, so `"bg-risk-{$band}"` is purged and the badge
+renders unstyled — silently. Every status helper returns complete class strings
+from a `match`.
+
+---
+
+## Design system
+
+Tokens live in `resources/css/theme.css`. Each semantic colour carries four:
+`--x`, `--x-foreground` (legible on the solid fill), `--x-subtle` (the tint used
+by status badges) and `--x-subtle-foreground` (legible on the tint). The last is
+easy to forget: pairing a tinted background with the solid fill's foreground
+looks fine in light mode and goes dark-on-dark the moment the theme flips.
+
+The sidebar has its own `--sidebar-*` namespace, which is how the rail stays dark
+plum-navy against a light content canvas.
+
+Theme and sidebar state persist in cookies excluded from encryption, so Blade
+renders both correctly on the first byte. Resolving them client-side is what
+causes the flash on hard refresh.
+
+`/admin/_kitchen-sink` renders every primitive in every variant. It is the
+fastest way to catch a token regression, and the place to look before building a
+new screen.
+
+---
+
+## Testing
+
+```bash
+php artisan test          # 37 tests
+./vendor/bin/pint --test  # formatting
+```
+
+The suite concentrates on the things that would be expensive to get wrong: the
+enforcement ladder writes its three records together, moderation actions cannot
+be edited, a shadow ban is undetectable through the API, another member's profile
+never carries private fields, and reports against one member fold into a single
+case.

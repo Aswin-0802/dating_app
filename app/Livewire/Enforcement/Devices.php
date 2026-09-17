@@ -6,9 +6,9 @@ namespace App\Livewire\Enforcement;
 
 use App\Enums\AccountStatus;
 use App\Livewire\Concerns\WithDataTable;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Url;
 use Livewire\Component;

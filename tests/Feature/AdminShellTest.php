@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Navigation;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -76,7 +77,19 @@ class AdminShellTest extends TestCase
         $this->assertNotContains('Staff', $moderatorLabels);
         $this->assertNotContains('Roles', $moderatorLabels);
         $this->assertNotContains('Settings', $moderatorLabels);
-        $this->assertNotContains('Appeals', $this->navigationLabels());
+
+        // A moderator DOES see Appeals — they can read one, they just cannot
+        // decide it. Viewing and deciding are separate permissions on purpose,
+        // so that the "never the original decider" rule always has somebody
+        // else to route to.
+        $this->assertContains('Appeals', $moderatorLabels);
+
+        // An analyst is read-only over aggregates and reaches neither.
+        $this->actingAs($this->staff(Role::ANALYST));
+        $analystLabels = $this->navigationLabels();
+
+        $this->assertNotContains('Appeals', $analystLabels);
+        $this->assertNotContains('Conversations', $analystLabels);
     }
 
     public function test_super_admin_sees_at_least_as_much_as_any_other_role(): void
@@ -96,7 +109,7 @@ class AdminShellTest extends TestCase
     /** @return array<int, string> */
     private function navigationLabels(): array
     {
-        return collect(\App\Support\Navigation::sections())
+        return collect(Navigation::sections())
             ->flatMap(fn (array $section): array => array_column($section['items'], 'label'))
             ->all();
     }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AppUser;
 use App\Models\User;
 
 return [
@@ -37,10 +38,23 @@ return [
     |
     */
 
+    /*
+     * Two guards, because there are two populations.
+     *
+     * `web` is staff signing into the console. `api` is dating-app members on
+     * their phones. They live in different tables and share no columns worth
+     * unifying; keeping them apart means a policy never has to ask which kind
+     * of account it is looking at.
+     */
     'guards' => [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
+        ],
+
+        'api' => [
+            'driver' => 'sanctum',
+            'provider' => 'app_users',
         ],
     ],
 
@@ -62,15 +76,17 @@ return [
     */
 
     'providers' => [
+        // Staff.
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        // Dating-app members.
+        'app_users' => [
+            'driver' => 'eloquent',
+            'model' => AppUser::class,
+        ],
     ],
 
     /*

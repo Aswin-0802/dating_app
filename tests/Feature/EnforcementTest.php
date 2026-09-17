@@ -13,7 +13,6 @@ use App\Enums\ReasonCode;
 use App\Models\ActivityLog;
 use App\Models\AppUser;
 use App\Models\Ban;
-use App\Models\ModerationAction;
 use App\Models\ReportCase;
 use App\Models\Role;
 use App\Models\User;
