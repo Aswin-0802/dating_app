@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use Database\Seeders\Demo\AppUserSeeder;
+use Database\Seeders\Demo\BehaviourSeeder;
 use Database\Seeders\Demo\PhotoSeeder;
+use Database\Seeders\Demo\RiskSeeder;
+use Database\Seeders\Demo\TrustAndSafetySeeder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -44,11 +47,21 @@ class DemoDataSeeder extends Seeder
         DB::disableQueryLog();
 
         $this->callSilent(InterestSeeder::class);
+        $this->callSilent(RiskFactorDefinitionSeeder::class);
 
-        // Instantiated directly rather than via call(), because these seeders
-        // take constructor arguments (the scaled row counts).
+        /*
+         * Instantiated directly rather than via call(), because these take
+         * constructor arguments (the scaled row counts).
+         *
+         * Order matters: trust & safety anchors its evidence to the behaviour
+         * graph, and risk reads from every table above it — so risk runs last
+         * and its scores reflect the whole dataset.
+         */
         $this->runSeeder(new AppUserSeeder($members));
         $this->runSeeder(new PhotoSeeder());
+        $this->runSeeder(new BehaviourSeeder($scale));
+        $this->runSeeder(new TrustAndSafetySeeder($scale));
+        $this->runSeeder(new RiskSeeder());
 
         $this->command?->info('Demo data complete.');
     }
