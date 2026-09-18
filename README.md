@@ -56,12 +56,12 @@ rather than present and refused.
 
 | Value | Members | Rows | Roughly |
 |---|---|---|---|
-| `tiny` | 50 | 1,784 | ~15 seconds — **the default** |
+| `tiny` | 50 | ~2,500 | ~15 seconds — **the default** |
 | `small` | 1,200 | 46,127 | ~90 seconds |
 | `demo` | 12,000 | | several minutes |
 | `large` | 48,000 | | considerably longer |
 
-Row counts are measured, not estimated. `demo` and `large` are left blank
+Row counts are measured, and `tiny` includes reference data (cities, permissions, settings). `demo` and `large` are left blank
 because they are not run often enough to quote honestly.
 
 `tiny` is the default deliberately. The dataset is here to exercise the console,
