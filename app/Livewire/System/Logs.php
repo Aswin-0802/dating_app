@@ -9,6 +9,7 @@ use App\Models\AppUserLogin;
 use App\Models\EmailLog;
 use App\Models\PaymentLog;
 use App\Models\SmsLog;
+use App\Support\Branding;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -55,7 +56,7 @@ class Logs extends Component
         ])->layout('components.layouts.admin', [
             'title' => self::KINDS[$this->kind]['label'],
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'System'],
                 ['label' => self::KINDS[$this->kind]['label']],
             ],

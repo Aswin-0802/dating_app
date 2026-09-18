@@ -1,15 +1,14 @@
 @php
-    $theme = request()->cookie('veyra_theme', 'system');
+    $theme = request()->cookie('veyra_theme', App\Support\Branding::themeMode());
 @endphp
 
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => $theme === 'dark'])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => $theme === 'dark']) data-theme-default="{{ App\Support\Branding::themeMode() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sign in · {{ config('veyra.brand.name') }}</title>
+    <title>Sign in · {{ App\Support\Branding::name() }}</title>
 
-    <link rel="icon" href="data:image/svg+xml,{{ rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%23c2265a"/><path d="M9 11l7 12 7-12" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>') }}">
 
     <script>
         (function () {
@@ -22,6 +21,7 @@
     </script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <x-brand.head />
 </head>
 
 <body class="min-h-screen bg-background font-sans text-foreground antialiased">
@@ -30,14 +30,10 @@
         <div class="flex items-center justify-center p-6 sm:p-10">
             <div class="w-full max-w-sm">
                 <div class="mb-8 flex items-center gap-2.5">
-                    <span class="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M5 8l7 11 7-11" />
-                        </svg>
-                    </span>
+                    <x-brand.mark variant="admin" />
                     <div>
-                        <p class="text-base font-semibold leading-tight">{{ config('veyra.brand.name') }}</p>
-                        <p class="text-xs leading-tight text-muted-foreground">{{ config('veyra.brand.tagline') }}</p>
+                        <p class="text-base font-semibold leading-tight">{{ App\Support\Branding::name() }}</p>
+                        <p class="text-xs leading-tight text-muted-foreground">{{ App\Support\Branding::tagline() }}</p>
                     </div>
                 </div>
 
@@ -112,6 +108,13 @@
 
         {{-- Brand panel. Hidden below lg so the form gets the whole viewport. --}}
         <div class="relative hidden overflow-hidden bg-sidebar lg:block">
+            @if ($loginImage = App\Support\Branding::loginImageUrl())
+                {{-- A buyer's own artwork, darkened at the foot so the quote
+                     stays legible whatever the image is. --}}
+                <img src="{{ $loginImage }}" alt="" class="absolute inset-0 size-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent"></div>
+            @endif
+
             <div class="absolute inset-0 bg-gradient-to-br from-primary/25 via-transparent to-accent/25"></div>
 
             <div class="absolute -right-24 -top-24 size-96 rounded-full bg-primary/20 blur-3xl"></div>
@@ -124,7 +127,7 @@
                         person's account. Both deserve a record.
                     </p>
                     <footer class="text-sm text-sidebar-muted-foreground">
-                        Veyra Trust &amp; Safety operating principles
+                        {{ App\Support\Branding::name() }} Trust &amp; Safety operating principles
                     </footer>
                 </blockquote>
             </div>

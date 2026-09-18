@@ -7,6 +7,7 @@ namespace App\Livewire\Settings;
 use App\Models\RiskFactorDefinition;
 use App\Models\Setting;
 use App\Services\Audit\ActivityLogger;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -58,7 +59,7 @@ class Index extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Settings',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Settings'],
                 ['label' => str($this->group)->headline()->toString()],
             ],
@@ -83,7 +84,7 @@ class Index extends Component
         $changed = [];
 
         foreach ($this->settingsForGroup() as $setting) {
-            $new = $this->values[$setting->key] ?? null;
+            $new = $this->values[$setting->id] ?? null;
 
             if ($setting->type === 'boolean') {
                 $new = $new ? '1' : '0';
@@ -130,8 +131,15 @@ class Index extends Component
 
     private function loadValues(): void
     {
+        /*
+         * Keyed by id, never by the setting key. Every key is dotted
+         * ("brand.name"), and Livewire reads a dot in wire:model as a path into
+         * a nested array — so `values.brand.name` wrote to $values['brand']['name']
+         * while save() read $values['brand.name'], saw nothing change, and
+         * reported "No changes to save" for every setting in every group.
+         */
         $this->values = $this->settingsForGroup()
-            ->mapWithKeys(fn (Setting $s): array => [$s->key => $s->typed_value])
+            ->mapWithKeys(fn (Setting $s): array => [$s->id => $s->typed_value])
             ->all();
 
         $this->riskPoints = $this->group === 'risk'

@@ -6,6 +6,7 @@ namespace App\Livewire\System;
 
 use App\Models\Setting;
 use App\Services\Audit\ActivityLogger;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail as Mailer;
@@ -38,7 +39,7 @@ class Mail extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Mail settings',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'System'],
                 ['label' => 'Mail'],
             ],

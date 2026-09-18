@@ -100,6 +100,12 @@ class AppUserSeeder extends Seeder
         $preferences = [];
         $pivots = [];
 
+        // Dealt across the population rather than rolled per member. See
+        // stratify() — at 50 members an independent roll leaves whole account
+        // states with nobody in them.
+        $statuses = $this->stratify($faker, self::STATUS_MIX, $this->target);
+        $verifications = $this->stratify($faker, self::VERIFICATION_MIX, $this->target);
+
         $bar = $this->command?->getOutput()->createProgressBar($this->target);
         $bar?->start();
 
@@ -116,9 +122,9 @@ class AppUserSeeder extends Seeder
             $age = $this->age($faker);
             $birthdate = $now->copy()->subYears($age)->subDays($faker->numberBetween(0, 364));
 
-            $verification = $this->weighted($faker, self::VERIFICATION_MIX);
+            $verification = $verifications[$i - 1];
             $isVerified = $verification === VerificationStatus::Approved->value;
-            $status = $this->weighted($faker, self::STATUS_MIX);
+            $status = $statuses[$i - 1];
 
             $firstName = $this->firstNameFor($faker, $gender);
             $displayName = $firstName.' '.$faker->lastName();
@@ -165,7 +171,7 @@ class AppUserSeeder extends Seeder
             $profiles[] = $this->profileRow($faker, $i);
             $preferences[] = $this->preferenceRow($faker, $i, $gender, $age);
 
-            foreach ($faker->randomElements($interestIds, $faker->numberBetween(3, 8)) as $interestId) {
+            foreach ($faker->randomElements($interestIds, $faker->numberBetween(2, 4)) as $interestId) {
                 $pivots[] = ['app_user_id' => $i, 'interest_id' => $interestId];
             }
 
@@ -374,14 +380,51 @@ class AppUserSeeder extends Seeder
             'religion' => $faker->boolean(35) ? $faker->randomElement(['Agnostic', 'Atheist', 'Christian', 'Muslim', 'Jewish', 'Hindu', 'Buddhist', 'Spiritual']) : null,
             'politics' => $faker->boolean(28) ? $faker->randomElement(['Liberal', 'Moderate', 'Conservative', 'Apolitical', 'Left', 'Green']) : null,
             'languages' => json_encode($faker->randomElements(['English', 'Spanish', 'French', 'German', 'Portuguese', 'Yoruba', 'Hindi', 'Japanese', 'Italian', 'Polish'], $faker->numberBetween(1, 3))),
-            'prompts' => json_encode([
-                ['q' => 'A perfect Sunday', 'a' => $faker->sentence(8)],
-                ['q' => 'I geek out on', 'a' => $faker->sentence(6)],
-            ]),
+            'prompts' => json_encode($this->prompts($faker)),
             'bio_contains_contact' => $containsContact,
             'created_at' => now(),
             'updated_at' => now(),
         ];
+    }
+
+    /**
+     * Two prompt answers in plain English.
+     *
+     * These are read on the member website, where lorem ipsum makes the whole
+     * product look broken rather than seeded.
+     *
+     * @return array<int, array{q: string, a: string}>
+     */
+    private function prompts($faker): array
+    {
+        $answers = [
+            'A perfect Sunday' => [
+                'Long breakfast, longer walk, then a nap I will deny taking.',
+                'Farmers market, cooking something ambitious, failing, ordering pizza.',
+                'Swimming in the sea no matter the weather, then a pub roast.',
+                'Record shop, coffee, and absolutely no plans after 4pm.',
+            ],
+            'I geek out on' => [
+                'Maps. Old ones, new ones, the ones on the back of cereal boxes.',
+                'Bread. I have a sourdough starter with a name and a birthday.',
+                'Football tactics. I will draw you a diagram on a napkin.',
+                'Houseplants. Currently keeping 34 of them alive, just.',
+            ],
+            'The way to win me over' => [
+                'Recommend me a book and then actually want to talk about it.',
+                'Laugh at my jokes, even the bad ones. Especially the bad ones.',
+                'Know a good dumpling place.',
+            ],
+            'My simple pleasures' => [
+                'The first coffee, a clean kitchen, and a good playlist.',
+                'Cold pillows and the smell of rain.',
+                'Finding a parking space right outside.',
+            ],
+        ];
+
+        return collect($faker->randomElements(array_keys($answers), 2))
+            ->map(fn (string $question): array => ['q' => $question, 'a' => $faker->randomElement($answers[$question])])
+            ->all();
     }
 
     private function bio($faker, bool $withContact): string
@@ -457,6 +500,54 @@ class AppUserSeeder extends Seeder
      *
      * @param  array<string, float|int>  $weights
      */
+    /**
+     * Deal a weighted mix across the population instead of rolling it per member.
+     *
+     * Independent draws are correct at scale and wrong at the bottom of it.
+     * Shadow-banned is 1.2% of the mix; over 50 members that is a coin which
+     * comes up empty more often than not, and a category that rounds to nobody
+     * takes a whole admin screen down with it — no shadow bans means no shadow
+     * ban review queue, and the screen reads as broken rather than as quiet.
+     *
+     * Dealing guarantees every category is represented while keeping the
+     * proportions it asks for, and at demo scale the result is indistinguishable
+     * from the rolls it replaces.
+     *
+     * @param  array<string, float>  $mix
+     * @return array<int, string>
+     */
+    private function stratify($faker, array $mix, int $count): array
+    {
+        $total = array_sum($mix);
+        $dominant = (string) array_search(max($mix), $mix, true);
+        $deck = [];
+
+        foreach ($mix as $value => $weight) {
+            $share = max(1, (int) round($count * $weight / $total));
+            $deck = array_merge($deck, array_fill(0, $share, (string) $value));
+        }
+
+        // Rounding every category up to at least one overshoots on a small
+        // population. The surplus comes off the dominant category, which is the
+        // only one that can spare it.
+        while (count($deck) > $count) {
+            $position = array_search($dominant, $deck, true);
+
+            if ($position === false) {
+                break;
+            }
+
+            unset($deck[$position]);
+            $deck = array_values($deck);
+        }
+
+        while (count($deck) < $count) {
+            $deck[] = $dominant;
+        }
+
+        return $faker->shuffleArray($deck);
+    }
+
     private function weighted($faker, array $weights): string
     {
         $total = array_sum($weights);

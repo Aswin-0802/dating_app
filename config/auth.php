@@ -56,6 +56,14 @@ return [
             'driver' => 'sanctum',
             'provider' => 'app_users',
         ],
+
+        // Members using the website. Same people as `api`, a session instead of
+        // a token. Sanctum's own guard list is empty, so this session never
+        // authenticates an API request.
+        'member' => [
+            'driver' => 'session',
+            'provider' => 'app_users',
+        ],
     ],
 
     /*

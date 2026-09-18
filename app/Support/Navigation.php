@@ -154,9 +154,14 @@ final class Navigation
                     [
                         'label' => 'Settings',
                         'icon' => 'cog',
-                        'route' => 'admin.settings.general',
                         'permission' => 'settings',
                         'active' => ['admin.settings.*'],
+                        'children' => [
+                            // First, because it is the first thing anybody
+                            // re-branding the product looks for.
+                            ['label' => 'Branding', 'route' => 'admin.settings.branding', 'permission' => 'settings'],
+                            ['label' => 'Product & safety', 'route' => 'admin.settings.general', 'permission' => 'settings'],
+                        ],
                     ],
                     /*
                      * System sits apart from Settings on purpose.

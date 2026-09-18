@@ -17,7 +17,7 @@ use RuntimeException;
  *     a file copy, which is sub-millisecond.
  *
  *  2. The images must not look like real people. They are gradient plates with an
- *     abstract silhouette and initials — recognisably placeholders, so nobody
+ *     abstract silhouette — recognisably placeholders, so nobody
  *     mistakes seeded data for a real member, while still giving the grid,
  *     comparator and duplicate-detection screens something to show.
  */
@@ -63,7 +63,10 @@ final class PlaceholderPhotoGenerator
             $thumbPath = "photos/_pool/{$i}-thumb.jpg";
 
             if (! Storage::disk($this->disk)->exists($path)) {
-                $image = $this->renderPlate(self::PHOTO_WIDTH, self::PHOTO_HEIGHT, $i, $this->initialsFor($i));
+                // No initials on pooled photos: a pool image is shared by many
+                // members, so any letters would be wrong for nearly all of them —
+                // "YK" on Cindy's profile reads as a bug, not a placeholder.
+                $image = $this->renderPlate(self::PHOTO_WIDTH, self::PHOTO_HEIGHT, $i, '');
                 $this->writeJpeg($image, $path);
                 imagedestroy($image);
             }
@@ -230,6 +233,10 @@ final class PlaceholderPhotoGenerator
 
     private function drawInitials($image, string $initials, int $width, int $height): void
     {
+        if ($initials === '') {
+            return;
+        }
+
         $white = imagecolorallocate($image, 255, 255, 255);
         $font = $this->resolveFont();
         $size = (int) ($width * 0.13);

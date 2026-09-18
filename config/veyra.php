@@ -28,13 +28,17 @@ return [
     | Demo data
     |--------------------------------------------------------------------------
     |
-    | `scale` trades realism for seeding time. `photos` controls how profile
-    | imagery is produced: `generated` draws them locally with GD and needs no
-    | network at all.
+    | `scale` trades realism for seeding time and database size: tiny (600
+    | members) | small (1,200) | demo (12,000) | large (48,000). `tiny` is the
+    | default because the dataset exists to exercise the UI, and every queue,
+    | chart and filter still has content at that size.
+    |
+    | `photos` controls how profile imagery is produced: `generated` draws them
+    | locally with GD and needs no network at all.
     |
     */
     'seed' => [
-        'scale' => env('VEYRA_SEED_SCALE', 'small'),
+        'scale' => env('VEYRA_SEED_SCALE', 'tiny'),
         'photos' => env('VEYRA_SEED_PHOTOS', 'generated'),
         // Fixed so analytics screenshots and assertions do not drift between runs.
         'faker_seed' => 20260917,

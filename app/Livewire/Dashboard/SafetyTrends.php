@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Services\Analytics\MetricRollup;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -25,7 +26,7 @@ class SafetyTrends extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Safety trends',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Analytics'],
                 ['label' => 'Safety trends'],
             ],

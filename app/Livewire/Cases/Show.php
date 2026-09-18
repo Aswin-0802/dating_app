@@ -10,6 +10,7 @@ use App\Enums\LadderStep;
 use App\Enums\ReasonCode;
 use App\Models\Message;
 use App\Models\ReportCase;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -60,7 +61,7 @@ class Show extends Component
         ])->layout('components.layouts.admin', [
             'title' => $this->reportCase->case_number,
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Cases', 'href' => route('admin.cases.index')],
                 ['label' => $this->reportCase->case_number],
             ],

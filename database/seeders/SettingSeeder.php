@@ -19,9 +19,49 @@ class SettingSeeder extends Seeder
     public static function settings(): array
     {
         return [
+            /*
+             * ---- branding ----
+             *
+             * Everything a buyer changes to make the product theirs, edited from
+             * Settings -> Branding rather than the generic settings list: logos
+             * need an upload field and a colour needs a picker, and a live
+             * preview is what stops somebody shipping an unreadable palette.
+             */
+            ['key' => 'brand.name', 'value' => 'Veyra', 'type' => 'text', 'group' => 'branding', 'label' => 'Product name', 'is_public' => true],
+            ['key' => 'brand.tagline', 'value' => 'Trust & Safety Console', 'type' => 'text', 'group' => 'branding', 'label' => 'Admin tagline', 'description' => 'Shown under the name in the admin sidebar.'],
+            ['key' => 'brand.primary_color', 'value' => '#c2265a', 'type' => 'text', 'group' => 'branding', 'label' => 'Brand colour', 'is_public' => true],
+            ['key' => 'brand.theme_mode', 'value' => 'system', 'type' => 'text', 'group' => 'branding', 'label' => 'Default theme', 'description' => 'light, dark or system. Each person can still switch their own.'],
+            ['key' => 'brand.admin_logo', 'value' => '', 'type' => 'image', 'group' => 'branding', 'label' => 'Admin logo'],
+            ['key' => 'brand.logo', 'value' => '', 'type' => 'image', 'group' => 'branding', 'label' => 'Website logo', 'is_public' => true],
+            ['key' => 'brand.favicon', 'value' => '', 'type' => 'image', 'group' => 'branding', 'label' => 'Favicon', 'is_public' => true],
+            ['key' => 'brand.login_image', 'value' => '', 'type' => 'image', 'group' => 'branding', 'label' => 'Sign-in page image'],
+            ['key' => 'brand.support_email', 'value' => 'support@veyra.test', 'type' => 'text', 'group' => 'branding', 'label' => 'Support email', 'is_public' => true],
+
+            ['key' => 'business.name', 'value' => 'Veyra Ltd', 'type' => 'text', 'group' => 'branding', 'label' => 'Company name', 'is_public' => true],
+            ['key' => 'business.email', 'value' => 'hello@veyra.test', 'type' => 'text', 'group' => 'branding', 'label' => 'Company email', 'is_public' => true],
+            ['key' => 'business.phone', 'value' => '', 'type' => 'text', 'group' => 'branding', 'label' => 'Company phone', 'is_public' => true],
+            ['key' => 'business.address', 'value' => '', 'type' => 'textarea', 'group' => 'branding', 'label' => 'Company address', 'is_public' => true],
+
+            ['key' => 'website.enabled', 'value' => '1', 'type' => 'boolean', 'group' => 'branding', 'label' => 'Public website', 'description' => 'When off, the home page sends visitors straight to sign in.'],
+            ['key' => 'website.hero_title', 'value' => 'Meet people who are exactly who they say they are.', 'type' => 'text', 'group' => 'branding', 'label' => 'Home page headline', 'is_public' => true],
+            ['key' => 'website.hero_subtitle', 'value' => 'Every profile photo-verified by a real person. Real conversations, fewer dead ends, and a safety team that actually answers.', 'type' => 'textarea', 'group' => 'branding', 'label' => 'Home page subheading', 'is_public' => true],
+            ['key' => 'website.meta_description', 'value' => 'A dating app where every profile is verified.', 'type' => 'text', 'group' => 'branding', 'label' => 'Search engine description', 'is_public' => true],
+            ['key' => 'website.footer_text', 'value' => 'Made for people who would rather meet than scroll.', 'type' => 'text', 'group' => 'branding', 'label' => 'Footer text', 'is_public' => true],
+            ['key' => 'website.currency_symbol', 'value' => '£', 'type' => 'text', 'group' => 'branding', 'label' => 'Currency symbol', 'is_public' => true],
+            ['key' => 'website.plus_price', 'value' => '12.99', 'type' => 'text', 'group' => 'branding', 'label' => 'Plus price / month', 'is_public' => true],
+            ['key' => 'website.gold_price', 'value' => '24.99', 'type' => 'text', 'group' => 'branding', 'label' => 'Gold price / month', 'is_public' => true],
+
+            ['key' => 'app.ios_url', 'value' => '', 'type' => 'text', 'group' => 'branding', 'label' => 'App Store link', 'is_public' => true],
+            ['key' => 'app.android_url', 'value' => '', 'type' => 'text', 'group' => 'branding', 'label' => 'Google Play link', 'is_public' => true],
+
+            ['key' => 'social.instagram', 'value' => '', 'type' => 'text', 'group' => 'branding', 'label' => 'Instagram', 'is_public' => true],
+            ['key' => 'social.facebook', 'value' => '', 'type' => 'text', 'group' => 'branding', 'label' => 'Facebook', 'is_public' => true],
+            ['key' => 'social.x', 'value' => '', 'type' => 'text', 'group' => 'branding', 'label' => 'X / Twitter', 'is_public' => true],
+            ['key' => 'social.tiktok', 'value' => '', 'type' => 'text', 'group' => 'branding', 'label' => 'TikTok', 'is_public' => true],
+            ['key' => 'social.youtube', 'value' => '', 'type' => 'text', 'group' => 'branding', 'label' => 'YouTube', 'is_public' => true],
+            ['key' => 'social.linkedin', 'value' => '', 'type' => 'text', 'group' => 'branding', 'label' => 'LinkedIn', 'is_public' => true],
+
             // ---- general ----
-            ['key' => 'brand.name', 'value' => 'Veyra', 'type' => 'text', 'group' => 'general', 'label' => 'Product name', 'is_public' => true],
-            ['key' => 'brand.support_email', 'value' => 'support@veyra.test', 'type' => 'text', 'group' => 'general', 'label' => 'Support email', 'is_public' => true],
             ['key' => 'general.min_age', 'value' => '18', 'type' => 'number', 'group' => 'general', 'label' => 'Minimum age', 'description' => 'Accounts below this age are removed on discovery.', 'is_public' => true],
             ['key' => 'general.maintenance_mode', 'value' => '0', 'type' => 'boolean', 'group' => 'general', 'label' => 'Maintenance mode', 'is_public' => true],
 

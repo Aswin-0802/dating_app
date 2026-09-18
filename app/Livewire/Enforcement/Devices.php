@@ -6,6 +6,7 @@ namespace App\Livewire\Enforcement;
 
 use App\Enums\AccountStatus;
 use App\Livewire\Concerns\WithDataTable;
+use App\Support\Branding;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -41,7 +42,7 @@ class Devices extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Shared devices',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Enforcement'],
                 ['label' => 'Shared devices'],
             ],

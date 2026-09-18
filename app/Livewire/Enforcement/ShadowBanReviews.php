@@ -10,6 +10,7 @@ use App\Enums\ReasonCode;
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\Ban;
 use App\Services\Audit\ActivityLogger;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
@@ -54,7 +55,7 @@ class ShadowBanReviews extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Shadow ban reviews',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Enforcement'],
                 ['label' => 'Shadow ban reviews'],
             ],

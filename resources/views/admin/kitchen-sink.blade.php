@@ -21,7 +21,7 @@
 <x-layouts.admin
     title="Component gallery"
     :breadcrumbs="[
-        ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+        ['label' => App\Support\Branding::name(), 'href' => route('admin.dashboard')],
         ['label' => 'Component gallery'],
     ]"
 >

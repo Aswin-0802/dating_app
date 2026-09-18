@@ -7,6 +7,7 @@ namespace App\Livewire\Conversations;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Services\Messaging\MessageRevealService;
+use App\Support\Branding;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -52,7 +53,7 @@ class Show extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Conversation',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Conversations', 'href' => route('admin.conversations.index')],
                 ['label' => 'Thread'],
             ],

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\AccountStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\MatchResource;
 use App\Http\Resources\Api\V1\MeResource;
@@ -12,10 +11,11 @@ use App\Http\Resources\Api\V1\VerificationResource;
 use App\Models\City;
 use App\Models\Interest;
 use App\Models\MatchRecord;
-use App\Models\Verification;
+use App\Services\Members\ContentScanner;
+use App\Services\Members\ProfileCompletion;
+use App\Services\Members\VerificationSubmission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -71,12 +71,12 @@ class ProfileController extends Controller
         // Flagged on write so the risk engine reads a stored fact rather than
         // re-scanning every bio on every recompute.
         if (array_key_exists('bio', $data)) {
-            $data['bio_contains_contact'] = $data['bio'] !== null && $this->looksLikeContactDetails($data['bio']);
+            $data['bio_contains_contact'] = $data['bio'] !== null && ContentScanner::containsContactInfo($data['bio']);
         }
 
         $profile->update($data);
 
-        $this->refreshCompletion($member);
+        app(ProfileCompletion::class)->refresh($member);
 
         return response()->json(['data' => new MeResource($member->fresh(['profile', 'photos']))]);
     }
@@ -152,41 +152,21 @@ class ProfileController extends Controller
      * The gesture code is issued by the server and must appear in the capture:
      * it is what stops somebody uploading a photograph of a photograph.
      */
-    public function submitVerification(Request $request): JsonResponse
+    public function submitVerification(Request $request, VerificationSubmission $submission): JsonResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'selfie' => ['required', 'image', 'max:10240'],
             'gesture_code' => ['required', 'string', 'size:4'],
         ]);
 
-        $member = $request->user();
-        $max = (int) config('veyra.verification.max_attempts', 3);
-        $used = Verification::query()->where('app_user_id', $member->id)->count();
+        $verification = $submission->submit($request->user(), $request->file('selfie'), $data['gesture_code']);
 
-        if ($used >= $max) {
+        if ($verification === null) {
             return response()->json([
                 'message' => 'You have used all your verification attempts. Contact support.',
                 'code' => 'verification_attempts_exhausted',
             ], 422);
         }
-
-        $path = $request->file('selfie')->store('selfies', 'verifications');
-
-        $verification = Verification::query()->create([
-            'uuid' => (string) Str::uuid(),
-            'app_user_id' => $member->id,
-            'attempt_no' => $used + 1,
-            'type' => 'selfie',
-            'status' => 'pending',
-            'queue' => 'standard',
-            'selfie_disk' => 'verifications',
-            'selfie_path' => $path,
-            'gesture_code' => strtoupper($request->string('gesture_code')),
-            'submitted_at' => now(),
-            'sla_due_at' => now()->addHours((int) veyra_setting('verification.sla_hours', 24)),
-        ]);
-
-        $member->forceFill(['verification_status' => 'pending'])->save();
 
         return response()->json(['data' => new VerificationResource($verification)], 202);
     }
@@ -194,44 +174,8 @@ class ProfileController extends Controller
     public function gestureCode(): JsonResponse
     {
         return response()->json([
-            'gesture_code' => strtoupper(Str::random(2).random_int(10, 99)),
+            'gesture_code' => VerificationSubmission::newGestureCode(),
             'expires_in' => 600,
         ]);
-    }
-
-    /**
-     * Recompute how complete a profile is, and promote out of `pending` once
-     * there is enough there to be worth showing to anybody.
-     */
-    private function refreshCompletion($member): void
-    {
-        $profile = $member->profile;
-
-        $filled = collect([
-            filled($profile?->bio),
-            filled($profile?->job_title),
-            filled($profile?->education),
-            $profile?->height_cm !== null,
-            $profile?->relationship_goal !== 'unspecified',
-            $member->photos()->count() > 0,
-            $member->interests()->count() >= 3,
-            filled($member->city_id),
-        ])->filter()->count();
-
-        $completion = (int) round($filled / 8 * 100);
-
-        $attributes = ['profile_completion' => $completion];
-
-        if ($completion >= 50 && $member->account_status === AccountStatus::Pending) {
-            $attributes['account_status'] = AccountStatus::Active;
-            $attributes['profile_completed_at'] = $member->profile_completed_at ?? now();
-        }
-
-        $member->forceFill($attributes)->save();
-    }
-
-    private function looksLikeContactDetails(string $bio): bool
-    {
-        return (bool) preg_match('~@[a-z0-9._]{3,}|\+?\d[\d\s().-]{7,}\d|\b(whatsapp|telegram|snap(chat)?|insta(gram)?)\b~i', $bio);
     }
 }

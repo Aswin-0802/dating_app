@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\EnsureAppUserIsNotBanned;
+use App\Http\Middleware\EnsureMemberCanUseApp;
 use App\Http\Middleware\EnsureStaffIsActive;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -58,8 +59,25 @@ return Application::configure(basePath: dirname(__DIR__))
             // veyra
             'staff.active' => EnsureStaffIsActive::class,
             'appuser.active' => EnsureAppUserIsNotBanned::class,
+            'member.active' => EnsureMemberCanUseApp::class,
             'ability' => CheckForAnyAbility::class,
         ]);
+
+        /*
+         * Two populations, two sign-in pages. Staff land on /admin/login and
+         * members on /login, whichever area they were trying to reach.
+         */
+        $middleware->redirectGuestsTo(
+            fn (Request $request): string => $request->is('admin', 'admin/*')
+                ? route('login')
+                : route('member.login'),
+        );
+
+        $middleware->redirectUsersTo(
+            fn (Request $request): string => $request->routeIs('login')
+                ? route('admin.dashboard')
+                : route('member.discover'),
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         /*

@@ -6,6 +6,7 @@ namespace App\Livewire\Notifications;
 
 use App\Models\NotificationTemplate;
 use App\Services\Audit\ActivityLogger;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -34,7 +35,7 @@ class Templates extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Notification templates',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Notifications', 'href' => route('admin.notifications.campaigns')],
                 ['label' => 'Templates'],
             ],

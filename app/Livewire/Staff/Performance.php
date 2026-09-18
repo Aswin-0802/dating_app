@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Staff;
 
 use App\Enums\AppealStatus;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +33,7 @@ class Performance extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Moderator performance',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Staff', 'href' => route('admin.staff.index')],
                 ['label' => 'Performance'],
             ],

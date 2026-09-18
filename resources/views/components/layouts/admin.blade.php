@@ -6,20 +6,19 @@
 @php
     // Read on the server so the first painted byte already carries the right
     // theme and sidebar width. Anything resolved client-side flashes.
-    $theme = request()->cookie('veyra_theme', 'system');
+    $theme = request()->cookie('veyra_theme', App\Support\Branding::themeMode());
     $sidebar = request()->cookie('veyra_sidebar', 'expanded');
 @endphp
 
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => $theme === 'dark'])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => $theme === 'dark']) data-theme-default="{{ App\Support\Branding::themeMode() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ? $title.' · ' : '' }}{{ config('veyra.brand.name') }}</title>
+    <title>{{ $title ? $title.' · ' : '' }}{{ App\Support\Branding::name() }}</title>
 
-    <link rel="icon" href="data:image/svg+xml,{{ rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%23c2265a"/><path d="M9 11l7 12 7-12" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>') }}">
 
     <script>
         // Runs before first paint. `system` cannot be resolved server-side, so it
@@ -34,6 +33,7 @@
     </script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <x-brand.head />
     @livewireStyles
 </head>
 

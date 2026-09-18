@@ -6,6 +6,7 @@ namespace App\Livewire\Verifications;
 
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\Verification;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
@@ -57,7 +58,7 @@ class Queue extends Component
         ])->layout('components.layouts.admin', [
             'title' => $isRestricted ? 'Minor safety queue' : 'Verification',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Verification', 'href' => route('admin.verifications.index')],
                 ...($isRestricted ? [['label' => 'Minor safety']] : []),
             ],

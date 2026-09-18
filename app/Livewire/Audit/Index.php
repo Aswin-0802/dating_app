@@ -6,6 +6,7 @@ namespace App\Livewire\Audit;
 
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\ActivityLog;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -50,7 +51,7 @@ class Index extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Audit log',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Audit log'],
             ],
         ]);

@@ -30,7 +30,7 @@ class AdminShellTest extends TestCase
 
     public function test_guests_are_redirected_to_login(): void
     {
-        $this->get('/admin')->assertRedirect('/login');
+        $this->get('/admin')->assertRedirect('/admin/login');
     }
 
     public function test_dashboard_renders_for_signed_in_staff(): void
@@ -122,7 +122,7 @@ class AdminShellTest extends TestCase
 
         $user->update(['status' => 'suspended']);
 
-        $this->actingAs($user)->get('/admin')->assertRedirect('/login');
+        $this->actingAs($user)->get('/admin')->assertRedirect('/admin/login');
         $this->assertGuest();
     }
 

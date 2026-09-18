@@ -13,7 +13,9 @@ const ONE_YEAR = 60 * 60 * 24 * 365;
 export function readPreference() {
     const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE}=([^;]*)`));
 
-    return match ? decodeURIComponent(match[1]) : 'system';
+    // Without a personal choice, fall back to the default set in
+    // Settings -> Branding, which every layout stamps onto <html>.
+    return match ? decodeURIComponent(match[1]) : document.documentElement.dataset.themeDefault || 'system';
 }
 
 function writePreference(value) {

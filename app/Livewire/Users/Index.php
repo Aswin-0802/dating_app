@@ -12,6 +12,7 @@ use App\Livewire\Concerns\WithBulkActions;
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\AppUser;
 use App\Models\City;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
@@ -75,7 +76,7 @@ class Index extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Users',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Users'],
             ],
         ]);

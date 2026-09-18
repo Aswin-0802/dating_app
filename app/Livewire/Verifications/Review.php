@@ -7,6 +7,7 @@ namespace App\Livewire\Verifications;
 use App\Actions\Verification\DecideVerification;
 use App\Enums\ReasonCode;
 use App\Models\Verification;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -47,7 +48,7 @@ class Review extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Review verification',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Verification', 'href' => route('admin.verifications.index')],
                 ['label' => $this->verification->appUser?->display_name ?? 'Submission'],
             ],

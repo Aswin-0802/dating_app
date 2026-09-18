@@ -42,7 +42,10 @@ class SystemLogSeeder extends Seeder
     {
         $members = DB::table('app_users')
             ->inRandomOrder()
-            ->limit((int) round(1200 * $this->scale))
+            // Floored, not purely proportional: at 50 members a strict share
+            // would be five rows, and the delivery log is read as a log — it
+            // needs enough history to page through and filter.
+            ->limit(max(60, (int) round(1200 * $this->scale)))
             ->get(['id', 'email', 'display_name']);
 
         $kinds = [
@@ -107,7 +110,7 @@ class SystemLogSeeder extends Seeder
         $members = DB::table('app_users')
             ->whereNotNull('phone')
             ->inRandomOrder()
-            ->limit((int) round(700 * $this->scale))
+            ->limit(max(40, (int) round(700 * $this->scale)))
             ->get(['id', 'phone']);
 
         $rows = [];

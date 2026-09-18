@@ -1,5 +1,10 @@
 <div class="space-y-4 md:space-y-6">
 
+    <div class="flex flex-wrap gap-1">
+        <a href="{{ route('admin.settings.branding') }}" wire:navigate class="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Branding</a>
+        <a href="{{ route('admin.settings.general') }}" wire:navigate class="rounded-md bg-primary-subtle px-3 py-1.5 text-sm font-medium text-primary-subtle-foreground">Product &amp; safety settings</a>
+    </div>
+
     <div class="grid gap-4 md:gap-6 lg:grid-cols-[220px_1fr]">
 
         {{-- ---- group nav ---------------------------------------------- --}}
@@ -50,8 +55,8 @@
                                         size="lg"
                                         :label="$setting->label ?? $setting->key"
                                         :description="$setting->description"
-                                        wire:model="values.{{ $setting->key }}"
-                                        :checked="(bool) ($values[$setting->key] ?? false)"
+                                        wire:model="values.{{ $setting->id }}"
+                                        :checked="(bool) ($values[$setting->id] ?? false)"
                                         :disabled="! $canEdit"
                                     />
                                 @elseif ($setting->type === 'textarea')
@@ -59,15 +64,15 @@
                                         :label="$setting->label ?? $setting->key"
                                         :hint="$setting->description"
                                         rows="3"
-                                        wire:model="values.{{ $setting->key }}"
+                                        wire:model="values.{{ $setting->id }}"
                                         :disabled="! $canEdit"
-                                    >{{ $values[$setting->key] ?? '' }}</x-ui.textarea>
+                                    >{{ $values[$setting->id] ?? '' }}</x-ui.textarea>
                                 @else
                                     <x-ui.input
                                         :label="$setting->label ?? $setting->key"
                                         :hint="$setting->description"
                                         :type="$setting->type === 'number' ? 'number' : 'text'"
-                                        wire:model="values.{{ $setting->key }}"
+                                        wire:model="values.{{ $setting->id }}"
                                         :disabled="! $canEdit"
                                     />
                                 @endif

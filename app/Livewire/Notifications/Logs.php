@@ -6,6 +6,7 @@ namespace App\Livewire\Notifications;
 
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\PushLog;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ class Logs extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Delivery logs',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Notifications', 'href' => route('admin.notifications.campaigns')],
                 ['label' => 'Delivery logs'],
             ],

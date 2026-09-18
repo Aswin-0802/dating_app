@@ -23,7 +23,16 @@ composer setup   # install, key, storage link, migrate, seed, npm install, build
 composer dev     # serve + queue + scheduler + vite
 ```
 
-Then open <http://localhost:8000> and sign in.
+Then open <http://localhost:8000>.
+
+| URL | Who it is for |
+|---|---|
+| `/` | The public website: home, safety centre, terms, privacy |
+| `/join`, `/login` | Member sign-up and sign-in |
+| `/app/*` | The member web app: discover, matches, messages, profile, verification |
+| `/admin/login` | Staff sign-in for the console |
+
+Every seeded member signs in with the password `password`. Staff accounts:
 
 | Account | Role | What it can do |
 |---|---|---|
@@ -45,15 +54,34 @@ rather than present and refused.
 
 `VEYRA_SEED_SCALE` controls the demo population:
 
-| Value | Members | Roughly |
-|---|---|---|
-| `small` | 1,200 | ~2 minutes — **the default** |
-| `demo` | 12,000 | ~12 minutes |
-| `large` | 48,000 | considerably longer |
+| Value | Members | Rows | Roughly |
+|---|---|---|---|
+| `tiny` | 50 | 1,784 | ~15 seconds — **the default** |
+| `small` | 1,200 | 46,127 | ~90 seconds |
+| `demo` | 12,000 | | several minutes |
+| `large` | 48,000 | | considerably longer |
 
-`small` is the default deliberately: it is enough to fill every queue, chart and
-filter while staying quick to rebuild. Every screen has content at this size —
-38 open cases, 43 pending verifications, 2 shadow bans overdue for review.
+Row counts are measured, not estimated. `demo` and `large` are left blank
+because they are not run often enough to quote honestly.
+
+`tiny` is the default deliberately. The dataset is here to exercise the console,
+not to demo it, and 50 members rebuild fast enough that reseeding is not a
+decision. Every queue, chart and filter still has rows in it at that size — run
+the invariant check below to see them counted.
+
+Below roughly 50 members the matching graph is the binding constraint: mutual
+likes need a pool to draw from, and without matches there are no conversations,
+no reports anchored to real evidence, and no cases. That is the floor, not the
+seeder's.
+
+One trade-off worth knowing about at `tiny`: rare states are *dealt* rather than
+rolled. Shadow-banned is 1.2% of the account mix, which over 50 members is a
+coin that comes up empty more often than not — and a category that rounds to
+nobody takes a whole screen down with it. So the seeder guarantees a minimum of
+each (two overdue shadow bans, two restricted-queue verifications, two cases
+past SLA) instead of leaving it to chance. The proportions are therefore less
+realistic at 50 members than at 12,000. `small` and up are unaffected: the
+minimums are far below what those populations produce naturally.
 
 `VEYRA_SEED_PHOTOS=none` skips image generation entirely and falls back to
 initials tiles, which makes a rebuild much faster. The default, `generated`,
@@ -62,6 +90,39 @@ draws placeholder imagery locally with GD and needs no network access.
 ---
 
 ## What is here
+
+### Re-branding it
+
+Settings → Branding changes the product name, admin and website logos,
+favicon, sign-in image, brand colour, default theme, company details, website
+copy, prices, app store links and social links. Every screen (console, sign-in
+pages, website, member app) reads them through `App\Support\Branding`, so
+nothing needs editing in a template. One colour generates the whole token set
+for light and dark mode, with button text picked for contrast. SVG uploads
+are refused because an SVG served from your own domain can run script.
+
+The legal pages (`resources/views/site/legal.blade.php`) are template text.
+Have them reviewed before launch; signed-in staff see a reminder on them.
+
+### The website and member app
+
+A public marketing site, plus a web version of the dating app: sign-up,
+discover (one card at a time, arrow keys work), matches with "liked you" for
+Premium, messaging, profile and photo editing, selfie verification, reporting,
+blocking, account settings, and a restricted-account page with an appeal
+form. It uses the same services as the mobile API (`app/Services/Members`), so
+the website and the apps enforce identical rules. Members and staff use
+separate guards over separate tables.
+
+Things worth knowing:
+
+- **Uploaded photos are re-encoded**, which strips EXIF data. Phone photos
+  often carry GPS coordinates.
+- **When a member's city runs out of people, the web deck widens** to people
+  further away and says so. The mobile API keeps its city-only deck.
+- **There is no card checkout.** Premium shows the plans and sends upgrades to
+  the store apps or support. The payment gateway settings under System hold
+  credentials, but nothing charges through them yet.
 
 ### The console
 
@@ -170,9 +231,20 @@ new screen.
 ## Testing
 
 ```bash
-php artisan test          # 37 tests
+php artisan test          # 60 tests
 ./vendor/bin/pint --test  # formatting
+
+# Checks the seeded database itself, rather than a fixture
+php artisan db:seed --class="Database\Seeders\VerifyInvariants"
 ```
+
+`VerifyInvariants` runs against whatever is actually in the database. It asserts
+eight structural rules — canonical match ordering, every shadow ban carrying a
+review date, no appeal assigned to its original decider, report evidence
+belonging to the reported member, the enforcement mirror agreeing with `bans`,
+risk factors summing to their stored score — and then counts eight queues that
+must not be empty. The second half is what catches a scale change that leaves a
+screen with nothing to render, which no unit test would notice.
 
 The suite concentrates on the things that would be expensive to get wrong: the
 enforcement ladder writes its three records together, moderation actions cannot

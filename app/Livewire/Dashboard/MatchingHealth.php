@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Services\Analytics\MetricRollup;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -22,7 +23,7 @@ class MatchingHealth extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Matching health',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Analytics'],
                 ['label' => 'Matching health'],
             ],

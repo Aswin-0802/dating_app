@@ -32,7 +32,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth', 'staff.active'])->group(function (): void {
+// `auth:web` rather than bare `auth`: the console must only ever accept a staff
+// session, whatever the default guard happens to be for the request.
+Route::middleware(['auth:web', 'staff.active'])->group(function (): void {
 
     Route::get('/', Dashboard\Overview::class)
         ->middleware('permission:dashboard')
@@ -217,6 +219,8 @@ Route::middleware(['auth', 'staff.active'])->group(function (): void {
 
     Route::middleware('permission:settings')->prefix('settings')->name('settings.')->group(function (): void {
         Route::get('/', Settings\Index::class)->name('general');
+        // Before {group}, which would otherwise swallow it as a group name.
+        Route::get('branding', Settings\Branding::class)->name('branding');
         Route::get('{group}', Settings\Index::class)->name('group');
     });
 

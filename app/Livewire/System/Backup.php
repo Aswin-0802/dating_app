@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\System;
 
 use App\Services\Audit\ActivityLogger;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -29,7 +30,7 @@ class Backup extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Database backup',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'System'],
                 ['label' => 'Backup'],
             ],

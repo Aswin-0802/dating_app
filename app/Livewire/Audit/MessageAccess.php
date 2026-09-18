@@ -6,6 +6,7 @@ namespace App\Livewire\Audit;
 
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\MessageAccessLog;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
@@ -43,7 +44,7 @@ class MessageAccess extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Message access log',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Audit log', 'href' => route('admin.audit.index')],
                 ['label' => 'Message access'],
             ],

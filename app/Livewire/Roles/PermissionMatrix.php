@@ -7,6 +7,7 @@ namespace App\Livewire\Roles;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Services\Audit\ActivityLogger;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -31,7 +32,7 @@ class PermissionMatrix extends Component
         ])->layout('components.layouts.admin', [
             'title' => $this->role->name.' permissions',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Roles', 'href' => route('admin.roles.index')],
                 ['label' => $this->role->name],
             ],

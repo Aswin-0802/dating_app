@@ -6,6 +6,7 @@ namespace App\Livewire\Enforcement;
 
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\AppUser;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,7 @@ class Blocks extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Blocks',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Enforcement'],
                 ['label' => 'Blocks'],
             ],

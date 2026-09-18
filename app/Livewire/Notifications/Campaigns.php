@@ -7,6 +7,7 @@ namespace App\Livewire\Notifications;
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\PushCampaign;
 use App\Services\Audit\ActivityLogger;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
@@ -37,7 +38,7 @@ class Campaigns extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Campaigns',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Notifications'],
                 ['label' => 'Campaigns'],
             ],

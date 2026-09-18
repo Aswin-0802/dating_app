@@ -19,16 +19,12 @@
     {{-- Brand --}}
     <div class="flex h-16 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-4">
         <a href="{{ route('admin.dashboard') }}" wire:navigate class="flex min-w-0 items-center gap-2.5">
-            <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 8l7 11 7-11" />
-                </svg>
-            </span>
+            <x-brand.mark variant="admin" size="sm" tone="sidebar" />
 
             <span class="veyra-nav-label min-w-0">
-                <span class="block truncate text-sm font-semibold leading-tight">{{ config('veyra.brand.name') }}</span>
+                <span class="block truncate text-sm font-semibold leading-tight">{{ App\Support\Branding::name() }}</span>
                 <span class="block truncate text-[11px] leading-tight text-sidebar-muted-foreground">
-                    {{ config('veyra.brand.tagline') }}
+                    {{ App\Support\Branding::tagline() }}
                 </span>
             </span>
         </a>

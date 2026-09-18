@@ -7,6 +7,7 @@ namespace App\Livewire\System;
 use App\Models\PaymentGateway;
 use App\Models\SmsGateway;
 use App\Services\Audit\ActivityLogger;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -49,7 +50,7 @@ class Gateways extends Component
         ])->layout('components.layouts.admin', [
             'title' => $this->kind === 'payment' ? 'Payment gateways' : 'SMS gateways',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'System'],
                 ['label' => $this->kind === 'payment' ? 'Payments' : 'SMS'],
             ],

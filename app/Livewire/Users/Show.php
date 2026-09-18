@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Users;
 
 use App\Models\AppUser;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -36,7 +37,7 @@ class Show extends Component
         ])->layout('components.layouts.admin', [
             'title' => $this->appUser->display_name,
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Users', 'href' => route('admin.users.index')],
                 ['label' => $this->appUser->display_name],
             ],

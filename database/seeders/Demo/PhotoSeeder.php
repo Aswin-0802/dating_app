@@ -42,10 +42,18 @@ class PhotoSeeder extends Seeder
             $generator->buildPool(900);
         }
 
-        // Pick the accounts that will share a face, and the accounts that will
-        // share a literal file. These are what the review screen surfaces.
-        $faceRings = $this->buildRings($faker, $userIds, self::FACE_RINGS, 2, 6);
-        $hashRings = $this->buildRings($faker, $userIds, self::HASH_RINGS, 2, 5);
+        /*
+         * Pick the accounts that will share a face, and the accounts that will
+         * share a literal file. These are what the review screen surfaces.
+         *
+         * The ring counts are ceilings rather than targets: 18 rings of up to 6
+         * need 108 accounts to draw from, so at 50 members every single account
+         * ends up in a ring and "same face on 4 accounts" stops being an anomaly
+         * worth flagging. ringCount() keeps the planted rings to a quarter of
+         * the population at any scale.
+         */
+        $faceRings = $this->buildRings($faker, $userIds, $this->ringCount(self::FACE_RINGS, count($userIds), 6), 2, 6);
+        $hashRings = $this->buildRings($faker, $userIds, $this->ringCount(self::HASH_RINGS, count($userIds), 5), 2, 5);
 
         $faceByUser = $this->indexRings($faceRings, fn (int $ring): string => hash('sha256', "face-ring-{$ring}"));
         $hashByUser = $this->indexRings($hashRings, fn (int $ring): string => substr(md5("hash-ring-{$ring}"), 0, 16));
@@ -121,9 +129,23 @@ class PhotoSeeder extends Seeder
         $this->command?->newLine(2);
 
         $ringAccounts = count($faceByUser);
+        $ringsUsed = count($faceRings);
         $this->command?->info(
-            "Seeded {$total} photos, including {$ringAccounts} accounts across ".self::FACE_RINGS.' shared faces.'
+            "Seeded {$total} photos, including {$ringAccounts} accounts across {$ringsUsed} shared faces."
         );
+    }
+
+    /**
+     * How many rings a population of this size can carry.
+     *
+     * A ring is only a signal if most accounts are not in one, so the planted
+     * rings are capped at a quarter of the member base. The floor of three is
+     * what keeps the duplicate-face drawer demonstrable at the tiny scale, where
+     * a strict quarter would round down to one ring or none.
+     */
+    private function ringCount(int $ceiling, int $population, int $maxPerRing): int
+    {
+        return max(3, min($ceiling, (int) floor($population * 0.25 / $maxPerRing)));
     }
 
     /**

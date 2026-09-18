@@ -98,6 +98,9 @@ class BehaviourSeeder extends Seeder
 
         $devices = $this->seedDevices($faker, $ids);
         $this->command?->info("Seeded {$devices} devices.");
+
+        $logins = $this->seedLogins($faker);
+        $this->command?->info("Seeded {$logins} member sign-ins.");
     }
 
     /**
@@ -261,17 +264,27 @@ class BehaviourSeeder extends Seeder
     }
 
     /** Pareto: median ~22, p90 ~140, a long tail of mass swipers to flag. */
+    /**
+     * Swipes per member.
+     *
+     * This and messageCount() decide most of the database's size, so the tail is
+     * kept only as long as it has to be. RiskEngine flags a swipe velocity
+     * outlier above 400, so the top tier sits just past that line rather than at
+     * the 1,800 a real power user would rack up: the factor still fires, on a
+     * realistic handful of accounts, without those accounts alone contributing
+     * more rows than everybody else combined.
+     */
     private function swipeCount($faker): int
     {
         $roll = $faker->randomFloat(6, 0, 1);
 
         return match (true) {
-            $roll > 0.995 => $faker->numberBetween(600, 1800),
-            $roll > 0.97 => $faker->numberBetween(200, 600),
-            $roll > 0.90 => $faker->numberBetween(80, 200),
-            $roll > 0.65 => $faker->numberBetween(30, 80),
-            $roll > 0.30 => $faker->numberBetween(8, 30),
-            default => $faker->numberBetween(1, 8),
+            $roll > 0.995 => $faker->numberBetween(410, 520),
+            $roll > 0.97 => $faker->numberBetween(90, 180),
+            $roll > 0.90 => $faker->numberBetween(40, 90),
+            $roll > 0.65 => $faker->numberBetween(16, 40),
+            $roll > 0.30 => $faker->numberBetween(6, 16),
+            default => $faker->numberBetween(1, 6),
         };
     }
 
@@ -503,15 +516,29 @@ class BehaviourSeeder extends Seeder
      * Per-conversation length. 31% are the dreaded one-and-done, which is the
      * single most important fact about dating-app messaging.
      */
+    /**
+     * Messages per conversation.
+     *
+     * Same reasoning as swipeCount(): the 300-message threshold RiskEngine uses
+     * for a message velocity outlier is per sender across every conversation, so
+     * a ceiling of 90 here still lets a prolific account cross it while keeping
+     * the messages table an order of magnitude smaller.
+     */
     private function messageCount($faker): int
     {
         $roll = $faker->randomFloat(4, 0, 1);
 
+        /*
+         * The floor is 4 rather than 1 because the case evidence pane shows a
+         * reported message with ten messages of context either side. A thread
+         * two messages long renders that pane as the report itself and nothing
+         * around it, which is the one thing the pane exists not to do.
+         */
         return match (true) {
-            $roll > 0.90 => $faker->numberBetween(41, 300),
-            $roll > 0.65 => $faker->numberBetween(11, 40),
-            $roll > 0.31 => $faker->numberBetween(3, 10),
-            default => $faker->numberBetween(1, 2),
+            $roll > 0.96 => $faker->numberBetween(41, 90),
+            $roll > 0.72 => $faker->numberBetween(15, 40),
+            $roll > 0.34 => $faker->numberBetween(8, 14),
+            default => $faker->numberBetween(4, 7),
         };
     }
 
@@ -586,9 +613,18 @@ class BehaviourSeeder extends Seeder
         $total = 0;
         $count = (int) round(count($ids) * 0.34);
 
-        // A deliberate harassment cluster: a handful of accounts blocked by many
-        // others, so "blocked by 8+" has rows to surface.
-        $targets = $faker->randomElements($ids, min(26, count($ids)));
+        /*
+         * A deliberate harassment cluster: a handful of accounts blocked by many
+         * others, so "blocked by 8+" has rows to surface.
+         *
+         * Sized against the population, not fixed. 26 targets each blocked by
+         * 8-16 people is a rounding error at 12,000 members and half the member
+         * base at 50 — which does not read as a harassment cluster, it reads as
+         * a platform where everybody blocks everybody, and it drags the whole
+         * risk distribution into the high band with it.
+         */
+        $clusterSize = min(26, max(3, (int) round(count($ids) * 0.02)));
+        $targets = $faker->randomElements($ids, min($clusterSize, count($ids)));
 
         foreach ($targets as $target) {
             foreach ($faker->randomElements($ids, $faker->numberBetween(8, 16)) as $blocker) {
@@ -675,6 +711,97 @@ class BehaviourSeeder extends Seeder
 
         if ($rows !== []) {
             DB::table('devices')->insertOrIgnore($rows);
+        }
+
+        return $total;
+    }
+
+    /**
+     * Member sign-in history, for System -> Member sign-ins.
+     *
+     * Only members seen in the last 30 days get rows, and the most recent row is
+     * pinned to last_active_at so the log and the member record agree. Seeding
+     * every member's whole history would be the single largest table here for a
+     * screen that is read a page at a time.
+     *
+     * The failures are not noise: a handful of accounts get a burst of them from
+     * one address, which is what the failed-sign-ins filter exists to surface.
+     */
+    private function seedLogins($faker): int
+    {
+        $members = DB::table('app_users')
+            ->where('last_active_at', '>=', now()->subDays(30))
+            ->pluck('last_active_at', 'id');
+
+        if ($members->isEmpty()) {
+            return 0;
+        }
+
+        $devices = DB::table('devices')
+            ->whereIn('app_user_id', $members->keys())
+            ->get(['id', 'app_user_id'])
+            ->groupBy('app_user_id')
+            ->map(fn ($group) => $group->pluck('id')->all())
+            ->all();
+
+        // A few accounts under credential-stuffing, so the failure filter and the
+        // "Failed (30d)" stat both return something.
+        $stuffed = $faker->randomElements($members->keys()->all(), min(6, $members->count()));
+        $stuffedIndex = array_flip($stuffed);
+
+        $rows = [];
+        $total = 0;
+
+        foreach ($members as $id => $lastActive) {
+            $lastActive = Carbon::parse($lastActive);
+            $deviceIds = $devices[$id] ?? [];
+
+            $attempts = [['at' => $lastActive, 'ok' => true]];
+
+            foreach (range(1, $faker->numberBetween(0, 2)) as $ignored) {
+                $attempts[] = [
+                    'at' => $lastActive->copy()->subDays($faker->numberBetween(1, 29)),
+                    'ok' => $faker->boolean(94),
+                ];
+            }
+
+            if (isset($stuffedIndex[$id])) {
+                $burstAt = $lastActive->copy()->subDays($faker->numberBetween(1, 20));
+                $burstIp = $faker->ipv4();
+
+                foreach (range(1, $faker->numberBetween(5, 9)) as $n) {
+                    $attempts[] = [
+                        'at' => $burstAt->copy()->addSeconds($n * $faker->numberBetween(20, 90)),
+                        'ok' => false,
+                        'ip' => $burstIp,
+                    ];
+                }
+            }
+
+            foreach ($attempts as $attempt) {
+                $rows[] = [
+                    'app_user_id' => $id,
+                    // A failed attempt has no session, so it carries no device.
+                    'device_id' => $attempt['ok'] && $deviceIds !== []
+                        ? $faker->randomElement($deviceIds)
+                        : null,
+                    'ip_address' => $attempt['ip'] ?? $faker->ipv4(),
+                    'country_code' => $faker->randomElement(['GB', 'US', 'IE', 'ES', 'DE', 'FR', 'NL', 'PT']),
+                    'succeeded' => $attempt['ok'],
+                    'created_at' => $attempt['at'],
+                ];
+
+                $total++;
+
+                if (count($rows) >= 1000) {
+                    DB::table('app_user_logins')->insert($rows);
+                    $rows = [];
+                }
+            }
+        }
+
+        if ($rows !== []) {
+            DB::table('app_user_logins')->insert($rows);
         }
 
         return $total;

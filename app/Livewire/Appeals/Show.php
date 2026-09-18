@@ -10,6 +10,7 @@ use App\Enums\ReasonCode;
 use App\Models\Appeal;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -50,7 +51,7 @@ class Show extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Appeal',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Appeals', 'href' => route('admin.appeals.index')],
                 ['label' => $this->appeal->appUser?->display_name ?? 'Appeal'],
             ],

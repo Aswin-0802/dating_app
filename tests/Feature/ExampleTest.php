@@ -8,10 +8,14 @@ use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    public function test_the_root_url_sends_visitors_to_the_console(): void
+    public function test_the_root_url_is_the_public_website(): void
     {
-        // Veyra has no public marketing page; / is a shortcut to the console.
-        $this->get('/')->assertRedirect('/admin');
+        $this->get('/')->assertOk()->assertSee(route('member.register'));
+    }
+
+    public function test_the_console_is_behind_its_own_sign_in(): void
+    {
+        $this->get('/admin')->assertRedirect('/admin/login');
     }
 
     public function test_the_health_check_responds(): void

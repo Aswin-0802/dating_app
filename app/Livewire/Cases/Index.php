@@ -8,6 +8,7 @@ use App\Enums\CaseStatus;
 use App\Enums\Severity;
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\ReportCase;
+use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
@@ -46,7 +47,7 @@ class Index extends Component
         ])->layout('components.layouts.admin', [
             'title' => 'Cases',
             'breadcrumbs' => [
-                ['label' => 'Veyra', 'href' => route('admin.dashboard')],
+                ['label' => Branding::name(), 'href' => route('admin.dashboard')],
                 ['label' => 'Cases'],
             ],
         ]);

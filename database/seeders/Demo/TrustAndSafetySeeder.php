@@ -80,6 +80,8 @@ class TrustAndSafetySeeder extends Seeder
         $rows = [];
 
         $total = 0;
+        $restricted = 0;
+        $overdue = 0;
 
         foreach ($members as $member) {
             $attempts = $faker->boolean(14) ? ($faker->boolean(20) ? 3 : 2) : 1;
@@ -94,10 +96,22 @@ class TrustAndSafetySeeder extends Seeder
                 $trueAge = Carbon::parse($member->birthdate)->diffInYears(now());
                 $duplicates = (int) ($duplicateFaceCounts[$member->id] ?? 0);
 
-                // 4% get a conflicting age estimate. Those become the restricted
-                // minor-safety queue, which Approve is disabled for entirely.
-                $conflictingAge = $faker->boolean(4);
+                /*
+                 * 4% get a conflicting age estimate. Those become the restricted
+                 * minor-safety queue, which Approve is disabled for entirely.
+                 *
+                 * The first two are forced rather than rolled: 4% of the 28
+                 * verifications a 50-member population produces rounds to one or
+                 * none, and the restricted queue is not a screen that should be
+                 * demonstrated empty — it is the one place the console refuses an
+                 * action outright.
+                 */
+                $conflictingAge = $restricted < 2 || $faker->boolean(4);
                 $minorSuspected = $conflictingAge && $trueAge < 30;
+
+                if ($minorSuspected) {
+                    $restricted++;
+                }
 
                 $approved = $status === 'approved';
                 $matchScore = $approved
@@ -122,7 +136,16 @@ class TrustAndSafetySeeder extends Seeder
                  * shorter window automatically.
                  */
                 if ($isOpen) {
-                    $submittedAt = $faker->boolean(14)
+                    // Same reasoning as the restricted queue above: the first two
+                    // open items breach outright, so the SLA pills and the queue
+                    // breach banner have something to render at any scale.
+                    $breaching = $overdue < 2 || $faker->boolean(14);
+
+                    if ($breaching) {
+                        $overdue++;
+                    }
+
+                    $submittedAt = $breaching
                         ? now()->subMinutes((int) ($windowHours * 60 * $faker->randomFloat(2, 1.1, 2.5)))
                         : now()->subMinutes((int) ($windowHours * 60 * $faker->randomFloat(2, 0.05, 0.9)));
                 }
@@ -308,9 +331,12 @@ class TrustAndSafetySeeder extends Seeder
          * 8% is above a real platform's rate, which is nearer 1-3%. That is a
          * deliberate trade: at a realistic rate a demo dataset produces a couple
          * of dozen reports and every moderation screen opens empty.
+         *
+         * The floor is what carries the tiny scale, where 8% of the matches a
+         * 50-member pool produces would not fill a single page of the queue.
          */
         $matches = DB::table('matches')->count();
-        $target = max(150, (int) round($matches * 0.08));
+        $target = max(30, (int) round($matches * 0.08));
 
         // Weight report subjects towards accounts that look bad already: heavily
         // blocked members, flagged senders, and restricted accounts. Reports
@@ -448,6 +474,7 @@ class TrustAndSafetySeeder extends Seeder
         $severities = [1 => 'low', 2 => 'medium', 3 => 'high', 4 => 'critical'];
         $sequence = 1;
         $rows = [];
+        $overdueCases = 0;
 
         foreach ($groups as $group) {
             $severity = Severity::from($severities[(int) $group->severity_rank] ?? 'low');
@@ -478,7 +505,16 @@ class TrustAndSafetySeeder extends Seeder
                  */
                 $windowMinutes = $severity->slaHours() * 60;
 
-                $openedAt = $faker->boolean(9)
+                // The first two breach outright. 9% of the nine open cases a
+                // 50-member population produces is a coin flip on whether the
+                // breach banner appears at all.
+                $breached = $overdueCases < 2 || $faker->boolean(9);
+
+                if ($breached) {
+                    $overdueCases++;
+                }
+
+                $openedAt = $breached
                     // Deliberately breached: opened more than a full window ago.
                     ? now()->subMinutes((int) ($windowMinutes * $faker->randomFloat(2, 1.2, 3.0)))
                     // Still inside its window.
@@ -551,9 +587,20 @@ class TrustAndSafetySeeder extends Seeder
         $actions = [];
         $bans = [];
         $total = 0;
+        $shadowBans = 0;
 
-        foreach ($cases as $case) {
-            $step = $this->stepFor(Severity::from($case->severity), $faker);
+        foreach ($cases as $index => $case) {
+            /*
+             * The first two decisions are shadow bans outright. At 50 members
+             * there are only about nine enforcement decisions in total, and the
+             * ladder roll can produce none at all — which empties the shadow
+             * ban review queue, the one screen built to prove shadow bans get
+             * revisited. At demo scale two out of hundreds changes nothing.
+             */
+            $step = $index < 2
+                ? LadderStep::ShadowBan
+                : $this->stepFor(Severity::from($case->severity), $faker);
+            $isShadow = $step->createsBan() && $this->banTypeFor($step) === 'shadow_ban';
             $reason = $this->reasonFor($faker);
             $actor = $faker->randomElement($moderators);
             $isAutomation = $faker->boolean(22);
@@ -571,6 +618,27 @@ class TrustAndSafetySeeder extends Seeder
             $decidedAt = $faker->boolean(50)
                 ? now()->subHours($faker->numberBetween(1, max(2, (int) (($durationHours ?? 336) * 0.7))))
                 : Carbon::parse($case->created_at)->addHours($faker->numberBetween(1, 120));
+
+            /*
+             * A shadow ban is dated inside its own window rather than wherever
+             * the case history happened to fall.
+             *
+             * Its review date is only meaningful while the ban is still running,
+             * and the review queue reads "in force AND overdue". Dating the
+             * decision from the case could put it in April with a 30-day
+             * duration, so the ban expired in May — and then any review date
+             * that is in the past is also one the ban outlived. Every row
+             * silently fails the "in force" half and the queue opens empty.
+             */
+            if ($isShadow) {
+                $shadowBans++;
+                $durationHours ??= 720;
+
+                $decidedAt = now()->subHours($faker->numberBetween(
+                    (int) round($durationHours * 0.3),
+                    (int) round($durationHours * 0.85),
+                ));
+            }
 
             $uuid = (string) Str::uuid();
 
@@ -597,7 +665,6 @@ class TrustAndSafetySeeder extends Seeder
 
             if ($step->createsBan()) {
                 $banType = $this->banTypeFor($step);
-                $isShadow = $banType === 'shadow_ban';
 
                 $bans[] = [
                     'uuid' => (string) Str::uuid(),
@@ -618,19 +685,15 @@ class TrustAndSafetySeeder extends Seeder
                     'expires_at' => $durationHours
                         ? $decidedAt->copy()->addHours($durationHours)
                         : null,
-                    /*
-                     * Every shadow ban gets a review date, without exception.
-                     * A handful are seeded already overdue so the review queue
-                     * opens with rows in it — an empty safeguard teaches nobody
-                     * to use it.
-                     */
                     'review_due_at' => $isShadow
-                        ? ($faker->boolean(35)
-                            ? now()->subDays($faker->numberBetween(1, 21))
-                            : now()->addDays($faker->numberBetween(1, 14)))
+                        ? $this->shadowReviewDate($decidedAt, $durationHours, $shadowBans, $faker)
                         : null,
                     'lifted_by' => null,
-                    'lifted_at' => $faker->boolean(18) ? $decidedAt->copy()->addDays($faker->numberBetween(1, 30)) : null,
+                    // Lifting a ban removes it from every in-force queue, so the
+                    // ones deliberately seeded overdue are left standing.
+                    'lifted_at' => ! $isShadow && $faker->boolean(18)
+                        ? $decidedAt->copy()->addDays($faker->numberBetween(1, 30))
+                        : null,
                     'lift_reason' => null,
                     'created_at' => $decidedAt,
                     'updated_at' => $decidedAt,
@@ -684,6 +747,27 @@ class TrustAndSafetySeeder extends Seeder
             ReasonCode::ImpersonationConfirmed,
             ReasonCode::StolenPhotos,
         ]);
+    }
+
+    /**
+     * When a shadow ban falls due for review.
+     *
+     * Always inside the ban's own window, so it is never a date the ban
+     * outlived. The first three land in the past rather than by a coin flip: at
+     * tiny scale there are only four shadow bans in the whole dataset, and a
+     * 35% roll across four of them can open the review queue empty on the one
+     * screen built to prove shadow bans get revisited.
+     */
+    private function shadowReviewDate(Carbon $startsAt, int $durationHours, int $index, $faker): Carbon
+    {
+        $elapsed = max(1, (int) $startsAt->diffInHours(now()));
+        $overdue = $index <= 3 || $faker->boolean(35);
+
+        $offset = $overdue
+            ? $faker->numberBetween(1, max(1, (int) round($elapsed * 0.7)))
+            : $faker->numberBetween($elapsed + 1, max($elapsed + 2, $durationHours));
+
+        return $startsAt->copy()->addHours($offset);
     }
 
     private function banTypeFor(LadderStep $step): string
@@ -741,7 +825,7 @@ class TrustAndSafetySeeder extends Seeder
             ->select('b.id as ban_id', 'b.app_user_id', 'b.issued_by', 'b.created_at')
             ->whereIn('b.type', ['feature_limit', 'shadow_ban', 'suspension', 'permanent_ban'])
             ->inRandomOrder()
-            ->limit((int) round(246 * $this->scale))
+            ->limit(max(10, (int) round(246 * $this->scale)))
             ->get();
 
         $rows = [];

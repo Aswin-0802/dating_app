@@ -9,14 +9,10 @@ use App\Enums\Gender;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\MeResource;
 use App\Models\AppUser;
-use App\Models\AppUserLogin;
-use App\Models\Preference;
-use App\Models\Profile;
+use App\Services\Members\MemberAccounts;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
@@ -37,30 +33,7 @@ class AuthController extends Controller
             'birthdate.before' => 'You must be at least 18 to use this service.',
         ]);
 
-        $member = DB::transaction(function () use ($data): AppUser {
-            $member = AppUser::query()->create([
-                'uuid' => (string) Str::uuid(),
-                'display_name' => $data['display_name'],
-                'email' => strtolower($data['email']),
-                'password' => Hash::make($data['password']),
-                'birthdate' => $data['birthdate'],
-                'gender' => $data['gender'],
-                // Pending until a profile exists — an empty profile in the deck
-                // is a bad experience for everybody who sees it.
-                'account_status' => AccountStatus::Pending,
-                'signup_source' => 'ios',
-                'last_active_at' => now(),
-            ]);
-
-            Profile::query()->create(['app_user_id' => $member->id]);
-
-            Preference::query()->create([
-                'app_user_id' => $member->id,
-                'interested_in' => $data['interested_in'],
-            ]);
-
-            return $member;
-        });
+        $member = app(MemberAccounts::class)->register($data, 'ios');
 
         return response()->json([
             'token' => $member->createToken('mobile', $this->abilitiesFor($member))->plainTextToken,
@@ -77,15 +50,13 @@ class AuthController extends Controller
 
         $member = AppUser::query()->where('email', strtolower($data['email']))->first();
 
+        $accounts = app(MemberAccounts::class);
+
         if ($member === null || ! Hash::check($data['password'], $member->password)) {
-            // Failed attempts are recorded even when the account does not
-            // exist, so credential stuffing is visible in the login log.
+            // Failed attempts against a real account are recorded, so credential
+            // stuffing is visible in the login log.
             if ($member !== null) {
-                AppUserLogin::query()->create([
-                    'app_user_id' => $member->id,
-                    'ip_address' => $request->ip(),
-                    'succeeded' => false,
-                ]);
+                $accounts->recordLogin($member, $request->ip(), succeeded: false);
             }
 
             throw ValidationException::withMessages([
@@ -93,13 +64,7 @@ class AuthController extends Controller
             ]);
         }
 
-        AppUserLogin::query()->create([
-            'app_user_id' => $member->id,
-            'ip_address' => $request->ip(),
-            'succeeded' => true,
-        ]);
-
-        $member->forceFill(['last_active_at' => now()])->saveQuietly();
+        $accounts->recordLogin($member, $request->ip(), succeeded: true);
 
         return response()->json([
             'token' => $member->createToken('mobile', $this->abilitiesFor($member))->plainTextToken,
