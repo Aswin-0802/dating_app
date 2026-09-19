@@ -46,7 +46,7 @@ trait HandlesSafety
     public function submitReport(SafetyActions $safety): void
     {
         $this->validate([
-            'reportCategory' => ['required', Rule::enum(ReportCategory::class)],
+            'reportCategory' => ['required', Rule::in(array_column(ReportCategory::selectable(), 'value'))],
             'reportDetails' => ['nullable', 'string', 'max:2000'],
         ], ['reportCategory.required' => 'Choose what happened.']);
 
@@ -91,7 +91,7 @@ trait HandlesSafety
      */
     public function reportCategories(): array
     {
-        return collect(ReportCategory::cases())
+        return collect(ReportCategory::selectable())
             // Minor safety is the staff-side label for the same concern as
             // "suspected underage"; one option is clearer for a reporter.
             ->reject(fn (ReportCategory $c): bool => $c === ReportCategory::MinorSafety)

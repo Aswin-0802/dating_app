@@ -199,24 +199,22 @@
                         'features' => ["{$freeLikes} likes a day", 'Unlimited messaging with matches', 'Photo verification', 'Every safety tool'],
                         'highlight' => false,
                     ],
-                    [
-                        'name' => 'Plus',
-                        'price' => Branding::get('website.plus_price', '12.99'),
-                        'blurb' => 'For people who know what they want.',
-                        'features' => ['Unlimited likes', 'See who has already liked you', 'Everything in Free'],
-                        'highlight' => true,
-                    ],
-                    [
-                        'name' => 'Gold',
-                        'price' => Branding::get('website.gold_price', '24.99'),
-                        'blurb' => 'The full experience.',
-                        'features' => ['Everything in Plus', 'Gold badge on your profile', 'Priority support'],
-                        'highlight' => false,
-                    ],
+                    ...App\Support\Masters::plans()->map(fn ($p) => [
+                        'name' => $p->name,
+                        'price' => $p->monthly_price,
+                        'blurb' => $p->tagline,
+                        'features' => $p->benefitLines(),
+                        'highlight' => $p->is_featured,
+                    ])->all(),
                 ];
             @endphp
 
-            <div class="mt-12 grid gap-6 lg:grid-cols-3">
+            <div @class([
+                'mt-12 grid gap-6',
+                'lg:grid-cols-2 lg:max-w-4xl lg:mx-auto' => count($plans) === 2,
+                'lg:grid-cols-3' => count($plans) === 3,
+                'md:grid-cols-2 xl:grid-cols-4' => count($plans) >= 4,
+            ])>
                 @foreach ($plans as $plan)
                     <div @class([
                         'relative flex flex-col rounded-2xl border bg-card p-7 shadow-sm',
@@ -228,10 +226,12 @@
                         @endif
 
                         <h3 class="text-lg font-semibold">{{ $plan['name'] }}</h3>
-                        <p class="mt-1 text-sm text-muted-foreground">{{ $plan['blurb'] }}</p>
+                        @if ($plan['blurb'])
+                            <p class="mt-1 text-sm text-muted-foreground">{{ $plan['blurb'] }}</p>
+                        @endif
 
                         <p class="mt-6 flex items-baseline gap-1">
-                            @if ($plan['price'])
+                            @if ($plan['price'] !== null)
                                 <span class="text-4xl font-bold tracking-tight">{{ App\Support\Currency::format($plan['price']) }}</span>
                                 <span class="text-sm text-muted-foreground">/ month</span>
                             @else
@@ -252,7 +252,7 @@
                             :variant="$plan['highlight'] ? 'default' : 'outline'"
                             :href="route('member.register')"
                         >
-                            {{ $plan['price'] ? 'Start with '.$plan['name'] : 'Join free' }}
+                            {{ $plan['price'] !== null ? 'Start with '.$plan['name'] : 'Join free' }}
                         </x-ui.button>
                     </div>
                 @endforeach

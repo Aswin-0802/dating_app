@@ -16,6 +16,7 @@ use App\Models\AppUser;
 use App\Models\City;
 use App\Services\Audit\ActivityLogger;
 use App\Support\Branding;
+use App\Support\Masters;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Locked;
@@ -293,7 +294,7 @@ class Index extends Component
                         'status' => $m->account_status?->label(),
                         'verification' => $m->verification_status?->label(),
                         'risk' => $m->risk_band?->label(),
-                        'premium' => $m->is_premium ? ucfirst((string) ($m->premium_tier ?? 'yes')) : 'No',
+                        'premium' => $m->is_premium ? (Masters::plan($m->premium_tier)?->name ?? ucfirst((string) ($m->premium_tier ?? 'yes'))) : 'No',
                         'joined' => $m->created_at?->toDateString(),
                         'active' => $m->last_active_at?->toDateTimeString(),
                         'email' => $withPii ? $m->email : null,

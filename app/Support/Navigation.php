@@ -151,6 +151,25 @@ final class Navigation
                         'permission' => 'activity_log',
                         'active' => ['admin.audit.*'],
                     ],
+                    /*
+                     * Masters: the lists the product is built from — plans,
+                     * interests, profile questions, report categories and
+                     * enforcement reasons. Content, not configuration: an
+                     * operator changes them without touching code.
+                     */
+                    [
+                        'label' => 'Masters',
+                        'icon' => 'squares',
+                        'permission' => 'settings',
+                        'active' => ['admin.masters.*'],
+                        'children' => [
+                            ['label' => 'Subscription plans', 'route' => 'admin.masters.plans', 'permission' => 'settings'],
+                            ['label' => 'Interests', 'route' => 'admin.masters.interests', 'permission' => 'settings'],
+                            ['label' => 'Profile questions', 'route' => 'admin.masters.profile-options', 'permission' => 'settings'],
+                            ['label' => 'Report categories', 'route' => 'admin.masters.report-categories', 'permission' => 'settings'],
+                            ['label' => 'Enforcement reasons', 'route' => 'admin.masters.reasons', 'permission' => 'settings'],
+                        ],
+                    ],
                     [
                         'label' => 'Settings',
                         'icon' => 'cog',

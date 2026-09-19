@@ -27,7 +27,8 @@ class InterestSeeder extends Seeder
     {
         foreach (self::CATALOGUE as $category => $interests) {
             foreach ($interests as $name) {
-                Interest::query()->updateOrCreate(
+                // firstOrCreate: re-seeding must not undo an operator's edits in Masters.
+                Interest::query()->firstOrCreate(
                     ['slug' => str($name)->slug()->toString()],
                     ['name' => $name, 'category' => $category],
                 );

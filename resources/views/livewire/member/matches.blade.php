@@ -9,7 +9,7 @@
                 </div>
             </div>
 
-            @if ($me->is_premium)
+            @if ($me->hasPremiumFeature('see_likers'))
                 <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
                     @foreach ($likers as $liker)
                         <a href="{{ route('member.person', $liker) }}" wire:navigate class="group relative aspect-[3/4] overflow-hidden rounded-2xl bg-muted">
@@ -39,7 +39,7 @@
                         <p class="mt-2 text-lg font-bold">See who likes you</p>
                         <p class="mt-1 max-w-xs text-sm text-muted-foreground">Match with them instantly instead of waiting for them in your deck.</p>
                         <x-ui.button class="mt-4" :href="route('member.premium')" wire:navigate>
-                            <x-ui.icon name="bolt" size="sm" /> Unlock with Plus
+                            <x-ui.icon name="bolt" size="sm" /> Unlock with {{ App\Support\Masters::plans()->first(fn ($p) => $p->hasFeature('see_likers'))?->name ?? 'Premium' }}
                         </x-ui.button>
                     </div>
                 </div>

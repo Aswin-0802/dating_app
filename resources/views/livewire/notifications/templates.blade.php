@@ -7,8 +7,13 @@
             Editing one is a policy change, and it is logged as such.
         </p>
 
-        <x-ui.select size="sm" placeholder="All audiences" wire:model.live="audience"
-            :options="['member' => 'Member-facing', 'staff' => 'Staff alerts']" class="w-44" />
+        <div class="flex items-center gap-2">
+            <x-ui.select size="sm" placeholder="All audiences" wire:model.live="audience"
+                :options="['member' => 'Member-facing', 'staff' => 'Staff alerts']" class="w-44" />
+            @if ($canEdit)
+                <x-ui.button size="sm" icon="plus" wire:click="create">Add template</x-ui.button>
+            @endif
+        </div>
     </div>
 
     @foreach ($templates as $category => $group)
@@ -36,9 +41,16 @@
                             </div>
 
                             @if ($canEdit && $editing !== $template->id)
-                                <x-ui.button size="xs" variant="outline" wire:click="edit({{ $template->id }})">
-                                    Edit
-                                </x-ui.button>
+                                <div class="flex items-center gap-1">
+                                    <x-ui.button size="xs" variant="outline" wire:click="edit({{ $template->id }})">
+                                        Edit
+                                    </x-ui.button>
+                                    @unless ($template->isProtected())
+                                        <x-ui.button size="xs" variant="ghost" class="text-destructive" wire:click="delete({{ $template->id }})" wire:confirm="Delete the “{{ $template->name }}” template?">
+                                            Delete
+                                        </x-ui.button>
+                                    @endunless
+                                </div>
                             @endif
                         </div>
 
@@ -86,4 +98,39 @@
             <x-ui.empty-state icon="document" heading="No templates match this filter" />
         </x-ui.card>
     @endif
+
+    <x-ui.dialog :show="$creating" close="closeCreate" size="lg">
+        <form wire:submit="store" class="space-y-4 p-6" novalidate>
+            <h2 class="text-lg font-semibold">Add template</h2>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <x-ui.input label="Category" wire:model="newCategory" list="template-categories" placeholder="engagement" :error="$errors->first('newCategory')" required autofocus />
+                <x-ui.input label="Name" wire:model.live.debounce.400ms="newName" placeholder="Weekend reminder" :error="$errors->first('newName')" required />
+            </div>
+            <datalist id="template-categories">
+                @foreach ($categories as $c)
+                    <option value="{{ $c }}"></option>
+                @endforeach
+            </datalist>
+
+            <x-ui.input label="Key" wire:model="newKey" hint="How the apps and campaigns refer to it. Cannot be changed later." :error="$errors->first('newKey')" required />
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <x-ui.select label="Audience" wire:model="newAudience" :selected="$newAudience" :options="['member' => 'Members', 'staff' => 'Staff']" :error="$errors->first('newAudience')" />
+                <x-ui.select label="Channel" wire:model.live="newChannel" :selected="$newChannel" :options="['push' => 'Push', 'email' => 'Email', 'in_app' => 'In-app']" :error="$errors->first('newChannel')" />
+            </div>
+
+            <x-ui.input :label="$newChannel === 'email' ? 'Subject' : 'Title'" wire:model="newSubject" :required="$newChannel === 'email'" :error="$errors->first('newSubject')" />
+            <x-ui.textarea label="Body" rows="4" wire:model="newBody" :error="$errors->first('newBody')" required />
+            @php $example = sprintf('Hi {{ %s }}', 'first_name'); @endphp
+            <x-ui.input label="Placeholders" wire:model="newPlaceholders" :hint="'Comma-separated. Use them in the text as '.$example.'.'" :error="$errors->first('newPlaceholders')" />
+
+            <x-ui.toggle label="Active" description="Turn off to keep a draft without the apps using it." wire:model="newActive" :checked="$newActive" />
+
+            <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                <x-ui.button variant="ghost" wire:click="closeCreate">Cancel</x-ui.button>
+                <x-ui.button type="submit">Add template</x-ui.button>
+            </div>
+        </form>
+    </x-ui.dialog>
 </div>

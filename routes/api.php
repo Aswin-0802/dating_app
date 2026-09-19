@@ -50,7 +50,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     })->name('config');
 
     Route::get('interests', fn () => response()->json([
-        'data' => Interest::query()->orderBy('category')->orderBy('name')
+        'data' => Interest::query()->where('is_active', true)->orderBy('category')->orderBy('sort_order')->orderBy('name')
             ->get(['slug', 'name', 'category']),
     ]))->name('interests');
 

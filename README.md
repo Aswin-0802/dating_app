@@ -98,7 +98,7 @@ own before launch — see `public/images/site/CREDITS.md`.
 
 Settings → Branding changes the product name, admin and website logos,
 favicon, sign-in image, brand colour, default theme, company details, website
-copy, currency and prices, app store links and social links. Every screen (console, sign-in
+copy, currency, app store links and social links. Every screen (console, sign-in
 pages, website, member app) reads them through `App\Support\Branding`, so
 nothing needs editing in a template. One colour generates the whole token set
 for light and dark mode, with button text picked for contrast. SVG uploads
@@ -120,6 +120,35 @@ Other settings worth knowing:
   right; until then messages are written to the log.
 - **Maintenance mode** (Settings → General): shows a maintenance page on the
   website, member app and API. The staff console keeps working.
+
+### Masters
+
+The lists the product is built from are managed under **Masters** in the
+console, with no code changes:
+
+- **Subscription plans**: name, monthly and yearly price, badge colour, the
+  "Most popular" highlight, and what each plan unlocks (unlimited likes, seeing
+  who liked you, a profile badge, priority support). The website pricing and
+  the member Premium page read from here. A plan with members on it can be
+  hidden but not deleted.
+- **Interests**: add, rename, re-categorise, reorder and hide. An interest
+  members have chosen can't be deleted.
+- **Profile questions**: prompts and education levels can be added and removed.
+  "Looking for", drinking, smoking and children can be reworded, reordered and
+  hidden but not extended, because they are stored as fixed values. Members keep
+  an answer that has since been hidden.
+- **Report categories**: wording, order, severity and whether members see a
+  category. Self-harm, underage and minor-safety reports are always available,
+  and minor-safety reports are always Critical.
+- **Enforcement reasons**: the name staff see, the policy clause and the
+  statement sent to the member. Changes apply to new decisions only. Reasons the
+  system records itself, such as appeal outcomes and expiry, cannot be turned
+  off.
+
+Plans, interests and profile questions need `edit_general_settings`. Report
+categories and reasons need `edit_moderation_settings`. Notification templates
+can now be added and deleted as well; enforcement notices are protected.
+Every change is recorded in the audit log.
 
 Password reset is available to staff (`/admin/forgot-password`) and members
 (`/forgot-password`). New staff added under Staff are emailed a link to set

@@ -135,7 +135,11 @@ class Profile extends Component
     #[Computed(persist: true)]
     public function interestGroups(): array
     {
-        return Interest::query()->orderBy('name')->get(['id', 'name', 'category'])
+        // Hidden interests drop out of the picker, but a member who already
+        // chose one still sees it so they can keep or remove it.
+        return Interest::query()
+            ->where(fn ($q) => $q->where('is_active', true)->orWhereIn('id', $this->interestIds))
+            ->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'category'])
             ->groupBy('category')
             ->map(fn ($group) => $group->pluck('name', 'id')->all())
             ->all();
@@ -199,22 +203,28 @@ class Profile extends Component
 
     public function saveAbout(ProfileCompletion $completion): void
     {
+        // Hidden options stay valid for members who already chose them.
+        $profile = $this->member()->profile;
+        $allowed = fn (string $group, ?string $current): array => array_keys(ProfileOptions::forSelect($group, $current));
+        $savedPrompts = collect($profile?->prompts ?? [])->pluck('q')->filter()->all();
+        $promptKeys = array_unique([...array_keys(ProfileOptions::options('prompt')), ...$savedPrompts]);
+
         $data = $this->validate([
             'display_name' => ['required', 'string', 'min:2', 'max:60', ProfileOptions::NAME_RULE],
             'bio' => ['nullable', 'string', 'max:500'],
             'job_title' => ['nullable', 'string', 'max:100'],
             'company' => ['nullable', 'string', 'max:100'],
             'school' => ['nullable', 'string', 'max:100'],
-            'education' => ['nullable', Rule::in(array_keys(ProfileOptions::EDUCATION))],
+            'education' => ['nullable', Rule::in($allowed('education', $profile?->education))],
             'height_cm' => ['nullable', 'integer', 'min:120', 'max:230'],
-            'relationship_goal' => ['required', Rule::in(array_keys(ProfileOptions::RELATIONSHIP_GOALS))],
-            'drinking' => ['required', Rule::in(array_keys(ProfileOptions::DRINKING))],
-            'smoking' => ['required', Rule::in(array_keys(ProfileOptions::SMOKING))],
-            'children' => ['required', Rule::in(array_keys(ProfileOptions::CHILDREN))],
+            'relationship_goal' => ['required', Rule::in($allowed('relationship_goal', $profile?->relationship_goal))],
+            'drinking' => ['required', Rule::in($allowed('drinking', $profile?->drinking))],
+            'smoking' => ['required', Rule::in($allowed('smoking', $profile?->smoking))],
+            'children' => ['required', Rule::in($allowed('children', $profile?->children))],
             'languages' => ['nullable', 'string', 'max:200'],
             'city_id' => ['required', 'exists:cities,id'],
             'prompts' => ['array', 'max:3'],
-            'prompts.*.q' => ['nullable', Rule::in(ProfileOptions::PROMPTS)],
+            'prompts.*.q' => ['nullable', Rule::in($promptKeys)],
             'prompts.*.a' => ['nullable', 'string', 'max:160'],
         ], [
             'display_name.regex' => ProfileOptions::NAME_MESSAGE,
@@ -269,7 +279,7 @@ class Profile extends Component
     {
         $this->validate([
             'interestIds' => ['array', 'max:10'],
-            'interestIds.*' => ['integer', 'exists:interests,id'],
+            'interestIds.*' => ['integer', Rule::exists('interests', 'id')->where(fn ($q) => $q->where('is_active', true)->orWhereIn('id', $this->member()->interests()->pluck('interests.id')->all()))],
         ], ['interestIds.max' => 'Pick up to 10.']);
 
         $this->member()->interests()->sync($this->interestIds);

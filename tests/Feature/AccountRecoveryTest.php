@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\AppUser;
+use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Setting;
 use App\Models\User;
@@ -91,7 +92,7 @@ class AccountRecoveryTest extends TestCase
     public function test_prices_follow_the_chosen_currency(): void
     {
         Setting::put('billing.currency', 'INR');
-        Setting::put('website.plus_price', '999');
+        Plan::query()->create(['slug' => 'plus', 'name' => 'Plus', 'monthly_price' => 999, 'features' => ['unlimited_likes'], 'badge_color' => '#e11d48']);
 
         $this->assertSame('INR', Currency::code());
         $this->assertSame('₹1,23,456.00', Currency::format(123456));

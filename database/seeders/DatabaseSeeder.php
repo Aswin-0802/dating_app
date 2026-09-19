@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             SettingSeeder::class,
             GeographySeeder::class,
             InterestSeeder::class,
+            MasterSeeder::class,
             RiskFactorDefinitionSeeder::class,
             NotificationTemplateSeeder::class,
             SystemSeeder::class,

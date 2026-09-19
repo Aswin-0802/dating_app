@@ -134,13 +134,13 @@
                         <x-ui.input label="Job title" wire:model="job_title" :error="$errors->first('job_title')" />
                         <x-ui.input label="Company" wire:model="company" :error="$errors->first('company')" />
                         <x-ui.input label="School or university" wire:model="school" :error="$errors->first('school')" />
-                        <x-ui.select label="Education" placeholder="Choose" wire:model="education" :selected="$education" :options="ProfileOptions::EDUCATION" />
+                        <x-ui.select label="Education" placeholder="Choose" wire:model="education" :selected="$education" :options="ProfileOptions::forSelect('education', $education)" />
                         <x-ui.input label="Height (cm)" type="number" min="120" max="230" wire:model="height_cm" :error="$errors->first('height_cm')" />
                         <x-ui.input label="Languages" hint="Separate with commas." wire:model="languages" placeholder="English, Spanish" />
-                        <x-ui.select label="Looking for" wire:model="relationship_goal" :selected="$relationship_goal" :options="ProfileOptions::RELATIONSHIP_GOALS" />
-                        <x-ui.select label="Children" wire:model="children" :selected="$children" :options="ProfileOptions::CHILDREN" />
-                        <x-ui.select label="Drinking" wire:model="drinking" :selected="$drinking" :options="ProfileOptions::DRINKING" />
-                        <x-ui.select label="Smoking" wire:model="smoking" :selected="$smoking" :options="ProfileOptions::SMOKING" />
+                        <x-ui.select label="Looking for" wire:model="relationship_goal" :selected="$relationship_goal" :options="ProfileOptions::forSelect('relationship_goal', $relationship_goal)" />
+                        <x-ui.select label="Children" wire:model="children" :selected="$children" :options="ProfileOptions::forSelect('children', $children)" />
+                        <x-ui.select label="Drinking" wire:model="drinking" :selected="$drinking" :options="ProfileOptions::forSelect('drinking', $drinking)" />
+                        <x-ui.select label="Smoking" wire:model="smoking" :selected="$smoking" :options="ProfileOptions::forSelect('smoking', $smoking)" />
                     </div>
 
                     <div class="space-y-3 border-t border-border pt-4">
@@ -150,7 +150,7 @@
                         </div>
                         @foreach ($prompts as $i => $prompt)
                             <div class="space-y-2 rounded-2xl bg-muted/50 p-3" wire:key="prompt-{{ $i }}">
-                                <x-ui.select placeholder="Choose a prompt" wire:model="prompts.{{ $i }}.q" :selected="$prompt['q']" :options="array_combine(ProfileOptions::PROMPTS, ProfileOptions::PROMPTS)" />
+                                <x-ui.select placeholder="Choose a prompt" wire:model="prompts.{{ $i }}.q" :selected="$prompt['q']" :options="ProfileOptions::forSelect('prompt', $prompt['q'])" />
                                 <x-ui.input wire:model="prompts.{{ $i }}.a" placeholder="Your answer" maxlength="160" :error="$errors->first('prompts.'.$i.'.a')" />
                             </div>
                         @endforeach

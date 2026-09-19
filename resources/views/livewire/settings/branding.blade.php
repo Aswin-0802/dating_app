@@ -187,8 +187,12 @@
                                 :options="App\Support\Currency::options()"
                                 :error="$errors->first('form.billing__currency')"
                             />
-                            <x-ui.input label="Plus price / month" wire:model="form.website__plus_price" :error="$errors->first('form.website__plus_price')" />
-                            <x-ui.input label="Gold price / month" wire:model="form.website__gold_price" :error="$errors->first('form.website__gold_price')" />
+                            <div class="sm:col-span-2 flex items-end">
+                                <p class="text-sm text-muted-foreground">
+                                    Plan names and prices are managed in
+                                    <a href="{{ route('admin.masters.plans') }}" wire:navigate class="font-medium text-primary hover:underline">Masters → Subscription plans</a>.
+                                </p>
+                            </div>
                         </div>
 
                         <div class="grid gap-4 sm:grid-cols-2">

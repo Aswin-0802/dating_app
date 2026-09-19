@@ -72,6 +72,49 @@ final class ProfileOptions
     ];
 
     /**
+     * The built-in lists above seed Masters -> Profile questions; from then on
+     * the operator's list is what members see. A group left empty in Masters
+     * (fresh install, tests) falls back to the built-in list.
+     *
+     * @return array<string, string> key => label
+     */
+    public static function options(string $group, bool $activeOnly = true): array
+    {
+        return Masters::profileOptions($group, $activeOnly) ?: self::builtIn($group);
+    }
+
+    /** @return array<string, string> */
+    public static function builtIn(string $group): array
+    {
+        return match ($group) {
+            'relationship_goal' => self::RELATIONSHIP_GOALS,
+            'drinking' => self::DRINKING,
+            'smoking' => self::SMOKING,
+            'children' => self::CHILDREN,
+            'education' => self::EDUCATION,
+            'prompt' => array_combine(self::PROMPTS, self::PROMPTS),
+            default => [],
+        };
+    }
+
+    /**
+     * Options for a select, keeping the member's current answer even if the
+     * operator has since hidden it — otherwise the form would silently blank it.
+     *
+     * @return array<string, string>
+     */
+    public static function forSelect(string $group, ?string $current): array
+    {
+        $options = self::options($group);
+
+        if (filled($current) && ! isset($options[$current])) {
+            $options[$current] = self::options($group, false)[$current] ?? $current;
+        }
+
+        return $options;
+    }
+
+    /**
      * The facts line on a profile card — only the ones actually filled in, and
      * never "prefer not to say", which is a non-answer rather than a fact.
      *
@@ -87,7 +130,7 @@ final class ProfileOptions
         }
 
         if (filled($profile?->school) || filled($profile?->education)) {
-            $facts[] = ['icon' => 'academic-cap', 'label' => $profile->school ?: $profile->education];
+            $facts[] = ['icon' => 'academic-cap', 'label' => $profile->school ?: (self::options('education', false)[$profile->education] ?? $profile->education)];
         }
 
         if ($profile?->height_cm) {
@@ -95,10 +138,10 @@ final class ProfileOptions
         }
 
         foreach ([
-            ['sparkles', self::RELATIONSHIP_GOALS, $profile?->relationship_goal],
-            ['fire', self::DRINKING, $profile?->drinking],
-            ['fire', self::SMOKING, $profile?->smoking],
-            ['users', self::CHILDREN, $profile?->children],
+            ['sparkles', self::options('relationship_goal', false), $profile?->relationship_goal],
+            ['fire', self::options('drinking', false), $profile?->drinking],
+            ['fire', self::options('smoking', false), $profile?->smoking],
+            ['users', self::options('children', false), $profile?->children],
         ] as [$icon, $labels, $value]) {
             if ($value !== null && $value !== 'unspecified' && isset($labels[$value])) {
                 $facts[] = ['icon' => $icon, 'label' => $labels[$value]];

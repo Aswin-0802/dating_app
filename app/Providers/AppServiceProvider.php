@@ -7,6 +7,7 @@ use App\Models\AppUser;
 use App\Models\Setting;
 use App\Support\Branding;
 use App\Support\MailSettings;
+use App\Support\Masters;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\ServiceProvider;
@@ -32,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Setting::forgetMemo();
+        Masters::forgetMemo();
 
         /*
          * Livewire action requests go to /livewire/update and only re-run route

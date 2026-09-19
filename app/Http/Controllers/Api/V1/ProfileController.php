@@ -17,6 +17,7 @@ use App\Services\Members\VerificationSubmission;
 use App\Support\ProfileOptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
@@ -57,11 +58,11 @@ class ProfileController extends Controller
             'job_title' => ['sometimes', 'nullable', 'string', 'max:100'],
             'company' => ['sometimes', 'nullable', 'string', 'max:100'],
             'school' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'education' => ['sometimes', 'nullable', 'string', 'max:60'],
-            'relationship_goal' => ['sometimes', 'in:long_term,short_term,friends,figuring_out,unspecified'],
-            'drinking' => ['sometimes', 'in:never,socially,often,unspecified'],
-            'smoking' => ['sometimes', 'in:never,socially,often,unspecified'],
-            'children' => ['sometimes', 'in:have,want,dont_want,unspecified'],
+            'education' => ['sometimes', 'nullable', Rule::in(array_keys(ProfileOptions::forSelect('education', $request->user()->profile?->education)))],
+            'relationship_goal' => ['sometimes', Rule::in(array_keys(ProfileOptions::forSelect('relationship_goal', $request->user()->profile?->relationship_goal)))],
+            'drinking' => ['sometimes', Rule::in(array_keys(ProfileOptions::forSelect('drinking', $request->user()->profile?->drinking)))],
+            'smoking' => ['sometimes', Rule::in(array_keys(ProfileOptions::forSelect('smoking', $request->user()->profile?->smoking)))],
+            'children' => ['sometimes', Rule::in(array_keys(ProfileOptions::forSelect('children', $request->user()->profile?->children)))],
             'languages' => ['sometimes', 'array'],
             'prompts' => ['sometimes', 'array'],
         ]);
@@ -102,7 +103,7 @@ class ProfileController extends Controller
     {
         $data = $request->validate([
             'slugs' => ['required', 'array', 'max:10'],
-            'slugs.*' => ['string', 'exists:interests,slug'],
+            'slugs.*' => ['string', Rule::exists('interests', 'slug')->where('is_active', true)],
         ]);
 
         $ids = Interest::query()->whereIn('slug', $data['slugs'])->pluck('id');

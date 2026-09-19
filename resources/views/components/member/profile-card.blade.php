@@ -50,8 +50,8 @@
                     <x-ui.icon name="check-badge" size="lg" class="text-sky-300" title="Photo verified" />
                     <span class="sr-only">Photo verified</span>
                 @endif
-                @if ($person->premium_tier === 'gold' && $person->is_premium)
-                    <span class="rounded-full bg-amber-400/90 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-950">Gold</span>
+                @if (($plan = $person->activePlan())?->hasFeature('profile_badge'))
+                    <span class="rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm" style="background-color: {{ $plan->badge_color }}">{{ $plan->name }}</span>
                 @endif
             </h2>
             <p class="mt-1 flex items-center gap-1.5 text-sm text-white/85">
@@ -80,7 +80,7 @@
         @unless ($compact)
             @foreach ($prompts as $prompt)
                 <div class="rounded-2xl bg-primary-subtle/60 p-4">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-primary-subtle-foreground">{{ $prompt['q'] }}</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-primary-subtle-foreground">{{ ProfileOptions::options('prompt', false)[$prompt['q']] ?? $prompt['q'] }}</p>
                     <p class="mt-1.5 text-lg font-medium leading-snug">{{ $prompt['a'] }}</p>
                 </div>
             @endforeach

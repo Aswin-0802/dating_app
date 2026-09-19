@@ -22,7 +22,7 @@ class SafetyController extends Controller
     {
         $data = $request->validate([
             'reported_id' => ['required', 'uuid', 'exists:app_users,uuid'],
-            'category' => ['required', 'in:'.implode(',', array_column(ReportCategory::cases(), 'value'))],
+            'category' => ['required', 'in:'.implode(',', array_column(ReportCategory::selectable(), 'value'))],
             'description' => ['nullable', 'string', 'max:2000'],
             'message_id' => ['nullable', 'uuid', 'exists:messages,uuid'],
         ]);

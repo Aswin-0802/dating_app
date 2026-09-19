@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Enums;
 
 use App\Enums\Concerns\HasBadge;
+use App\Support\Masters;
 
 enum ReportCategory: string
 {
@@ -26,7 +27,18 @@ enum ReportCategory: string
     case MinorSafety = 'minor_safety';
     case Other = 'other';
 
+    /** The wording set in Masters -> Report categories, or the built-in one. */
     public function label(): string
+    {
+        return Masters::reportCategory($this->value)['label'] ?? $this->builtInLabel();
+    }
+
+    public function description(): ?string
+    {
+        return Masters::reportCategory($this->value)['description'] ?? null;
+    }
+
+    public function builtInLabel(): string
     {
         return match ($this) {
             self::Harassment => 'Harassment or abuse',
@@ -51,9 +63,21 @@ enum ReportCategory: string
      * Severity is derived from category, not chosen by the reporter.
      *
      * Reporters routinely mislabel severity, and letting them set it is how a
-     * minor-safety report ends up behind a spam complaint.
+     * minor-safety report ends up behind a spam complaint. Operators can re-rate
+     * a category in Masters, except the restricted ones, which stay Critical.
      */
     public function defaultSeverity(): Severity
+    {
+        $override = Masters::reportCategory($this->value)['severity'] ?? null;
+
+        if ($this->isRestricted() || $override === null) {
+            return $this->builtInSeverity();
+        }
+
+        return Severity::tryFrom($override) ?? $this->builtInSeverity();
+    }
+
+    public function builtInSeverity(): Severity
     {
         return match ($this) {
             self::MinorSafety, self::UnderageSuspected, self::SelfHarm, self::ViolenceThreats => Severity::Critical,
@@ -71,6 +95,34 @@ enum ReportCategory: string
     public function isRestricted(): bool
     {
         return in_array($this, [self::MinorSafety, self::UnderageSuspected], true);
+    }
+
+    /**
+     * Whether members can pick this category. Safety categories can never be
+     * switched off: a member must always be able to report a child at risk.
+     */
+    public function isActive(): bool
+    {
+        if ($this->isRestricted() || $this === self::SelfHarm || $this === self::Other) {
+            return true;
+        }
+
+        return Masters::reportCategory($this->value)['is_active'] ?? true;
+    }
+
+    public function isLocked(): bool
+    {
+        return $this->isRestricted() || $this === self::SelfHarm || $this === self::Other;
+    }
+
+    /** @return array<int, self> categories members can choose, in the operator's order */
+    public static function selectable(): array
+    {
+        return collect(self::cases())
+            ->filter(fn (self $c): bool => $c->isActive())
+            ->sortBy(fn (self $c): int => Masters::reportCategory($c->value)['sort_order'] ?? array_search($c, self::cases(), true))
+            ->values()
+            ->all();
     }
 
     public function badgeClasses(): string

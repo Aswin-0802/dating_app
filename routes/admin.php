@@ -10,6 +10,7 @@ use App\Livewire\Cases;
 use App\Livewire\Conversations;
 use App\Livewire\Dashboard;
 use App\Livewire\Enforcement;
+use App\Livewire\Masters;
 use App\Livewire\Matches;
 use App\Livewire\Notifications;
 use App\Livewire\Roles;
@@ -218,6 +219,14 @@ Route::middleware(['auth:web', 'auth.session', 'staff.active'])->group(function 
         Route::get('/', Audit\Index::class)->name('index');
         Route::get('message-access', Audit\MessageAccess::class)
             ->middleware('permission:message_access_log')->name('message-access');
+    });
+
+    Route::middleware('permission:settings')->prefix('masters')->name('masters.')->group(function (): void {
+        Route::get('plans', Masters\Plans::class)->name('plans');
+        Route::get('interests', Masters\Interests::class)->name('interests');
+        Route::get('profile-questions', Masters\ProfileQuestions::class)->name('profile-options');
+        Route::get('report-categories', Masters\ReportCategories::class)->name('report-categories');
+        Route::get('reasons', Masters\Reasons::class)->name('reasons');
     });
 
     Route::middleware('permission:settings')->prefix('settings')->name('settings.')->group(function (): void {

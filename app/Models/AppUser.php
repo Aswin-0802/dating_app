@@ -8,6 +8,7 @@ use App\Enums\AccountStatus;
 use App\Enums\Gender;
 use App\Enums\RiskBand;
 use App\Enums\VerificationStatus;
+use App\Support\Masters;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -271,6 +272,22 @@ class AppUser extends Authenticatable
     }
 
     // ---- accessors ----
+
+    /** The plan the member is currently on, or null for free (or lapsed) members. */
+    public function activePlan(): ?Plan
+    {
+        if (! $this->is_premium || ($this->premium_until !== null && $this->premium_until->isPast())) {
+            return null;
+        }
+
+        return Masters::plan($this->premium_tier);
+    }
+
+    /** Whether the member's plan includes a Plan::FEATURES key. */
+    public function hasPremiumFeature(string $feature): bool
+    {
+        return $this->activePlan()?->hasFeature($feature) ?? false;
+    }
 
     public function getAgeAttribute(): int
     {

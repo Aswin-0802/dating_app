@@ -91,10 +91,10 @@ final class SwipeRecorder
         });
     }
 
-    /** Null for premium members, who have no budget. */
+    /** Null for members whose plan includes unlimited likes. */
     public function likesLeftToday(AppUser $member): ?int
     {
-        if ($member->is_premium) {
+        if ($member->hasPremiumFeature('unlimited_likes')) {
             return null;
         }
 
@@ -109,7 +109,7 @@ final class SwipeRecorder
      */
     private function enforceDailyLikeLimit(AppUser $member, string $action): void
     {
-        if (! in_array($action, ['like', 'superlike'], true) || $member->is_premium) {
+        if (! in_array($action, ['like', 'superlike'], true) || $member->hasPremiumFeature('unlimited_likes')) {
             return;
         }
 

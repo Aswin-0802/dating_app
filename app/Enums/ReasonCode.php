@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Enums;
 
 use App\Enums\Concerns\HasBadge;
+use App\Support\Masters;
 
 /**
  * Structured reasons for every enforcement and verification decision.
@@ -62,7 +63,41 @@ enum ReasonCode: string
     case ExpiredAutomatically = 'expired_automatically';
     case Other = 'other';
 
+    /** The wording set in Masters -> Enforcement reasons, or the built-in one. */
     public function label(): string
+    {
+        return Masters::reason($this->value)['label'] ?? $this->builtInLabel();
+    }
+
+    public function policyClause(): string
+    {
+        return Masters::reason($this->value)['policy_clause'] ?? $this->builtInPolicyClause();
+    }
+
+    /** Template for the statement of reasons sent to the member. */
+    public function statement(): string
+    {
+        return Masters::reason($this->value)['statement'] ?? $this->builtInStatement();
+    }
+
+    /**
+     * Reasons the system itself records (appeal outcomes, expiry, corrections)
+     * cannot be switched off, or those flows would have nothing to write.
+     */
+    public function isSystem(): bool
+    {
+        return in_array($this, [
+            self::EvidenceInsufficient, self::AppealUpheld, self::AppealOverturned,
+            self::ModeratorError, self::ExpiredAutomatically, self::Other,
+        ], true);
+    }
+
+    public function isActive(): bool
+    {
+        return $this->isSystem() || (Masters::reason($this->value)['is_active'] ?? true);
+    }
+
+    public function builtInLabel(): string
     {
         return match ($this) {
             self::HarassmentConfirmed => 'Harassment confirmed',
@@ -103,7 +138,7 @@ enum ReasonCode: string
      * The Terms clause the decision rests on. DSA Article 17 requires telling the
      * user the specific clause, not a vague category.
      */
-    public function policyClause(): string
+    public function builtInPolicyClause(): string
     {
         return match ($this) {
             self::HarassmentConfirmed, self::HateSpeechConfirmed, self::ThreatOfViolence => '4.2 Respectful conduct',
@@ -119,8 +154,7 @@ enum ReasonCode: string
         };
     }
 
-    /** Template for the statement of reasons sent to the member. */
-    public function statement(): string
+    public function builtInStatement(): string
     {
         return match ($this) {
             self::Other => 'Your account was actioned following a review of reported activity.',
@@ -128,8 +162,8 @@ enum ReasonCode: string
             self::AppealUpheld => 'We reviewed your appeal. The original decision stands.',
             default => sprintf(
                 'We reviewed activity on your account and found it did not meet our %s policy (%s).',
-                strtolower($this->label()),
-                $this->policyClause(),
+                strtolower($this->builtInLabel()),
+                $this->builtInPolicyClause(),
             ),
         };
     }
@@ -173,7 +207,7 @@ enum ReasonCode: string
     /** @return array<int, self> The enumerated rejection list on the review screen. */
     public static function forVerificationRejection(): array
     {
-        return [
+        return array_values(array_filter([
             self::FaceMismatch,
             self::LivenessFailed,
             self::NotARealPerson,
@@ -183,7 +217,7 @@ enum ReasonCode: string
             self::AgeEstimateConflict,
             self::PoorImageQuality,
             self::Other,
-        ];
+        ], fn (self $c): bool => $c->isActive()));
     }
 
     /** @return array<string, array<int, self>> Codes grouped for a select. */
@@ -191,7 +225,7 @@ enum ReasonCode: string
     {
         $grouped = [];
 
-        foreach (self::cases() as $case) {
+        foreach (array_filter(self::cases(), fn (self $c): bool => $c->isActive()) as $case) {
             $grouped[$case->group()][] = $case;
         }
 

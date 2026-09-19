@@ -208,8 +208,6 @@ class Branding extends Component
             'form.brand__support_email' => ['nullable', 'email', 'max:255'],
             'form.business__email' => ['nullable', 'email', 'max:255'],
             'form.billing__currency' => ['required', Rule::in(array_keys(Currency::SUPPORTED))],
-            'form.website__plus_price' => ['required', 'numeric', 'min:0', 'max:1000000'],
-            'form.website__gold_price' => ['required', 'numeric', 'min:0', 'max:1000000'],
             'form.app__ios_url' => ['nullable', 'url', 'max:255'],
             'form.app__android_url' => ['nullable', 'url', 'max:255'],
             'form.social__instagram' => ['nullable', 'url', 'max:255'],

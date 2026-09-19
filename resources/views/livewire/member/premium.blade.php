@@ -5,28 +5,16 @@
     $ios = Branding::get('app.ios_url');
     $android = Branding::get('app.android_url');
     $support = Branding::get('brand.support_email');
-    $tier = $me->is_premium ? ($me->premium_tier ?? 'plus') : 'free';
-
-    $plans = [
-        'plus' => [
-            'name' => 'Plus',
-            'price' => Branding::get('website.plus_price', '12.99'),
-            'features' => ['Unlimited likes', 'See who has already liked you', 'Everything in Free'],
-        ],
-        'gold' => [
-            'name' => 'Gold',
-            'price' => Branding::get('website.gold_price', '24.99'),
-            'features' => ['Everything in Plus', 'Gold badge on your profile', 'Priority support'],
-        ],
-    ];
+    $current = $me->activePlan();
+    $plans = App\Support\Masters::plans();
 @endphp
 
 <div class="space-y-6">
     <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-accent p-6 text-primary-foreground sm:p-8">
         <div aria-hidden="true" class="absolute -right-16 -top-16 size-56 rounded-full bg-white/10 blur-2xl"></div>
         <x-ui.icon name="bolt" size="xl" class="relative" />
-        @if ($me->is_premium)
-            <h1 class="relative mt-3 text-3xl font-bold tracking-tight">You are on {{ ucfirst($tier) }}</h1>
+        @if ($current)
+            <h1 class="relative mt-3 text-3xl font-bold tracking-tight">You are on {{ $current->name }}</h1>
             <p class="relative mt-1 text-primary-foreground/85">
                 @if ($me->premium_until)
                     Renews {{ $me->premium_until->format('j F Y') }}.
@@ -42,30 +30,47 @@
         @endif
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2">
-        @foreach ($plans as $key => $plan)
-            <div @class([
-                'flex flex-col rounded-3xl border bg-card p-6',
-                'border-primary ring-1 ring-primary' => $tier === $key,
-                'border-border' => $tier !== $key,
-            ])>
-                <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-semibold">{{ $plan['name'] }}</h2>
-                    @if ($tier === $key)
-                        <x-ui.badge variant="primary">Your plan</x-ui.badge>
+    @if ($plans->isNotEmpty())
+        <div @class(['grid gap-4', 'sm:grid-cols-2' => $plans->count() === 2, 'sm:grid-cols-2 lg:grid-cols-3' => $plans->count() > 2])>
+            @foreach ($plans as $plan)
+                @php $isCurrent = $current?->is($plan); @endphp
+                <div @class([
+                    'flex flex-col rounded-3xl border bg-card p-6',
+                    'border-primary ring-1 ring-primary' => $isCurrent,
+                    'border-border' => ! $isCurrent,
+                ])>
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="flex items-center gap-2 text-lg font-semibold">
+                            <span class="size-2.5 rounded-full" style="background-color: {{ $plan->badge_color }}"></span>
+                            {{ $plan->name }}
+                        </h2>
+                        @if ($isCurrent)
+                            <x-ui.badge variant="primary">Your plan</x-ui.badge>
+                        @elseif ($plan->is_featured)
+                            <x-ui.badge variant="accent">Most popular</x-ui.badge>
+                        @endif
+                    </div>
+                    @if ($plan->tagline)
+                        <p class="mt-1 text-sm text-muted-foreground">{{ $plan->tagline }}</p>
                     @endif
+                    <p class="mt-3"><span class="text-3xl font-bold">{{ App\Support\Currency::format($plan->monthly_price) }}</span> <span class="text-sm text-muted-foreground">/ month</span></p>
+                    @if ($plan->yearly_price !== null)
+                        <p class="mt-0.5 text-xs text-muted-foreground">
+                            or {{ App\Support\Currency::format($plan->yearly_price) }} a year
+                            @if ($saving = $plan->yearlySavingPercent()) <span class="font-medium text-success">(save {{ $saving }}%)</span> @endif
+                        </p>
+                    @endif
+                    <ul class="mt-5 flex-1 space-y-2.5 text-sm">
+                        @foreach ($plan->benefitLines() as $line)
+                            <li class="flex gap-2"><x-ui.icon name="check" size="sm" class="mt-0.5 text-primary" /> {{ $line }}</li>
+                        @endforeach
+                    </ul>
                 </div>
-                <p class="mt-3"><span class="text-3xl font-bold">{{ App\Support\Currency::format($plan['price']) }}</span> <span class="text-sm text-muted-foreground">/ month</span></p>
-                <ul class="mt-5 flex-1 space-y-2.5 text-sm">
-                    @foreach ($plan['features'] as $feature)
-                        <li class="flex gap-2"><x-ui.icon name="check" size="sm" class="mt-0.5 text-primary" /> {{ $feature }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endforeach
-    </div>
+            @endforeach
+        </div>
+    @endif
 
-    @unless ($me->is_premium)
+    @if (! $current && $plans->isNotEmpty())
         <div class="rounded-3xl border border-border bg-card p-6 text-center">
             <p class="font-semibold">How to upgrade</p>
             @if ($ios || $android)
@@ -81,5 +86,5 @@
                 <p class="mt-1 text-sm text-muted-foreground">Premium is coming soon.</p>
             @endif
         </div>
-    @endunless
+    @endif
 </div>

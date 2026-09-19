@@ -37,7 +37,7 @@
                     />
                     @if ($appUser->is_premium)
                         <x-ui.badge variant="accent" icon="sparkles">
-                            {{ ucfirst($appUser->premium_tier ?? 'Premium') }}
+                            {{ App\Support\Masters::plan($appUser->premium_tier)?->name ?? ucfirst($appUser->premium_tier ?? 'Premium') }}
                         </x-ui.badge>
                     @endif
                 </div>
