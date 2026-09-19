@@ -14,6 +14,15 @@ use App\Models\AppUser;
  */
 final class ProfileOptions
 {
+    /**
+     * What a display name may contain: letters in any script, spaces,
+     * apostrophes, hyphens and dots, starting with a letter. Rules out markup,
+     * digits used as decoration and names that are only punctuation.
+     */
+    public const NAME_RULE = 'regex:/^\pL[\pL\pM\s\'.-]*$/u';
+
+    public const NAME_MESSAGE = 'Use letters only (spaces, hyphens and apostrophes are fine).';
+
     public const RELATIONSHIP_GOALS = [
         'long_term' => 'A long-term relationship',
         'short_term' => 'Something casual',

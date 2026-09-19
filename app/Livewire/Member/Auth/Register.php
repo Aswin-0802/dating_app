@@ -6,7 +6,9 @@ namespace App\Livewire\Member\Auth;
 
 use App\Enums\Gender;
 use App\Models\City;
+use App\Models\Country;
 use App\Services\Members\MemberAccounts;
+use App\Support\ProfileOptions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -52,7 +54,7 @@ class Register extends Component
     #[Computed(persist: true)]
     public function cities(): array
     {
-        return City::query()
+        return City::query()->whereHas('country', fn ($q) => $q->where('is_active', true))
             ->with('country:id,name')
             ->orderBy('name')
             ->get(['id', 'name', 'country_id'])
@@ -79,7 +81,7 @@ class Register extends Component
             'gender' => ['required', Rule::enum(Gender::class)],
             'interested_in' => ['required', 'array', 'min:1'],
             'interested_in.*' => [Rule::enum(Gender::class)],
-            'city_id' => ['required', 'exists:cities,id'],
+            'city_id' => ['required', Rule::exists('cities', 'id')->whereIn('country_id', Country::query()->where('is_active', true)->pluck('id')->all())],
             'terms' => ['accepted'],
         ], $this->messages());
 
@@ -105,7 +107,7 @@ class Register extends Component
     private function accountRules(): array
     {
         return [
-            'display_name' => ['required', 'string', 'min:2', 'max:60'],
+            'display_name' => ['required', 'string', 'min:2', 'max:60', ProfileOptions::NAME_RULE],
             'email' => ['required', 'email', 'max:255', 'unique:app_users,email'],
             'password' => ['required', Password::min(8)->letters()->numbers()],
             // Enforced here as well as on the API: an under-age account is a
@@ -120,6 +122,7 @@ class Register extends Component
         return [
             'birthdate.before_or_equal' => "You need to be {$this->minAge()} or older to join.",
             'email.unique' => 'There is already an account with that email. Try signing in.',
+            'display_name.regex' => ProfileOptions::NAME_MESSAGE,
             'interested_in.required' => 'Choose at least one.',
             'city_id.required' => 'Choose the city you are in.',
             'terms.accepted' => 'Please accept the terms to continue.',

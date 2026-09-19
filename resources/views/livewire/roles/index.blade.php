@@ -1,17 +1,12 @@
 <div class="space-y-4 md:space-y-6">
 
-    <div class="flex items-start gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3">
-        <x-ui.icon name="key" size="sm" class="mt-0.5 shrink-0 text-muted-foreground" />
-        <div class="min-w-0 text-sm">
-            <p class="font-medium">Two separations are load-bearing</p>
-            <p class="mt-0.5 text-muted-foreground">
-                Admin runs the platform; T&amp;S Lead owns safety policy. Admin cannot read
-                message content, decide appeals, or change moderation settings — that split
-                is what makes the audit log meaningful. And Moderators cannot decide appeals,
-                which guarantees the "never the original decider" rule always has somebody
-                to route to.
-            </p>
-        </div>
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-muted-foreground">
+            A role decides what its staff can see and do. Built-in roles can be edited but not deleted.
+        </p>
+        @can('add_roles')
+            <x-ui.button size="sm" icon="plus" wire:click="create">New role</x-ui.button>
+        @endcan
     </div>
 
     <div class="grid gap-4 md:gap-6 lg:grid-cols-2 xl:grid-cols-3">
@@ -31,8 +26,10 @@
                         </p>
                     </div>
 
-                    @if ($role->isProtected())
-                        <x-ui.badge variant="muted" icon="lock" size="sm">Protected</x-ui.badge>
+                    @if (in_array($role->name, $builtIn, true))
+                        <x-ui.badge variant="muted" icon="lock" size="sm">Built-in</x-ui.badge>
+                    @else
+                        <x-ui.badge variant="info" size="sm">Custom</x-ui.badge>
                     @endif
                 </div>
 
@@ -46,8 +43,43 @@
                             View permissions
                         </x-ui.button>
                     @endcan
+
+                    @can('delete_roles')
+                        @unless (in_array($role->name, $builtIn, true))
+                            <x-ui.button
+                                size="sm"
+                                variant="ghost"
+                                class="ml-auto text-destructive"
+                                wire:click="delete({{ $role->id }})"
+                                wire:confirm="Delete the {{ $role->name }} role? This cannot be undone."
+                            >Delete</x-ui.button>
+                        @endunless
+                    @endcan
                 </div>
             </x-ui.card>
         @endforeach
     </div>
+
+    <x-ui.dialog :show="$formOpen" close="closeForm">
+        <form wire:submit="save" class="p-6" novalidate>
+            <h2 class="text-lg font-semibold">New role</h2>
+            <p class="mt-1 text-sm text-muted-foreground">You will choose its permissions on the next screen.</p>
+
+            <div class="mt-5 space-y-4">
+                <x-ui.input label="Role name" wire:model="name" placeholder="e.g. Regional moderator" :error="$errors->first('name')" required autofocus />
+                <x-ui.select
+                    label="Start with the permissions of"
+                    placeholder="No permissions"
+                    wire:model="copyFrom"
+                    :options="$roles->reject(fn ($r) => $r->name === App\Models\Role::SUPER_ADMIN)->mapWithKeys(fn ($r) => [$r->name => $r->name])->all()"
+                    :error="$errors->first('copyFrom')"
+                />
+            </div>
+
+            <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <x-ui.button variant="ghost" wire:click="closeForm">Cancel</x-ui.button>
+                <x-ui.button type="submit" wire:loading.attr="disabled" wire:target="save">Create role</x-ui.button>
+            </div>
+        </form>
+    </x-ui.dialog>
 </div>

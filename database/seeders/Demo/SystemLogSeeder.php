@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders\Demo;
 
 use App\Models\AppUser;
+use App\Support\Currency;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -192,7 +193,7 @@ class SystemLogSeeder extends Seeder
                     'gateway_reference' => 'ch_'.$faker->bothify('??##########'),
                     'product' => 'Veyra '.ucfirst($tier),
                     'amount' => $prices[$tier] ?? 12.99,
-                    'currency' => 'GBP',
+                    'currency' => Currency::code(),
                     'status' => $status,
                     'failure_reason' => $status === 'failed'
                         ? $faker->randomElement(['Card declined', 'Insufficient funds', 'Card expired'])

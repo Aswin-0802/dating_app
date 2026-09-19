@@ -37,10 +37,9 @@ if (! function_exists('veyra_setting')) {
          * setting would not see it take effect, and neither would a test.
          */
         try {
-            if (! Schema::hasTable('settings')) {
-                return $default ?? config("veyra.{$key}");
-            }
-
+            // No Schema::hasTable() check: that is a schema query on every
+            // call, and branding alone calls this dozens of times per page. A
+            // missing table throws, which the catch below already handles.
             $values = Setting::allValues();
         } catch (Throwable) {
             return $default ?? config("veyra.{$key}");

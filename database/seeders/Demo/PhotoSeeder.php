@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders\Demo;
 
 use App\Services\Media\PlaceholderPhotoGenerator;
+use App\Services\Media\StockPortraitLibrary;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -31,10 +32,24 @@ class PhotoSeeder extends Seeder
         $faker = fake();
         $faker->seed(config('veyra.seed.faker_seed', 20260917) + 1);
 
-        $mode = config('veyra.seed.photos', 'generated');
-        $userIds = DB::table('app_users')->pluck('id')->all();
+        $mode = config('veyra.seed.photos', 'stock');
+        $genders = DB::table('app_users')->pluck('gender', 'id')->all();
+        $userIds = array_keys($genders);
 
         $generator = null;
+        $stock = null;
+
+        if ($mode === 'stock') {
+            $stock = new StockPortraitLibrary;
+            $this->command?->info('Fetching demo portraits…');
+
+            if ($stock->prepare() === 0) {
+                // Offline or blocked: placeholders rather than no photos at all.
+                $this->command?->warn('No portraits could be downloaded; using generated placeholders instead.');
+                $stock = null;
+                $mode = 'generated';
+            }
+        }
 
         if ($mode === 'generated') {
             $generator = new PlaceholderPhotoGenerator;
@@ -64,8 +79,16 @@ class PhotoSeeder extends Seeder
         $bar = $this->command?->getOutput()->createProgressBar(count($userIds));
         $bar?->start();
 
+        $nextPortrait = [];
+
         foreach ($userIds as $userId) {
             $count = (int) $this->weighted($faker, self::COUNT_MIX);
+
+            // A real portrait is one person; a second photo from the pool would
+            // be somebody else. Stock members get one photo, or none.
+            if ($stock !== null) {
+                $count = min(1, $count);
+            }
 
             for ($position = 0; $position < $count; $position++) {
                 // Members in a ring share their PRIMARY photo — that is the one
@@ -75,7 +98,18 @@ class PhotoSeeder extends Seeder
 
                 $file = ['path' => null, 'thumb_path' => null, 'width' => null, 'height' => null, 'bytes' => null];
 
-                if ($generator !== null) {
+                if ($stock !== null) {
+                    $gender = (string) $genders[$userId];
+
+                    // Ring members share ONE portrait, which is what a stolen-
+                    // photo ring looks like: the same person on several accounts.
+                    $ringKey = $inFaceRing ? $faceByUser[$userId] : ($inHashRing ? $hashByUser[$userId] : null);
+                    $index = $ringKey !== null
+                        ? (int) sprintf('%u', crc32($ringKey))
+                        : ($nextPortrait[$gender] = ($nextPortrait[$gender] ?? -1) + 1);
+
+                    $file = $stock->pick($ringKey !== null ? 'any' : $gender, $index) ?? $file;
+                } elseif ($generator !== null) {
                     // A ring member is given the SAME pool image, so the four
                     // accounts genuinely look identical on screen.
                     $override = $inFaceRing

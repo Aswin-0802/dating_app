@@ -82,7 +82,7 @@
                                 <x-ui.toggle
                                     size="lg"
                                     label="Test mode"
-                                    description="Transactions are simulated and no money moves."
+                                    description="Test mode: no real payments are taken."
                                     wire:model="isTestMode"
                                     :checked="$isTestMode"
                                 />

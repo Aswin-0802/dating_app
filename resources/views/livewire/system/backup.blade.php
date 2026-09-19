@@ -2,7 +2,7 @@
 
     <x-ui.card
         title="Database backup"
-        description="Produced with mysqldump, so it restores with the database's own tools rather than a bespoke importer."
+        description="A full copy of the database, saved as an SQL file."
     >
         @if ($mysqldump === null)
             <div class="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive-subtle p-3">
@@ -76,7 +76,7 @@
                         <x-ui.empty-state
                             icon="document"
                             heading="No backups yet"
-                            description="A backup you have never taken is a backup you do not have."
+                            description="Create a backup to keep a copy of your data."
                         />
                     </td>
                 </tr>

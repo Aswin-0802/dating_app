@@ -22,11 +22,12 @@ class SystemSeeder extends Seeder
     public static function mailSettings(): array
     {
         return [
+            ['key' => 'mail.mailer', 'value' => 'log', 'type' => 'text', 'label' => 'Delivery', 'description' => 'Choose "Send with SMTP" once the server details below are correct.'],
             ['key' => 'mail.host', 'value' => '127.0.0.1', 'type' => 'text', 'label' => 'SMTP host'],
             ['key' => 'mail.port', 'value' => '2525', 'type' => 'number', 'label' => 'SMTP port'],
             ['key' => 'mail.username', 'value' => '', 'type' => 'text', 'label' => 'SMTP username'],
-            ['key' => 'mail.password', 'value' => '', 'type' => 'text', 'label' => 'SMTP password', 'description' => 'Stored encrypted and never shown again.'],
-            ['key' => 'mail.encryption', 'value' => 'tls', 'type' => 'text', 'label' => 'Encryption', 'description' => 'tls, ssl, or blank for none.'],
+            ['key' => 'mail.password', 'value' => '', 'type' => 'text', 'label' => 'SMTP password', 'description' => 'Stored encrypted and never shown again. Leave blank to keep the current one.'],
+            ['key' => 'mail.encryption', 'value' => 'tls', 'type' => 'text', 'label' => 'Encryption'],
             ['key' => 'mail.from_address', 'value' => 'hello@veyra.test', 'type' => 'text', 'label' => 'From address'],
             ['key' => 'mail.from_name', 'value' => 'Veyra', 'type' => 'text', 'label' => 'From name'],
         ];
@@ -34,10 +35,10 @@ class SystemSeeder extends Seeder
 
     /** @return array<int, array{0: string, 1: string, 2: string}> */
     private const PAYMENT_GATEWAYS = [
-        ['stripe', 'Stripe', 'GBP,USD,EUR'],
+        ['stripe', 'Stripe', 'USD,INR,EUR,GBP'],
         ['razorpay', 'Razorpay', 'INR'],
         ['payu', 'PayU', 'INR,USD'],
-        ['paypal', 'PayPal', 'GBP,USD,EUR'],
+        ['paypal', 'PayPal', 'USD,INR,EUR,GBP'],
     ];
 
     /** @return array<int, array{0: string, 1: string}> */

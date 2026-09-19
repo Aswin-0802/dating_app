@@ -89,7 +89,7 @@
                         <x-ui.empty-state
                             icon="lock"
                             heading="No message content has been read"
-                            description="Nobody has revealed a conversation. That is the expected state."
+                            description="No conversations have been opened by staff."
                         />
                     </td>
                 </tr>

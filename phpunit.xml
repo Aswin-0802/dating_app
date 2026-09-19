@@ -11,6 +11,10 @@
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
+        <!-- User acceptance suites: full demo dataset, every role, edge cases. -->
+        <testsuite name="Uat">
+            <directory>tests/Uat</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>

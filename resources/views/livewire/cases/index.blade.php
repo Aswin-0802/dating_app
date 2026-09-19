@@ -160,7 +160,7 @@
                         <x-ui.empty-state
                             icon="check-circle"
                             heading="No cases match this view"
-                            description="Reports are aggregated into cases by subject, so one member with six reports is one case."
+                            description="Reports about the same member are grouped into a single case."
                         />
                     </td>
                 </tr>

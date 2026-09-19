@@ -144,12 +144,17 @@ final class PlaceholderPhotoGenerator
      * Visibly related to the member's profile plate but not identical, so the
      * review screen's comparator has something meaningful to compare.
      */
-    public function selfie(int $appUserId, string $gestureCode, string $disk = 'verifications'): array
+    public function selfie(int $appUserId, string $gestureCode, string $disk = 'verifications', ?string $portraitPath = null): array
     {
         $this->ensureGd();
 
         $seed = (int) sprintf('%u', crc32("selfie:{$appUserId}"));
-        $image = $this->renderPlate(self::SELFIE_SIZE, self::SELFIE_SIZE, $seed, $this->initialsFor($seed));
+
+        // With a real portrait, the selfie is that same person — mirrored, as a
+        // front camera shows it, and cropped square — so the comparator on the
+        // review screen shows a genuine match rather than two unrelated images.
+        $image = $portraitPath !== null ? $this->selfieFromPortrait($portraitPath) : null;
+        $image ??= $this->renderPlate(self::SELFIE_SIZE, self::SELFIE_SIZE, $seed, $this->initialsFor($seed));
 
         $this->stampGesture($image, $gestureCode);
 
@@ -162,6 +167,25 @@ final class PlaceholderPhotoGenerator
         imagedestroy($image);
 
         return ['disk' => $disk, 'path' => $path];
+    }
+
+    /** @return \GdImage|null */
+    private function selfieFromPortrait(string $portraitPath)
+    {
+        $bytes = Storage::disk($this->disk)->get($portraitPath);
+        $source = $bytes !== null ? @imagecreatefromstring($bytes) : false;
+
+        if ($source === false) {
+            return null;
+        }
+
+        $side = min(imagesx($source), imagesy($source));
+        $image = imagecreatetruecolor(self::SELFIE_SIZE, self::SELFIE_SIZE);
+        imagecopyresampled($image, $source, 0, 0, (int) ((imagesx($source) - $side) / 2), 0, self::SELFIE_SIZE, self::SELFIE_SIZE, $side, $side);
+        imageflip($image, IMG_FLIP_HORIZONTAL);
+        imagedestroy($source);
+
+        return $image;
     }
 
     // ---- rendering ----

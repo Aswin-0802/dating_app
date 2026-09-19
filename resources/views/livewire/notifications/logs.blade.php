@@ -18,8 +18,7 @@
         <div class="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-subtle px-4 py-3">
             <x-ui.icon name="warning" size="sm" class="mt-0.5 shrink-0 text-warning-subtle-foreground" />
             <p class="min-w-0 text-sm text-warning-subtle-foreground">
-                Over 5% of sends are failing. That is usually stale push tokens rather than a
-                content problem, and it is invisible from campaign-level numbers alone.
+                Over 5% of sends are failing. This is usually caused by out-of-date device tokens.
             </p>
         </div>
     @endif

@@ -58,7 +58,7 @@
                 </x-ui.button>
 
                 @can('export_users')
-                    <x-ui.button variant="outline" size="sm" icon="download">Export</x-ui.button>
+                    <x-ui.button variant="outline" size="sm" icon="download" wire:click="export">Export CSV</x-ui.button>
                 @endcan
             </div>
         </x-slot:toolbar>
@@ -152,13 +152,13 @@
                     <div class="flex-1"></div>
 
                     @can('warn_users')
-                        <x-ui.button size="xs" variant="outline">Warn</x-ui.button>
+                        <x-ui.button size="xs" variant="outline" wire:click="openBulkStep('warn')">Warn</x-ui.button>
                     @endcan
                     @can('suspend_users')
-                        <x-ui.button size="xs" variant="destructive">Suspend</x-ui.button>
+                        <x-ui.button size="xs" variant="destructive" wire:click="openBulkStep('suspend')">Suspend</x-ui.button>
                     @endcan
                     @can('export_users')
-                        <x-ui.button size="xs" variant="outline" icon="download">Export</x-ui.button>
+                        <x-ui.button size="xs" variant="outline" icon="download" wire:click="export">Export</x-ui.button>
                     @endcan
                 </div>
             </x-slot:bulkBar>
@@ -269,11 +269,11 @@
 
                             @can('warn_users')
                                 <x-ui.dropdown.separator />
-                                <x-ui.dropdown.item icon="warning">Warn</x-ui.dropdown.item>
+                                <x-ui.dropdown.item icon="warning" wire:click="openRowStep('warn', {{ $user->id }})">Warn</x-ui.dropdown.item>
                             @endcan
 
                             @can('suspend_users')
-                                <x-ui.dropdown.item icon="pause-circle" variant="destructive">Suspend</x-ui.dropdown.item>
+                                <x-ui.dropdown.item icon="pause-circle" variant="destructive" wire:click="openRowStep('suspend', {{ $user->id }})">Suspend</x-ui.dropdown.item>
                             @endcan
                         </x-ui.dropdown>
                     </x-ui.table.cell>
@@ -306,4 +306,11 @@
             <x-ui.pagination :paginator="$users" :per-page="$perPage" :per-page-options="$this->perPageOptions()" />
         </x-slot:footer>
     </x-ui.table>
+    <x-veyra.enforcement-dialog
+        :step="$pendingStep"
+        :target="$rowTarget ? (App\Models\AppUser::find($rowTarget)?->display_name ?? '') : $this->selectedCount().' selected '.str('member')->plural($this->selectedCount())"
+        :reason-code="$reasonCode"
+        :duration-hours="$durationHours"
+        :notify-user="$notifyUser"
+    />
 </div>

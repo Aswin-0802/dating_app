@@ -6,20 +6,26 @@ namespace App\Livewire\Users;
 
 use App\Enums\AccountStatus;
 use App\Enums\Gender;
+use App\Enums\LadderStep;
 use App\Enums\RiskBand;
 use App\Enums\VerificationStatus;
+use App\Livewire\Concerns\AppliesEnforcement;
 use App\Livewire\Concerns\WithBulkActions;
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\AppUser;
 use App\Models\City;
+use App\Services\Audit\ActivityLogger;
 use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
 {
+    use AppliesEnforcement;
     use WithBulkActions;
     use WithDataTable;
 
@@ -202,5 +208,101 @@ class Index extends Component
             $this->resetPage();
             $this->clearSelection();
         }
+    }
+
+    // ---- actions --------------------------------------------------------------
+
+    /** Set when the enforcement dialog was opened from one row's menu. */
+    #[Locked]
+    public ?int $rowTarget = null;
+
+    public function openRowStep(string $step, int $appUserId): void
+    {
+        $this->openStep($step);
+        $this->rowTarget = $appUserId;
+    }
+
+    public function openBulkStep(string $step): void
+    {
+        $this->openStep($step);
+        $this->rowTarget = null;
+    }
+
+    public function confirmStep(): void
+    {
+        $limit = (int) config('veyra.tables.bulk_inline_limit', 500);
+
+        $subjects = $this->rowTarget !== null
+            ? AppUser::query()->whereKey($this->rowTarget)->get()
+            : $this->bulkQuery()->limit($limit + 1)->get();
+
+        if ($subjects->count() > $limit) {
+            $this->addError('reasonCode', "That is more than {$limit} members. Narrow the filters and try again.");
+
+            return;
+        }
+
+        $step = LadderStep::tryFrom($this->pendingStep);
+        $count = $this->applyStepTo($subjects);
+
+        if ($count > 0) {
+            $this->clearSelection();
+            $this->rowTarget = null;
+            session()->flash('status', "{$step?->label()} applied to {$count} ".str('member')->plural($count).'.');
+        }
+    }
+
+    /**
+     * CSV of the selection, or of everything matching the filters when nothing
+     * is selected. Email and phone are included only for staff allowed to see
+     * personal data, and every export is recorded as sensitive in the audit log.
+     */
+    public function export(ActivityLogger $logger): StreamedResponse
+    {
+        $this->authorize('export_users');
+
+        $query = $this->hasSelection() ? $this->bulkQuery() : $this->baseQuery();
+        $withPii = auth()->user()->can('view_user_pii');
+        $count = (clone $query)->count();
+
+        $logger->log(
+            module: 'users',
+            action: 'exported',
+            description: "Exported {$count} ".str('member')->plural($count).($withPii ? ' including contact details' : ''),
+            new: ['count' => $count, 'filters' => $this->activeFilters(), 'personal_data' => $withPii],
+            sensitive: true,
+        );
+
+        $filename = str(Branding::name())->slug().'-members-'.now()->format('Y-m-d-His').'.csv';
+
+        return response()->streamDownload(function () use ($query, $withPii): void {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, array_filter([
+                'ID', 'Name', 'Age', 'Gender', 'City', 'Status', 'Verification', 'Risk band', 'Premium', 'Joined', 'Last active',
+                $withPii ? 'Email' : null, $withPii ? 'Phone' : null,
+            ]));
+
+            $query->with('city')->orderBy('id')->chunk(500, function ($members) use ($out, $withPii): void {
+                foreach ($members as $m) {
+                    fputcsv($out, array_values(array_filter([
+                        'id' => $m->uuid,
+                        'name' => $m->display_name,
+                        'age' => $m->age,
+                        'gender' => $m->gender?->label(),
+                        'city' => $m->city?->name,
+                        'status' => $m->account_status?->label(),
+                        'verification' => $m->verification_status?->label(),
+                        'risk' => $m->risk_band?->label(),
+                        'premium' => $m->is_premium ? ucfirst((string) ($m->premium_tier ?? 'yes')) : 'No',
+                        'joined' => $m->created_at?->toDateString(),
+                        'active' => $m->last_active_at?->toDateTimeString(),
+                        'email' => $withPii ? $m->email : null,
+                        'phone' => $withPii ? ($m->phone ?? '') : null,
+                    ], fn ($v, $k) => ! (in_array($k, ['email', 'phone'], true) && ! $withPii), ARRAY_FILTER_USE_BOTH)));
+                }
+            });
+
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 }

@@ -35,9 +35,9 @@
             </p>
         </div>
 
-        <div class="relative hidden overflow-hidden bg-gradient-to-br from-primary via-primary/85 to-accent lg:block">
-            <div aria-hidden="true" class="absolute -left-24 top-1/4 size-96 rounded-full bg-white/10 blur-3xl"></div>
-            <div aria-hidden="true" class="absolute -bottom-24 right-0 size-96 rounded-full bg-black/10 blur-3xl"></div>
+        <div class="relative hidden overflow-hidden bg-primary lg:block">
+            <img src="{{ asset('images/site/couple-bikes.jpg') }}" alt="" class="absolute inset-0 size-full object-cover">
+            <div aria-hidden="true" class="absolute inset-0 bg-gradient-to-t from-black/80 via-primary/35 to-primary/20"></div>
 
             <div class="relative flex h-full flex-col justify-end p-14 text-primary-foreground">
                 <div class="mb-auto mt-16 max-w-sm space-y-3">

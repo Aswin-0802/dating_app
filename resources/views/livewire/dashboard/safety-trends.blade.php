@@ -18,7 +18,7 @@
 
     <x-ui.card
         title="Reports and enforcement"
-        description="Daily volume. A persistent gap between the lines is a review backlog, not a quiet week."
+        description="Reports received and actions taken each day."
     >
         <x-ui.chart
             type="line"
@@ -37,7 +37,7 @@
     </x-ui.card>
 
     <div class="grid gap-4 md:gap-6 xl:grid-cols-2">
-        <x-ui.card title="Reports by category" description="What members actually report.">
+        <x-ui.card title="Reports by category" description="Report categories, most common first.">
             @php $maxCategory = max($byCategory ?: [1]); @endphp
 
             <div class="space-y-2">
@@ -56,7 +56,7 @@
             </div>
         </x-ui.card>
 
-        <x-ui.card title="Enforcement by rung" description="Which parts of the ladder actually get used.">
+        <x-ui.card title="Enforcement by rung" description="How often each type of action is used.">
             @php $maxStep = max($byLadderStep ?: [1]); @endphp
 
             <div class="space-y-2">

@@ -8,6 +8,7 @@ use App\Enums\ReportCategory;
 use App\Models\AppUser;
 use App\Services\Members\SafetyActions;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The report and block dialog, shared by profiles and conversations.
@@ -51,13 +52,20 @@ trait HandlesSafety
 
         $reported = AppUser::query()->where('uuid', $this->reportingUuid)->firstOrFail();
 
-        $safety->report(
-            $this->member(),
-            $reported,
-            ReportCategory::from($this->reportCategory),
-            filled($this->reportDetails) ? $this->reportDetails : null,
-            $this->reportMessageUuid,
-        );
+        try {
+            $safety->report(
+                $this->member(),
+                $reported,
+                ReportCategory::from($this->reportCategory),
+                filled($this->reportDetails) ? $this->reportDetails : null,
+                $this->reportMessageUuid,
+            );
+        } catch (ValidationException $e) {
+            // Shown on the form rather than as a field the member cannot see.
+            $this->addError('reportCategory', collect($e->errors())->flatten()->first());
+
+            return;
+        }
 
         if ($this->alsoBlock) {
             $safety->block($this->member(), $reported, 'reported');

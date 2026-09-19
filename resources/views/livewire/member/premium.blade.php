@@ -1,7 +1,7 @@
 @php
     use App\Support\Branding;
 
-    $currency = Branding::get('website.currency_symbol', '£');
+    $currency = App\Support\Currency::symbol();
     $ios = Branding::get('app.ios_url');
     $android = Branding::get('app.android_url');
     $support = Branding::get('brand.support_email');
@@ -55,7 +55,7 @@
                         <x-ui.badge variant="primary">Your plan</x-ui.badge>
                     @endif
                 </div>
-                <p class="mt-3"><span class="text-3xl font-bold">{{ $currency }}{{ $plan['price'] }}</span> <span class="text-sm text-muted-foreground">/ month</span></p>
+                <p class="mt-3"><span class="text-3xl font-bold">{{ App\Support\Currency::format($plan['price']) }}</span> <span class="text-sm text-muted-foreground">/ month</span></p>
                 <ul class="mt-5 flex-1 space-y-2.5 text-sm">
                     @foreach ($plan['features'] as $feature)
                         <li class="flex gap-2"><x-ui.icon name="check" size="sm" class="mt-0.5 text-primary" /> {{ $feature }}</li>

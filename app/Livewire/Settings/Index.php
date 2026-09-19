@@ -10,6 +10,7 @@ use App\Services\Audit\ActivityLogger;
 use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class Index extends Component
@@ -77,9 +78,49 @@ class Index extends Component
         $this->loadValues();
     }
 
+    /**
+     * Limits for every numeric setting.
+     *
+     * Without these a negative like limit or a zero-hour SLA saves happily and
+     * breaks the product quietly. Anything not listed still has to be a whole,
+     * non-negative number.
+     *
+     * @var array<string, array{0: int|float, 1: int|float}>
+     */
+    private const RANGES = [
+        'general.min_age' => [18, 99],
+        'api.rate_limit_default' => [10, 10000],
+        'api.rate_limit_swipe' => [10, 10000],
+        'api.rate_limit_message' => [5, 10000],
+        'enforcement.shadow_ban_review_hours' => [1, 2160],
+        'enforcement.shadow_ban_max_hours' => [24, 8760],
+        'enforcement.appeal_window_days' => [1, 365],
+        'matching.daily_like_limit_free' => [1, 10000],
+        'matching.max_distance_km' => [1, 500],
+        'matching.max_photos' => [1, 12],
+        'matching.unmatch_after_days' => [0, 365],
+        'sla.case_critical_hours' => [1, 24],
+        'sla.case_high_hours' => [1, 168],
+        'sla.case_medium_hours' => [1, 336],
+        'sla.case_low_hours' => [1, 720],
+        'sla.appeal_hours' => [1, 720],
+        'moderation.claim_release_minutes' => [1, 1440],
+        'privacy.message_reveal_minutes' => [1, 240],
+        'privacy.message_context_window' => [1, 100],
+        'risk.auto_queue_at' => [1, 100],
+        'risk.auto_limit_at' => [1, 100],
+        'risk.recalculate_after_hours' => [1, 720],
+        'verification.sla_hours' => [1, 168],
+        'verification.restricted_sla_hours' => [1, 48],
+        'verification.max_attempts' => [1, 10],
+        'verification.approve_threshold' => [0.5, 1],
+    ];
+
     public function save(): void
     {
         abort_unless($this->canEditCurrentGroup(), 403);
+
+        $this->validateValues();
 
         $changed = [];
 
@@ -129,6 +170,59 @@ class Index extends Component
             : sprintf('%d %s updated.', count($changed), str('setting')->plural(count($changed))));
     }
 
+    private function validateValues(): void
+    {
+        $rules = [];
+        $attributes = [];
+
+        foreach ($this->settingsForGroup() as $setting) {
+            $field = "values.{$setting->id}";
+            $attributes[$field] = strtolower((string) ($setting->label ?? $setting->key));
+
+            $rules[$field] = match ($setting->type) {
+                'number' => isset(self::RANGES[$setting->key])
+                    ? ['required', 'numeric', 'between:'.self::RANGES[$setting->key][0].','.self::RANGES[$setting->key][1]]
+                    : ['required', 'integer', 'min:0', 'max:1000000'],
+                'boolean' => ['boolean'],
+                'json' => ['nullable', 'array'],
+                default => ['nullable', 'string', 'max:2000'],
+            };
+
+            if ($setting->key === 'api.min_supported_version') {
+                $rules[$field] = ['required', 'regex:/^\d+\.\d+\.\d+$/'];
+            }
+        }
+
+        foreach ($this->riskPoints as $id => $points) {
+            $rules["riskPoints.{$id}"] = ['required', 'integer', 'between:-50,100'];
+            $attributes["riskPoints.{$id}"] = 'points';
+        }
+
+        $this->validate($rules, [
+            'values.*.between' => 'Must be between :min and :max.',
+            'values.*.regex' => 'Use a version number such as 2.4.0.',
+        ], $attributes);
+
+        // The two risk thresholds only make sense in order.
+        $queue = $this->valueFor('risk.auto_queue_at');
+        $limit = $this->valueFor('risk.auto_limit_at');
+
+        if ($queue !== null && $limit !== null && (float) $limit < (float) $queue) {
+            $id = $this->settingsForGroup()->firstWhere('key', 'risk.auto_limit_at')?->id;
+
+            throw ValidationException::withMessages([
+                "values.{$id}" => 'The auto-limit score must be at or above the auto-queue score.',
+            ]);
+        }
+    }
+
+    private function valueFor(string $key): mixed
+    {
+        $setting = $this->settingsForGroup()->firstWhere('key', $key);
+
+        return $setting ? ($this->values[$setting->id] ?? null) : null;
+    }
+
     private function loadValues(): void
     {
         /*
@@ -169,7 +263,7 @@ class Index extends Component
 
         foreach (self::GROUP_PERMISSIONS as $group => $permission) {
             $out[$group] = [
-                'label' => str($group)->headline()->toString(),
+                'label' => $group === 'api' ? 'API' : str($group)->headline()->toString(),
                 'count' => (int) ($counts[$group] ?? 0),
                 'editable' => auth()->user()?->can($permission) ?? false,
             ];

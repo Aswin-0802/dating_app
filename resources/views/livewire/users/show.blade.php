@@ -72,24 +72,27 @@
 
             <div class="flex shrink-0 flex-wrap items-center gap-2">
                 @can('warn_users')
-                    <x-ui.button variant="outline" size="sm" icon="warning">Warn</x-ui.button>
+                    <x-ui.button variant="outline" size="sm" icon="warning" wire:click="openStep('warn')">Warn</x-ui.button>
                 @endcan
 
-                @canany(['suspend_users', 'ban_users', 'shadow_ban_users'])
+                @canany(['limit_users', 'suspend_users', 'ban_users', 'shadow_ban_users'])
                     <x-ui.dropdown align="end">
                         <x-slot:trigger>
                             <x-ui.button variant="outline" size="sm" icon-right="chevron-down">Actions</x-ui.button>
                         </x-slot:trigger>
 
+                        @can('limit_users')
+                            <x-ui.dropdown.item icon="adjustments" wire:click="openStep('feature_limit')">Limit features…</x-ui.dropdown.item>
+                        @endcan
                         @can('shadow_ban_users')
-                            <x-ui.dropdown.item icon="eye-off">Shadow ban…</x-ui.dropdown.item>
+                            <x-ui.dropdown.item icon="eye-off" wire:click="openStep('shadow_ban')">Shadow ban…</x-ui.dropdown.item>
                         @endcan
                         @can('suspend_users')
-                            <x-ui.dropdown.item icon="pause-circle">Suspend…</x-ui.dropdown.item>
+                            <x-ui.dropdown.item icon="pause-circle" wire:click="openStep('suspend')">Suspend…</x-ui.dropdown.item>
                         @endcan
                         @can('ban_users')
                             <x-ui.dropdown.separator />
-                            <x-ui.dropdown.item icon="ban" variant="destructive">Ban permanently…</x-ui.dropdown.item>
+                            <x-ui.dropdown.item icon="ban" variant="destructive" wire:click="openStep('permanent_ban')">Ban permanently…</x-ui.dropdown.item>
                         @endcan
                     </x-ui.dropdown>
                 @endcanany
@@ -121,7 +124,12 @@
             </div>
 
             @can('lift_enforcement')
-                <x-ui.button size="xs" variant="outline">Lift</x-ui.button>
+                <x-ui.button
+                    size="xs"
+                    variant="outline"
+                    wire:click="liftActiveBan"
+                    wire:confirm="Lift this {{ strtolower($appUser->activeBan->type->label()) }}? The member regains full access straight away."
+                >Lift</x-ui.button>
             @endcan
         </div>
     @endif
@@ -257,16 +265,182 @@
                 @endif
             </x-ui.card>
 
-        @else
-            {{-- Remaining tabs land with their modules. An honest placeholder
-                 beats a fake empty state that looks like real emptiness. --}}
-            <x-ui.card flush>
-                <x-ui.empty-state
-                    icon="squares"
-                    :heading="'The '.strtolower(collect($tabs)->firstWhere('key', $tab)['label'] ?? $tab).' tab is not built yet'"
-                    description="It arrives with its own module. The profile and photos tabs are live."
-                />
+        @elseif ($tab === 'matches')
+            <x-ui.card :title="'Matches'" :description="$tabData['matches']->count() >= 50 ? 'The 50 most recent.' : $tabData['matches']->count().' in total.'" flush>
+                @if ($tabData['matches']->isEmpty())
+                    <x-ui.empty-state icon="heart" heading="No matches yet" />
+                @else
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-border text-left text-xs text-muted-foreground">
+                                    <th class="px-4 py-2.5 font-medium">Matched with</th>
+                                    <th class="px-4 py-2.5 font-medium">Matched</th>
+                                    <th class="px-4 py-2.5 font-medium">Status</th>
+                                    <th class="px-4 py-2.5 text-right font-medium">Messages</th>
+                                    <th class="px-4 py-2.5"><span class="sr-only">Open</span></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                @foreach ($tabData['matches'] as $match)
+                                    @php $other = $match->otherParty($appUser); @endphp
+                                    <tr wire:key="m-{{ $match->id }}">
+                                        <td class="px-4 py-2.5">
+                                            @if ($other)
+                                                <a href="{{ route('admin.users.show', $other) }}" wire:navigate class="flex items-center gap-2.5 hover:underline">
+                                                    <x-ui.avatar :src="$other->primaryPhoto?->thumb_url" :name="$other->display_name" size="xs" />
+                                                    {{ $other->display_name }}
+                                                </a>
+                                            @else
+                                                <span class="text-muted-foreground">Deleted member</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-2.5 text-muted-foreground">{{ veyra_date($match->matched_at) }}</td>
+                                        <td class="px-4 py-2.5"><x-ui.badge size="sm" :variant="$match->status === 'active' ? 'success' : 'muted'">{{ ucfirst($match->status) }}</x-ui.badge></td>
+                                        <td class="tabular px-4 py-2.5 text-right">{{ veyra_number($match->messages_count) }}</td>
+                                        <td class="px-4 py-2.5 text-right">
+                                            @if ($match->conversation && auth()->user()->can('conversations'))
+                                                <x-ui.button size="xs" variant="ghost" :href="route('admin.conversations.show', $match->conversation)">Conversation</x-ui.button>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </x-ui.card>
+
+        @elseif ($tab === 'reports')
+            <x-ui.card title="Reports about this member" :description="'This member has filed '.$tabData['filed'].' '.str('report')->plural($tabData['filed']).' about others.'" flush>
+                @if ($tabData['reports']->isEmpty())
+                    <x-ui.empty-state icon="flag" heading="No reports about this member" />
+                @else
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-border text-left text-xs text-muted-foreground">
+                                    <th class="px-4 py-2.5 font-medium">Received</th>
+                                    <th class="px-4 py-2.5 font-medium">Category</th>
+                                    <th class="px-4 py-2.5 font-medium">Severity</th>
+                                    <th class="px-4 py-2.5 font-medium">Reported by</th>
+                                    <th class="px-4 py-2.5 font-medium">Case</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                @foreach ($tabData['reports'] as $report)
+                                    <tr wire:key="r-{{ $report->id }}">
+                                        <td class="px-4 py-2.5 text-muted-foreground">{{ veyra_datetime($report->created_at) }}</td>
+                                        <td class="px-4 py-2.5">{{ $report->category->label() }}</td>
+                                        <td class="px-4 py-2.5"><x-veyra.status-badge :status="$report->severity" /></td>
+                                        <td class="px-4 py-2.5">{{ $report->reporter?->display_name ?? 'Automated' }}</td>
+                                        <td class="px-4 py-2.5">
+                                            @if ($report->reportCase)
+                                                <a href="{{ route('admin.cases.show', $report->reportCase) }}" wire:navigate class="font-mono text-xs text-primary hover:underline">{{ $report->reportCase->case_number }}</a>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </x-ui.card>
+
+        @elseif ($tab === 'enforcement')
+            <x-ui.card title="Enforcement history" flush>
+                @if ($tabData['actions']->isEmpty())
+                    <x-ui.empty-state icon="shield-check" heading="No enforcement on record" description="This member has never been warned or restricted." />
+                @else
+                    <ol class="divide-y divide-border">
+                        @foreach ($tabData['actions'] as $action)
+                            <li class="flex flex-wrap items-start gap-x-4 gap-y-1 px-4 py-3 text-sm" wire:key="a-{{ $action->id }}">
+                                <span class="w-36 shrink-0 text-muted-foreground">{{ veyra_datetime($action->created_at) }}</span>
+                                <span class="min-w-0 flex-1">
+                                    <span class="font-medium">{{ $action->ladder_step->label() }}</span>
+                                    <span class="text-muted-foreground">· {{ $action->reason_code?->label() }}</span>
+                                    @if ($action->duration_hours)
+                                        <span class="text-muted-foreground">· {{ veyra_hours_label($action->duration_hours) }}</span>
+                                    @endif
+                                    @if ($action->internal_note)
+                                        <span class="mt-0.5 block text-xs text-muted-foreground">{{ $action->internal_note }}</span>
+                                    @endif
+                                </span>
+                                <span class="shrink-0 text-xs text-muted-foreground">{{ $action->actorLabel() }}</span>
+                            </li>
+                        @endforeach
+                    </ol>
+                @endif
+            </x-ui.card>
+
+        @elseif ($tab === 'devices')
+            <div class="grid gap-4 md:gap-6 lg:grid-cols-2">
+                <x-ui.card title="Devices" flush>
+                    @if ($tabData['devices']->isEmpty())
+                        <x-ui.empty-state icon="device" heading="No devices recorded" />
+                    @else
+                        <ul class="divide-y divide-border">
+                            @foreach ($tabData['devices'] as $device)
+                                <li class="flex items-center gap-3 px-4 py-3 text-sm" wire:key="d-{{ $device->id }}">
+                                    <x-ui.icon name="device" size="md" class="shrink-0 text-muted-foreground" />
+                                    <div class="min-w-0 flex-1">
+                                        <p class="font-medium">{{ ucfirst($device->platform) }} {{ $device->os_version }}</p>
+                                        <p class="text-xs text-muted-foreground">App {{ $device->app_version }} · last seen {{ $device->last_seen_at ? veyra_duration($device->last_seen_at).' ago' : 'never' }}</p>
+                                    </div>
+                                    @if ($device->shared_with > 0)
+                                        <x-ui.badge variant="warning" size="sm">Shared with {{ $device->shared_with }} {{ str('account')->plural($device->shared_with) }}</x-ui.badge>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </x-ui.card>
+
+                <x-ui.card title="Recent sign-ins" flush>
+                    @if ($tabData['logins']->isEmpty())
+                        <x-ui.empty-state icon="lock" heading="No sign-ins recorded" />
+                    @else
+                        <ul class="divide-y divide-border">
+                            @foreach ($tabData['logins'] as $login)
+                                <li class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm" wire:key="l-{{ $login->id }}">
+                                    <span class="text-muted-foreground">{{ veyra_datetime($login->created_at) }}</span>
+                                    <span class="font-mono text-xs">{{ $login->ip_address }}</span>
+                                    <x-ui.badge size="sm" :variant="$login->succeeded ? 'success' : 'destructive'">{{ $login->succeeded ? 'Signed in' : 'Failed' }}</x-ui.badge>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </x-ui.card>
+            </div>
+
+        @elseif ($tab === 'timeline')
+            <x-ui.card title="Staff activity on this member" flush>
+                @if ($tabData['events']->isEmpty())
+                    <x-ui.empty-state icon="clipboard-list" heading="No staff activity yet" />
+                @else
+                    <ol class="divide-y divide-border">
+                        @foreach ($tabData['events'] as $event)
+                            <li class="flex flex-wrap items-start gap-x-4 gap-y-1 px-4 py-3 text-sm" wire:key="e-{{ $event->id }}">
+                                <span class="w-36 shrink-0 text-muted-foreground">{{ veyra_datetime($event->created_at) }}</span>
+                                <span class="min-w-0 flex-1">
+                                    {{ $event->description }}
+                                    @if ($event->is_sensitive)
+                                        <x-ui.badge size="sm" variant="destructive" class="ml-1">Sensitive</x-ui.badge>
+                                    @endif
+                                </span>
+                                <span class="shrink-0 text-xs text-muted-foreground">{{ $event->actor_name ?? 'System' }}</span>
+                            </li>
+                        @endforeach
+                    </ol>
+                @endif
             </x-ui.card>
         @endif
     </div>
+    <x-veyra.enforcement-dialog
+        :step="$pendingStep"
+        :target="$appUser->display_name.' · '.$appUser->email"
+        :reason-code="$reasonCode"
+        :duration-hours="$durationHours"
+        :notify-user="$notifyUser"
+    />
 </div>

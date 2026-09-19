@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\VerificationSelfieController;
+use App\Livewire\Account;
 use App\Livewire\Appeals;
 use App\Livewire\Audit;
 use App\Livewire\Cases;
@@ -34,13 +35,15 @@ use Illuminate\Support\Facades\Route;
 
 // `auth:web` rather than bare `auth`: the console must only ever accept a staff
 // session, whatever the default guard happens to be for the request.
-Route::middleware(['auth:web', 'staff.active'])->group(function (): void {
+// `auth.session` is what makes "sign out other sessions" on a password change
+// take effect: it rejects sessions created with the old password.
+Route::middleware(['auth:web', 'auth.session', 'staff.active'])->group(function (): void {
 
     Route::get('/', Dashboard\Overview::class)
         ->middleware('permission:dashboard')
         ->name('dashboard');
 
-    Route::view('profile', 'admin.profile')->name('profile');
+    Route::get('profile', Account\Profile::class)->name('profile');
 
     /*
     |----------------------------------------------------------------------
@@ -221,6 +224,7 @@ Route::middleware(['auth:web', 'staff.active'])->group(function (): void {
         Route::get('/', Settings\Index::class)->name('general');
         // Before {group}, which would otherwise swallow it as a group name.
         Route::get('branding', Settings\Branding::class)->name('branding');
+        Route::get('locations', Settings\Locations::class)->name('locations');
         Route::get('{group}', Settings\Index::class)->name('group');
     });
 

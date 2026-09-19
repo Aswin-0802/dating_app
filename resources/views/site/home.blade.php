@@ -2,7 +2,7 @@
     use App\Support\Branding;
 
     $name = Branding::name();
-    $currency = Branding::get('website.currency_symbol', '£');
+    $currency = App\Support\Currency::symbol();
     $freeLikes = (int) veyra_setting('matching.daily_like_limit_free', 100);
     $minAge = (int) veyra_setting('general.min_age', 18);
     $verificationHours = (int) veyra_setting('verification.sla_hours', 24);
@@ -46,56 +46,29 @@
                 </ul>
             </div>
 
-            {{-- Illustrated, never real members: a marketing page is not a place
-                 anybody agreed to have their profile shown. --}}
-            <div class="relative mx-auto h-[30rem] w-full max-w-sm" aria-hidden="true">
-                <div class="absolute inset-x-6 top-6 h-[26rem] rotate-6 rounded-3xl bg-gradient-to-br from-accent/70 to-primary/50 shadow-xl"></div>
+            <div class="relative mx-auto w-full max-w-md lg:max-w-none">
+                <div aria-hidden="true" class="absolute -inset-3 -z-10 rotate-3 rounded-[2.5rem] bg-gradient-to-br from-primary/30 to-accent/30 blur-sm"></div>
 
-                <div class="absolute inset-x-0 top-0 h-[27rem] overflow-hidden rounded-3xl border border-border bg-card shadow-2xl">
-                    <div class="relative h-full bg-gradient-to-br from-primary via-primary/80 to-accent">
-                        <svg viewBox="0 0 200 240" class="absolute inset-x-0 bottom-24 mx-auto w-3/5 text-white/25" fill="currentColor">
-                            <circle cx="100" cy="80" r="46" />
-                            <path d="M20 240c0-60 36-100 80-100s80 40 80 100Z" />
-                        </svg>
+                <figure class="relative overflow-hidden rounded-[2rem] shadow-2xl ring-1 ring-black/5">
+                    <img
+                        src="{{ asset('images/site/hero-couple.jpg') }}"
+                        alt="A couple laughing together outdoors"
+                        width="1100"
+                        height="1300"
+                        fetchpriority="high"
+                        class="aspect-[4/5] w-full object-cover"
+                    >
+                    <div aria-hidden="true" class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/45 to-transparent"></div>
+                </figure>
 
-                        <div class="absolute inset-x-0 top-3 flex gap-1 px-3">
-                            <span class="h-1 flex-1 rounded-full bg-white"></span>
-                            <span class="h-1 flex-1 rounded-full bg-white/40"></span>
-                            <span class="h-1 flex-1 rounded-full bg-white/40"></span>
-                        </div>
-
-                        <div class="absolute inset-x-0 bottom-0 space-y-3 bg-gradient-to-t from-black/70 to-transparent p-5 pt-16 text-white">
-                            <div>
-                                <p class="flex items-center gap-2 text-2xl font-bold">
-                                    Maya, 29
-                                    <x-ui.icon name="check-badge" size="lg" class="text-sky-300" />
-                                </p>
-                                <p class="flex items-center gap-1.5 text-sm text-white/85">
-                                    <x-ui.icon name="briefcase" size="sm" /> Product designer · 3 km away
-                                </p>
-                            </div>
-                            <div class="flex flex-wrap gap-1.5 text-xs">
-                                <span class="rounded-full bg-white/20 px-2.5 py-1 backdrop-blur">Climbing</span>
-                                <span class="rounded-full bg-white/20 px-2.5 py-1 backdrop-blur">Live music</span>
-                                <span class="rounded-full bg-white/20 px-2.5 py-1 backdrop-blur">Ramen</span>
-                            </div>
-                            <div class="flex items-center justify-center gap-4 pt-1">
-                                <span class="flex size-12 items-center justify-center rounded-full bg-white text-muted-foreground shadow-lg"><x-ui.icon name="x-mark" size="lg" /></span>
-                                <span class="flex size-10 items-center justify-center rounded-full bg-white text-sky-500 shadow-lg"><x-ui.icon name="star" size="md" /></span>
-                                <span class="flex size-12 items-center justify-center rounded-full bg-white text-primary shadow-lg"><x-ui.icon name="heart" size="lg" /></span>
-                            </div>
-                        </div>
-                    </div>
+                <div class="absolute -left-3 top-10 flex items-center gap-2.5 rounded-2xl border border-border bg-card/95 px-4 py-3 shadow-xl backdrop-blur sm:-left-8">
+                    <span class="flex size-9 items-center justify-center rounded-full bg-success-subtle text-success-subtle-foreground"><x-ui.icon name="check-badge" size="md" /></span>
+                    <span class="text-sm leading-tight"><span class="block font-semibold">Photo verified</span><span class="block text-xs text-muted-foreground">Reviewed by our team</span></span>
                 </div>
 
-                <div class="absolute -left-4 top-16 flex items-center gap-2 rounded-2xl border border-border bg-card px-3.5 py-2.5 shadow-lg sm:-left-10">
-                    <span class="flex size-8 items-center justify-center rounded-full bg-success-subtle text-success-subtle-foreground"><x-ui.icon name="shield-check" size="sm" /></span>
-                    <span class="text-sm leading-tight"><span class="block font-semibold">Verified</span><span class="block text-xs text-muted-foreground">Checked by our team</span></span>
-                </div>
-
-                <div class="absolute -right-2 bottom-10 flex items-center gap-2 rounded-2xl border border-border bg-card px-3.5 py-2.5 shadow-lg sm:-right-8">
-                    <span class="flex size-8 items-center justify-center rounded-full bg-primary-subtle text-primary-subtle-foreground"><x-ui.icon name="heart" size="sm" /></span>
-                    <span class="text-sm font-semibold">It's a match!</span>
+                <div class="absolute -right-3 bottom-12 flex items-center gap-2.5 rounded-2xl border border-border bg-card/95 px-4 py-3 shadow-xl backdrop-blur sm:-right-8">
+                    <span class="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground"><x-ui.icon name="heart" size="md" /></span>
+                    <span class="text-sm leading-tight"><span class="block font-semibold">It's a match</span><span class="block text-xs text-muted-foreground">Say hello first</span></span>
                 </div>
             </div>
         </div>
@@ -148,15 +121,16 @@
         <div class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2">
             <div class="space-y-5">
                 <p class="text-sm font-semibold text-sidebar-primary">Safety</p>
-                <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Safety is not a feature here. It is the product.</h2>
+                <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Built around your safety</h2>
                 <p class="text-sidebar-foreground/75">
-                    Behind every profile is a moderation team with real tools and real deadlines.
-                    Reports are read by people, decisions are explained to you, and every decision can be appealed.
+                    A dedicated moderation team reviews reports, checks photos and explains every decision.
+                    If you disagree with one, you can appeal and a different reviewer will look again.
                 </p>
                 <x-ui.button variant="secondary" :href="route('site.safety')">
                     Visit the safety centre
                     <x-ui.icon name="arrow-right" size="sm" />
                 </x-ui.button>
+                <img src="{{ asset('images/site/couple-sunlight.jpg') }}" alt="A couple enjoying a sunny day together" loading="lazy" class="mt-4 hidden aspect-[16/10] w-full rounded-3xl object-cover shadow-2xl lg:block">
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
@@ -258,7 +232,7 @@
 
                         <p class="mt-6 flex items-baseline gap-1">
                             @if ($plan['price'])
-                                <span class="text-4xl font-bold tracking-tight">{{ $currency }}{{ $plan['price'] }}</span>
+                                <span class="text-4xl font-bold tracking-tight">{{ App\Support\Currency::format($plan['price']) }}</span>
                                 <span class="text-sm text-muted-foreground">/ month</span>
                             @else
                                 <span class="text-4xl font-bold tracking-tight">{{ $currency }}0</span>
@@ -315,10 +289,11 @@
 
     {{-- ---- closing CTA ----------------------------------------------------- --}}
     <section class="px-4 pb-20 sm:px-6">
-        <div class="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-accent px-6 py-14 text-center text-primary-foreground sm:px-12">
-            <div aria-hidden="true" class="absolute -right-20 -top-20 size-72 rounded-full bg-white/10 blur-2xl"></div>
-            <h2 class="relative text-3xl font-bold tracking-tight sm:text-4xl">Your person is probably already here.</h2>
-            <p class="relative mx-auto mt-3 max-w-xl text-primary-foreground/85">Join free in a couple of minutes. Verify when you are ready.</p>
+        <div class="relative mx-auto max-w-6xl overflow-hidden rounded-3xl px-6 py-16 text-center text-white sm:px-12 sm:py-20">
+            <img src="{{ asset('images/site/couple-city.jpg') }}" alt="" loading="lazy" class="absolute inset-0 size-full object-cover">
+            <div aria-hidden="true" class="absolute inset-0 bg-gradient-to-br from-primary/85 via-primary/60 to-black/70"></div>
+            <h2 class="relative text-3xl font-bold tracking-tight sm:text-4xl">Your person could already be here.</h2>
+            <p class="relative mx-auto mt-3 max-w-xl text-white/90">Join free in a couple of minutes. Verify when you are ready.</p>
             <div class="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <a href="{{ route('member.register') }}" class="inline-flex h-12 items-center gap-2 rounded-lg bg-white px-7 text-base font-semibold text-foreground shadow-sm transition hover:bg-white/90">
                     Create your profile

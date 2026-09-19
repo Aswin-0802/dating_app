@@ -14,6 +14,7 @@ use App\Models\MatchRecord;
 use App\Services\Members\ContentScanner;
 use App\Services\Members\ProfileCompletion;
 use App\Services\Members\VerificationSubmission;
+use App\Support\ProfileOptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -31,7 +32,7 @@ class ProfileController extends Controller
     public function update(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'display_name' => ['sometimes', 'string', 'min:2', 'max:60'],
+            'display_name' => ['sometimes', 'string', 'min:2', 'max:60', ProfileOptions::NAME_RULE],
             'pronouns' => ['sometimes', 'nullable', 'string', 'max:30'],
             'city_id' => ['sometimes', 'nullable', 'exists:cities,id'],
         ]);

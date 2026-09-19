@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\Currency;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -63,8 +64,8 @@ class PaymentLog extends Model
 
     public function formattedAmount(): string
     {
-        $symbols = ['GBP' => '£', 'USD' => '$', 'EUR' => '€'];
-
-        return ($symbols[$this->currency] ?? $this->currency.' ').number_format($this->amount, 2);
+        // Each payment keeps the currency it was charged in, whatever the
+        // currency setting is today.
+        return Currency::format($this->amount, $this->currency);
     }
 }

@@ -145,7 +145,7 @@ class Profile extends Component
     #[Computed(persist: true)]
     public function cities(): array
     {
-        return City::query()->with('country:id,name')->orderBy('name')->get(['id', 'name', 'country_id'])
+        return City::query()->whereHas('country', fn ($q) => $q->where('is_active', true))->with('country:id,name')->orderBy('name')->get(['id', 'name', 'country_id'])
             ->groupBy(fn (City $city): string => $city->country?->name ?? 'Other')
             ->sortKeys()
             ->map(fn ($group) => $group->pluck('name', 'id')->all())
@@ -200,7 +200,7 @@ class Profile extends Component
     public function saveAbout(ProfileCompletion $completion): void
     {
         $data = $this->validate([
-            'display_name' => ['required', 'string', 'min:2', 'max:60'],
+            'display_name' => ['required', 'string', 'min:2', 'max:60', ProfileOptions::NAME_RULE],
             'bio' => ['nullable', 'string', 'max:500'],
             'job_title' => ['nullable', 'string', 'max:100'],
             'company' => ['nullable', 'string', 'max:100'],
@@ -216,6 +216,10 @@ class Profile extends Component
             'prompts' => ['array', 'max:3'],
             'prompts.*.q' => ['nullable', Rule::in(ProfileOptions::PROMPTS)],
             'prompts.*.a' => ['nullable', 'string', 'max:160'],
+        ], [
+            'display_name.regex' => ProfileOptions::NAME_MESSAGE,
+            'height_cm.min' => 'Height must be between 120 and 230 cm.',
+            'height_cm.max' => 'Height must be between 120 and 230 cm.',
         ]);
 
         $me = $this->member();

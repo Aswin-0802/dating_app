@@ -123,6 +123,16 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // Members get their own token table: a member and a staff account can
+        // share an email address, and one table keyed by email would let a
+        // reset request from one overwrite the other's token.
+        'app_users' => [
+            'provider' => 'app_users',
+            'table' => 'member_password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
     ],
 
     /*

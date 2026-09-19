@@ -229,10 +229,18 @@ class TrustAndSafetySeeder extends Seeder
 
         $generator = new PlaceholderPhotoGenerator;
 
+        // Members with a real portrait get a selfie built from it.
+        $portraits = DB::table('photos')
+            ->whereIn('app_user_id', $open->pluck('app_user_id'))
+            ->where('is_primary', true)
+            ->where('path', 'like', 'photos/_stock/%')
+            ->pluck('path', 'app_user_id');
+
         foreach ($open as $verification) {
             $file = $generator->selfie(
                 (int) $verification->app_user_id,
                 (string) $verification->gesture_code,
+                portraitPath: $portraits[$verification->app_user_id] ?? null,
             );
 
             DB::table('verifications')->where('id', $verification->id)->update([

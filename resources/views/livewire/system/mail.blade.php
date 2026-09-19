@@ -1,6 +1,6 @@
 <div class="grid gap-4 md:gap-6 lg:grid-cols-[1fr_320px]">
 
-    <x-ui.card title="Outgoing mail" description="Stored in settings rather than .env, so it can be changed without a deploy.">
+    <x-ui.card title="Outgoing mail" description="The server used to send account and notification emails.">
         @unless ($canEdit)
             <div class="mb-4 flex items-start gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2.5">
                 <x-ui.icon name="lock" size="sm" class="mt-0.5 shrink-0 text-muted-foreground" />
@@ -11,7 +11,17 @@
         <div class="grid gap-4 sm:grid-cols-2">
             @foreach ($settings as $setting)
                 <div @class(['sm:col-span-2' => in_array($setting->key, ['mail.from_address', 'mail.from_name'], true)])>
-                    @if ($setting->type === 'boolean')
+                    @if (in_array($setting->key, ['mail.mailer', 'mail.encryption'], true))
+                        <x-ui.select
+                            :label="$setting->label ?? $setting->key"
+                            :hint="$setting->description"
+                            wire:model="values.{{ $setting->key }}"
+                            :selected="data_get($values, $setting->key)"
+                            :options="$setting->key === 'mail.mailer' ? App\Support\MailSettings::MAILERS : App\Support\MailSettings::ENCRYPTION"
+                            :disabled="! $canEdit"
+                            :error="$errors->first('values.'.$setting->key)"
+                        />
+                    @elseif ($setting->type === 'boolean')
                         <x-ui.toggle
                             size="lg"
                             :label="$setting->label ?? $setting->key"
@@ -45,7 +55,7 @@
 
     {{-- A form that saves without ever proving the connection works is how a
          broken mailer survives until the first password reset fails. --}}
-    <x-ui.card title="Send a test" description="The only way to know these settings are right is to use them.">
+    <x-ui.card title="Send a test" description="Send a test message to check the settings work.">
         <div class="space-y-3">
             <x-ui.input
                 label="Send to"
@@ -60,12 +70,6 @@
                     Send test message
                 </x-ui.button>
             @endif
-
-            <p class="text-xs text-muted-foreground">
-                With <code class="rounded bg-muted px-1">MAIL_MAILER=log</code> in the environment,
-                the message is written to <code class="rounded bg-muted px-1">storage/logs/laravel.log</code>
-                rather than delivered.
-            </p>
         </div>
     </x-ui.card>
 </div>

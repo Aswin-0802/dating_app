@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Middleware\EnsureAppUserIsNotBanned;
 use App\Http\Middleware\EnsureMemberCanUseApp;
 use App\Http\Middleware\EnsureStaffIsActive;
+use App\Http\Middleware\RespectMaintenanceMode;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -45,6 +46,10 @@ return Application::configure(basePath: dirname(__DIR__))
          * decrypt them, null them out, and the theme would flash on every hard
          * refresh. Neither carries anything sensitive.
          */
+        // Settings -> General -> Maintenance mode; the console stays reachable.
+        $middleware->web(append: [RespectMaintenanceMode::class]);
+        $middleware->api(append: [RespectMaintenanceMode::class]);
+
         $middleware->encryptCookies(except: [
             'veyra_theme',
             'veyra_sidebar',
@@ -74,7 +79,7 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $middleware->redirectUsersTo(
-            fn (Request $request): string => $request->routeIs('login')
+            fn (Request $request): string => $request->is('admin', 'admin/*')
                 ? route('admin.dashboard')
                 : route('member.discover'),
         );

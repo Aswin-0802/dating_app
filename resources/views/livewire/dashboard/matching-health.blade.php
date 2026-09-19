@@ -16,7 +16,7 @@
 
     <x-ui.card
         title="Gender balance by city"
-        description="The structural health metric. A city past 60/40 cannot produce matches for the majority side, however good the product is."
+        description="Share of men and women in each city. A balance beyond 60/40 makes matching harder."
     >
         <div class="space-y-2.5">
             @foreach ($cityBalance as $city)
@@ -55,7 +55,7 @@
 
     <x-ui.card
         title="Attention concentration"
-        description="How unevenly likes are distributed. A uniform marketplace would put the top decile at 10%."
+        description="How evenly likes are spread. With an even spread, the top 10% of profiles would receive 10% of likes."
     >
         <div class="grid gap-6 sm:grid-cols-3">
             @foreach ([

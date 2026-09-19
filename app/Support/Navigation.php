@@ -161,6 +161,7 @@ final class Navigation
                             // re-branding the product looks for.
                             ['label' => 'Branding', 'route' => 'admin.settings.branding', 'permission' => 'settings'],
                             ['label' => 'Product & safety', 'route' => 'admin.settings.general', 'permission' => 'settings'],
+                            ['label' => 'Locations', 'route' => 'admin.settings.locations', 'permission' => 'settings'],
                         ],
                     ],
                     /*

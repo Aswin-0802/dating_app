@@ -83,9 +83,12 @@ past SLA) instead of leaving it to chance. The proportions are therefore less
 realistic at 50 members than at 12,000. `small` and up are unaffected: the
 minimums are far below what those populations produce naturally.
 
-`VEYRA_SEED_PHOTOS=none` skips image generation entirely and falls back to
-initials tiles, which makes a rebuild much faster. The default, `generated`,
-draws placeholder imagery locally with GD and needs no network access.
+`VEYRA_SEED_PHOTOS` controls member photos. The default, `stock`, gives each
+seeded member a real portrait from Unsplash (free licence), downloaded once
+into `storage/app/public/photos/_stock` and reused; it falls back to
+`generated` when offline. `generated` draws placeholders locally with GD, and
+`none` skips images for the fastest rebuild. Replace demo photography with your
+own before launch — see `public/images/site/CREDITS.md`.
 
 ---
 
@@ -95,7 +98,7 @@ draws placeholder imagery locally with GD and needs no network access.
 
 Settings → Branding changes the product name, admin and website logos,
 favicon, sign-in image, brand colour, default theme, company details, website
-copy, prices, app store links and social links. Every screen (console, sign-in
+copy, currency and prices, app store links and social links. Every screen (console, sign-in
 pages, website, member app) reads them through `App\Support\Branding`, so
 nothing needs editing in a template. One colour generates the whole token set
 for light and dark mode, with button text picked for contrast. SVG uploads
@@ -103,6 +106,24 @@ are refused because an SVG served from your own domain can run script.
 
 The legal pages (`resources/views/site/legal.blade.php`) are template text.
 Have them reviewed before launch; signed-in staff see a reminder on them.
+
+Other settings worth knowing:
+
+- **Currency** (Settings → Branding): US Dollar, Indian Rupee, Euro or British
+  Pound. Every price and payment amount follows it; rupees use Indian digit
+  grouping (₹1,23,456.00).
+- **Locations** (Settings → Locations): the countries and cities members can
+  choose from. Hide a country to take it off sign-up without affecting
+  existing members.
+- **Mail** (System → Mail): the SMTP server used for every email, including
+  password resets. Set *Delivery* to "Send with SMTP" once the details are
+  right; until then messages are written to the log.
+- **Maintenance mode** (Settings → General): shows a maintenance page on the
+  website, member app and API. The staff console keeps working.
+
+Password reset is available to staff (`/admin/forgot-password`) and members
+(`/forgot-password`). New staff added under Staff are emailed a link to set
+their own password.
 
 ### The website and member app
 
@@ -231,7 +252,7 @@ new screen.
 ## Testing
 
 ```bash
-php artisan test          # 60 tests
+php artisan test          # 148 tests, including the UAT suites in tests/Uat
 ./vendor/bin/pint --test  # formatting
 
 # Checks the seeded database itself, rather than a fixture

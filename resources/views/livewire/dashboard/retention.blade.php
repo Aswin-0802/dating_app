@@ -1,7 +1,7 @@
 <div class="space-y-4 md:space-y-6">
     <x-ui.card
         title="Retention, verified against unverified"
-        description="Both series are computed the same way over the same cohort window. Members are classified by their current verification status."
+        description="Share of members who come back 1, 7 and 30 days after signing up."
     >
         <div class="grid gap-6 sm:grid-cols-2">
             @foreach (['verified' => 'Verified', 'unverified' => 'Unverified'] as $key => $label)
@@ -42,7 +42,7 @@
                     <span class="font-semibold {{ $d30Gap > 0 ? 'text-success-subtle-foreground' : 'text-destructive-subtle-foreground' }}">
                         {{ abs($d30Gap) }} points {{ $d30Gap > 0 ? 'better' : 'worse' }}
                     </span>
-                    at day 30. That gap is the business case for making verification harder to skip.
+                    at day 30.
                 </p>
             </div>
         @endif

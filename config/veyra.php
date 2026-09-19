@@ -33,13 +33,15 @@ return [
     | default because the dataset exists to exercise the UI, and every queue,
     | chart and filter still has content at that size.
     |
-    | `photos` controls how profile imagery is produced: `generated` draws them
-    | locally with GD and needs no network at all.
+    | `photos` controls how profile imagery is produced: `stock` (the default)
+    | uses real Unsplash portraits, downloaded once and cached; `generated`
+    | draws placeholders locally with GD and needs no network; `none` skips
+    | images. `stock` falls back to `generated` when offline.
     |
     */
     'seed' => [
         'scale' => env('VEYRA_SEED_SCALE', 'tiny'),
-        'photos' => env('VEYRA_SEED_PHOTOS', 'generated'),
+        'photos' => env('VEYRA_SEED_PHOTOS', 'stock'),
         // Fixed so analytics screenshots and assertions do not drift between runs.
         'faker_seed' => 20260917,
     ],

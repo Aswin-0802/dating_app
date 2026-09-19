@@ -1,7 +1,7 @@
 <div class="space-y-4 md:space-y-6">
     <x-ui.card
         title="Signup to conversation"
-        description="Each bar is the share of all signups that reached that step. The annotation marks where people are actually lost."
+        description="Share of sign-ups that reached each step."
     >
         <div class="space-y-3">
             @foreach ($funnel as $stage)

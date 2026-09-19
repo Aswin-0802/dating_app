@@ -37,6 +37,20 @@ final class SafetyActions
             throw ValidationException::withMessages(['reported_id' => 'You cannot report yourself.']);
         }
 
+        // One report per person per day. Repeats add nothing the first did not,
+        // and would let one member inflate a case against somebody.
+        $recent = Report::query()
+            ->where('reporter_app_user_id', $reporter->id)
+            ->where('reported_app_user_id', $reported->id)
+            ->where('created_at', '>=', now()->subDay())
+            ->exists();
+
+        if ($recent) {
+            throw ValidationException::withMessages([
+                'reported_id' => 'You have already reported this person today. Our safety team is reviewing it.',
+            ]);
+        }
+
         return DB::transaction(function () use ($reporter, $reported, $category, $description, $messageUuid): Report {
             $message = $messageUuid !== null
                 ? DB::table('messages')->where('uuid', $messageUuid)->first()

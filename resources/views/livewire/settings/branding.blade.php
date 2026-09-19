@@ -20,6 +20,7 @@
     <div class="flex flex-wrap gap-1">
         <a href="{{ route('admin.settings.branding') }}" wire:navigate class="rounded-md bg-primary-subtle px-3 py-1.5 text-sm font-medium text-primary-subtle-foreground">Branding</a>
         <a href="{{ route('admin.settings.general') }}" wire:navigate class="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Product &amp; safety settings</a>
+        <a href="{{ route('admin.settings.locations') }}" wire:navigate class="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Locations</a>
     </div>
 
     <div class="grid gap-4 md:gap-6 xl:grid-cols-[1fr_360px]">
@@ -178,7 +179,14 @@
                         <x-ui.input label="Footer text" wire:model="form.website__footer_text" />
 
                         <div class="grid gap-4 sm:grid-cols-3">
-                            <x-ui.input label="Currency symbol" wire:model="form.website__currency_symbol" />
+                            <x-ui.select
+                                label="Currency"
+                                hint="Used for every price and amount."
+                                wire:model.live="form.billing__currency"
+                                :selected="$form['billing__currency'] ?? App\Support\Currency::DEFAULT"
+                                :options="App\Support\Currency::options()"
+                                :error="$errors->first('form.billing__currency')"
+                            />
                             <x-ui.input label="Plus price / month" wire:model="form.website__plus_price" :error="$errors->first('form.website__plus_price')" />
                             <x-ui.input label="Gold price / month" wire:model="form.website__gold_price" :error="$errors->first('form.website__gold_price')" />
                         </div>

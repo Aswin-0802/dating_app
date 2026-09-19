@@ -7,9 +7,11 @@ namespace App\Livewire\Settings;
 use App\Models\Setting;
 use App\Services\Audit\ActivityLogger;
 use App\Support\Branding as Brand;
+use App\Support\Currency;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -205,8 +207,9 @@ class Branding extends Component
             'form.brand__theme_mode' => ['required', 'in:light,dark,system'],
             'form.brand__support_email' => ['nullable', 'email', 'max:255'],
             'form.business__email' => ['nullable', 'email', 'max:255'],
-            'form.website__plus_price' => ['nullable', 'numeric', 'min:0'],
-            'form.website__gold_price' => ['nullable', 'numeric', 'min:0'],
+            'form.billing__currency' => ['required', Rule::in(array_keys(Currency::SUPPORTED))],
+            'form.website__plus_price' => ['required', 'numeric', 'min:0', 'max:1000000'],
+            'form.website__gold_price' => ['required', 'numeric', 'min:0', 'max:1000000'],
             'form.app__ios_url' => ['nullable', 'url', 'max:255'],
             'form.app__android_url' => ['nullable', 'url', 'max:255'],
             'form.social__instagram' => ['nullable', 'url', 'max:255'],

@@ -3,6 +3,7 @@
     <div class="flex flex-wrap gap-1">
         <a href="{{ route('admin.settings.branding') }}" wire:navigate class="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Branding</a>
         <a href="{{ route('admin.settings.general') }}" wire:navigate class="rounded-md bg-primary-subtle px-3 py-1.5 text-sm font-medium text-primary-subtle-foreground">Product &amp; safety settings</a>
+        <a href="{{ route('admin.settings.locations') }}" wire:navigate class="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Locations</a>
     </div>
 
     <div class="grid gap-4 md:gap-6 lg:grid-cols-[220px_1fr]">
@@ -37,8 +38,7 @@
                 <div class="flex items-start gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3">
                     <x-ui.icon name="lock" size="sm" class="mt-0.5 shrink-0 text-muted-foreground" />
                     <p class="min-w-0 text-sm text-muted-foreground">
-                        You can read these settings but not change them. Moderation and risk
-                        thresholds are safety policy and belong to Trust &amp; Safety.
+                        You can view these settings but your role cannot change them.
                     </p>
                 </div>
             @endunless
@@ -65,6 +65,7 @@
                                         :hint="$setting->description"
                                         rows="3"
                                         wire:model="values.{{ $setting->id }}"
+                                        :error="$errors->first('values.'.$setting->id)"
                                         :disabled="! $canEdit"
                                     >{{ $values[$setting->id] ?? '' }}</x-ui.textarea>
                                 @else
@@ -73,11 +74,14 @@
                                         :hint="$setting->description"
                                         :type="$setting->type === 'number' ? 'number' : 'text'"
                                         wire:model="values.{{ $setting->id }}"
+                                        :error="$errors->first('values.'.$setting->id)"
                                         :disabled="! $canEdit"
                                     />
                                 @endif
 
-                                <p class="mt-1 font-mono text-[11px] text-muted-foreground">{{ $setting->key }}</p>
+                                @if ($setting->type === 'boolean')
+                                    @error('values.'.$setting->id) <p class="mt-1 text-xs text-destructive">{{ $message }}</p> @enderror
+                                @endif
                             </div>
                         @endforeach
                     </div>
@@ -88,14 +92,14 @@
             @if ($group === 'risk' && $riskFactors->isNotEmpty())
                 <x-ui.card
                     title="Risk factor weights"
-                    description="Changing a weight affects future scores only. Existing breakdowns keep the points they were computed with, which is why a past decision stays explicable."
+                    description="Points each signal adds to a member's risk score. Changes apply to scores calculated from now on."
                 >
                     <div class="space-y-2">
                         @foreach ($riskFactors as $factor)
                             <div class="flex items-center gap-3 rounded-lg border border-border px-3 py-2">
                                 <span class="min-w-0 flex-1">
                                     <span class="block truncate text-sm">{{ $factor->label }}</span>
-                                    <span class="block font-mono text-[11px] text-muted-foreground">{{ $factor->key }}</span>
+                                    @error('riskPoints.'.$factor->id) <span class="block text-xs text-destructive">{{ $message }}</span> @enderror
                                 </span>
 
                                 @if ($factor->isMitigating())
@@ -117,7 +121,7 @@
             @if ($canEdit)
                 <div class="flex items-center gap-3">
                     <x-ui.button wire:click="save">Save changes</x-ui.button>
-                    <p class="text-xs text-muted-foreground">Changes take effect immediately, without a deploy.</p>
+                    <p class="text-xs text-muted-foreground">Changes take effect immediately.</p>
                 </div>
             @endif
         </div>

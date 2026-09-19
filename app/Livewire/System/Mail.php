@@ -7,16 +7,17 @@ namespace App\Livewire\System;
 use App\Models\Setting;
 use App\Services\Audit\ActivityLogger;
 use App\Support\Branding;
+use App\Support\MailSettings;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail as Mailer;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 /**
  * Outgoing mail configuration.
  *
  * Stored in settings rather than .env so it can be changed without a deploy,
- * and applied to the mailer at runtime by VeyraServiceProvider.
+ * and applied to every outgoing message by App\Support\MailSettings.
  */
 class Mail extends Component
 {
@@ -51,13 +52,19 @@ class Mail extends Component
         $this->authorize('edit_api_settings');
 
         $this->validate([
+            'values.mail.mailer' => ['required', Rule::in(array_keys(MailSettings::MAILERS))],
             'values.mail.host' => ['required', 'string', 'max:255'],
             'values.mail.port' => ['required', 'integer', 'min:1', 'max:65535'],
-            'values.mail.from_address' => ['required', 'email'],
+            'values.mail.username' => ['nullable', 'string', 'max:255'],
+            'values.mail.password' => ['nullable', 'string', 'max:255'],
+            'values.mail.encryption' => ['nullable', Rule::in(array_keys(MailSettings::ENCRYPTION))],
+            'values.mail.from_address' => ['required', 'email', 'max:255'],
             'values.mail.from_name' => ['required', 'string', 'max:100'],
         ], [], [
+            'values.mail.mailer' => 'delivery',
             'values.mail.host' => 'SMTP host',
             'values.mail.port' => 'SMTP port',
+            'values.mail.encryption' => 'encryption',
             'values.mail.from_address' => 'from address',
             'values.mail.from_name' => 'from name',
         ]);
@@ -80,6 +87,12 @@ class Mail extends Component
              */
             if ($setting->key === 'mail.password' && blank($new)) {
                 continue;
+            }
+
+            // Stored encrypted, as the form promises; decrypted only when
+            // the mailer is configured.
+            if ($setting->key === 'mail.password') {
+                $new = MailSettings::encrypt((string) $new);
             }
 
             if ((string) $new === (string) $setting->value) {
@@ -119,15 +132,22 @@ class Mail extends Component
 
         $this->validate(['testRecipient' => ['required', 'email']]);
 
-        $this->applyRuntimeConfig();
+        MailSettings::apply();
+        $name = Branding::name();
 
         try {
             Mailer::raw(
-                "This is a test message from the Veyra console.\n\nIf you are reading it, outgoing mail is configured correctly.",
-                fn ($message) => $message->to($this->testRecipient)->subject('Veyra test message'),
+                "This is a test message from the {$name} console.\n\nIf you are reading it, outgoing mail is configured correctly.",
+                fn ($message) => $message->to($this->testRecipient)->subject("{$name} test message"),
             );
         } catch (\Throwable $e) {
-            $this->addError('testRecipient', 'Could not send: '.$e->getMessage());
+            $this->addError('testRecipient', 'The message could not be sent. Check the host, port, username and password. ('.str($e->getMessage())->limit(160).')');
+
+            return;
+        }
+
+        if (config('mail.default') === 'log') {
+            session()->flash('status', 'Delivery is set to "Do not send", so the test message was written to the log instead of being emailed.');
 
             return;
         }
@@ -139,17 +159,6 @@ class Mail extends Component
         );
 
         session()->flash('status', "Test message sent to {$this->testRecipient}.");
-    }
-
-    private function applyRuntimeConfig(): void
-    {
-        Config::set('mail.mailers.smtp.host', veyra_setting('mail.host'));
-        Config::set('mail.mailers.smtp.port', (int) veyra_setting('mail.port', 587));
-        Config::set('mail.mailers.smtp.username', veyra_setting('mail.username'));
-        Config::set('mail.mailers.smtp.password', veyra_setting('mail.password'));
-        Config::set('mail.mailers.smtp.encryption', veyra_setting('mail.encryption', 'tls'));
-        Config::set('mail.from.address', veyra_setting('mail.from_address'));
-        Config::set('mail.from.name', veyra_setting('mail.from_name'));
     }
 
     private function loadValues(): void

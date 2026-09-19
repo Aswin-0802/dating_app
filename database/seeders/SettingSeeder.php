@@ -47,7 +47,7 @@ class SettingSeeder extends Seeder
             ['key' => 'website.hero_subtitle', 'value' => 'Every profile photo-verified by a real person. Real conversations, fewer dead ends, and a safety team that actually answers.', 'type' => 'textarea', 'group' => 'branding', 'label' => 'Home page subheading', 'is_public' => true],
             ['key' => 'website.meta_description', 'value' => 'A dating app where every profile is verified.', 'type' => 'text', 'group' => 'branding', 'label' => 'Search engine description', 'is_public' => true],
             ['key' => 'website.footer_text', 'value' => 'Made for people who would rather meet than scroll.', 'type' => 'text', 'group' => 'branding', 'label' => 'Footer text', 'is_public' => true],
-            ['key' => 'website.currency_symbol', 'value' => '£', 'type' => 'text', 'group' => 'branding', 'label' => 'Currency symbol', 'is_public' => true],
+            ['key' => 'billing.currency', 'value' => 'USD', 'type' => 'text', 'group' => 'branding', 'label' => 'Currency', 'description' => 'USD, INR, EUR or GBP. Used for every price and amount.', 'is_public' => true],
             ['key' => 'website.plus_price', 'value' => '12.99', 'type' => 'text', 'group' => 'branding', 'label' => 'Plus price / month', 'is_public' => true],
             ['key' => 'website.gold_price', 'value' => '24.99', 'type' => 'text', 'group' => 'branding', 'label' => 'Gold price / month', 'is_public' => true],
 

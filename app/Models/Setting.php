@@ -23,8 +23,23 @@ class Setting extends Model
     {
         // Settings are read on nearly every request, so the lookup is cached and
         // busted on write rather than queried each time.
-        static::saved(fn () => Cache::forget('veyra.settings'));
-        static::deleted(fn () => Cache::forget('veyra.settings'));
+        static::saved(fn () => static::flush());
+        static::deleted(fn () => static::flush());
+    }
+
+    /** In-process copy, so one page asking for twenty settings costs one read. */
+    private static ?array $memo = null;
+
+    public static function flush(): void
+    {
+        static::forgetMemo();
+        Cache::forget('veyra.settings');
+    }
+
+    /** Called on every boot: the memo must never outlive one request. */
+    public static function forgetMemo(): void
+    {
+        static::$memo = null;
     }
 
     public function updatedBy(): BelongsTo
@@ -49,7 +64,7 @@ class Setting extends Model
     /** @return array<string, mixed> */
     public static function allValues(): array
     {
-        return Cache::rememberForever(
+        return static::$memo ??= Cache::rememberForever(
             'veyra.settings',
             fn (): array => static::query()
                 ->get()

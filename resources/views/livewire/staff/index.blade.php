@@ -16,11 +16,16 @@
                     :options="['active' => 'Active', 'suspended' => 'Suspended', 'invited' => 'Invited']" class="w-36" />
             </div>
 
-            @can('view_staff_performance')
-                <x-ui.button variant="outline" size="sm" icon="chart-bar" :href="route('admin.staff.performance')">
-                    Performance
-                </x-ui.button>
-            @endcan
+            <div class="flex items-center gap-2">
+                @can('view_staff_performance')
+                    <x-ui.button variant="outline" size="sm" icon="chart-bar" :href="route('admin.staff.performance')">
+                        Performance
+                    </x-ui.button>
+                @endcan
+                @can('add_staff')
+                    <x-ui.button size="sm" icon="plus" wire:click="create">Add staff</x-ui.button>
+                @endcan
+            </div>
         </x-slot:toolbar>
 
         <thead class="[&_tr]:border-b [&_tr]:border-border">
@@ -81,18 +86,38 @@
                     </x-ui.table.cell>
 
                     <x-ui.table.cell align="right">
-                        @can('staff_status_toggle')
-                            @if ($member->id !== auth()->id())
-                                <x-ui.button
-                                    size="xs"
-                                    :variant="$member->status === 'active' ? 'outline' : 'success'"
-                                    wire:click="toggleStatus({{ $member->id }})"
-                                    wire:confirm="{{ $member->status === 'active' ? 'Suspend' : 'Reactivate' }} {{ $member->name }}?"
-                                >{{ $member->status === 'active' ? 'Suspend' : 'Reactivate' }}</x-ui.button>
-                            @else
-                                <span class="text-xs text-muted-foreground">You</span>
-                            @endif
-                        @endcan
+                        @canany(['edit_staff', 'staff_status_toggle', 'delete_staff'])
+                            <x-ui.dropdown align="end">
+                                <x-slot:trigger>
+                                    <x-ui.button variant="ghost" size="icon-sm" icon="dots-horizontal">
+                                        <span class="sr-only">Actions for {{ $member->name }}</span>
+                                    </x-ui.button>
+                                </x-slot:trigger>
+
+                                @can('edit_staff')
+                                    <x-ui.dropdown.item icon="pencil" wire:click="edit({{ $member->id }})">Edit</x-ui.dropdown.item>
+                                @endcan
+
+                                @if ($member->id !== auth()->id())
+                                    @can('staff_status_toggle')
+                                        <x-ui.dropdown.item
+                                            :icon="$member->status === 'active' ? 'pause-circle' : 'check-circle'"
+                                            wire:click="toggleStatus({{ $member->id }})"
+                                            wire:confirm="{{ $member->status === 'active' ? 'Suspend' : 'Reactivate' }} {{ $member->name }}?"
+                                        >{{ $member->status === 'active' ? 'Suspend' : 'Reactivate' }}</x-ui.dropdown.item>
+                                    @endcan
+                                    @can('delete_staff')
+                                        <x-ui.dropdown.separator />
+                                        <x-ui.dropdown.item
+                                            icon="trash"
+                                            variant="destructive"
+                                            wire:click="remove({{ $member->id }})"
+                                            wire:confirm="Remove {{ $member->name }}? They will lose access immediately. Their past decisions stay in the audit log."
+                                        >Remove</x-ui.dropdown.item>
+                                    @endcan
+                                @endif
+                            </x-ui.dropdown>
+                        @endcanany
                     </x-ui.table.cell>
                 </x-ui.table.row>
             @empty
@@ -106,4 +131,32 @@
             <x-ui.pagination :paginator="$staff" :per-page="$perPage" :per-page-options="$this->perPageOptions()" />
         </x-slot:footer>
     </x-ui.table>
+
+    <x-ui.dialog :show="$formOpen" close="closeForm">
+        <form wire:submit="saveStaff" class="p-6" novalidate>
+            <h2 class="text-lg font-semibold">{{ $editingId ? 'Edit staff member' : 'Add staff member' }}</h2>
+            <p class="mt-1 text-sm text-muted-foreground">
+                {{ $editingId ? 'Changes take effect the next time they load a page.' : 'They will be emailed a link to set their own password.' }}
+            </p>
+
+            <div class="mt-5 space-y-4">
+                <x-ui.input label="Name" wire:model="formName" :error="$errors->first('formName')" required autofocus />
+                <x-ui.input label="Email" type="email" wire:model="formEmail" :error="$errors->first('formEmail')" required />
+                <x-ui.input label="Job title" wire:model="formJobTitle" :error="$errors->first('formJobTitle')" />
+                <x-ui.select
+                    label="Role"
+                    wire:model="formRole"
+                    :selected="$formRole"
+                    :options="$roles->mapWithKeys(fn ($r) => [$r->name => $r->name])->all()"
+                    :error="$errors->first('formRole')"
+                    hint="The role decides everything they can see and do."
+                />
+            </div>
+
+            <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <x-ui.button variant="ghost" wire:click="closeForm">Cancel</x-ui.button>
+                <x-ui.button type="submit" wire:loading.attr="disabled" wire:target="saveStaff">{{ $editingId ? 'Save changes' : 'Add staff member' }}</x-ui.button>
+            </div>
+        </form>
+    </x-ui.dialog>
 </div>

@@ -5,9 +5,8 @@
             <x-ui.icon name="warning" size="sm" class="shrink-0 text-warning-subtle-foreground" />
             <p class="min-w-0 flex-1 text-sm text-warning-subtle-foreground">
                 <span class="font-medium">{{ $awaitingApproval }}</span>
-                {{ str('campaign')->plural($awaitingApproval) }} waiting for approval. A push reaches
-                every recipient at once and cannot be recalled, so somebody other than the
-                author has to read it first.
+                {{ str('campaign')->plural($awaitingApproval) }} waiting for approval. Campaigns are
+                approved by someone other than their author before they are sent.
             </p>
         </div>
     @endif
@@ -34,6 +33,9 @@
                 <x-ui.button variant="outline" size="sm" icon="inbox" :href="route('admin.notifications.logs')">
                     Delivery logs
                 </x-ui.button>
+                @can('create_campaigns')
+                    <x-ui.button size="sm" icon="plus" wire:click="create">New campaign</x-ui.button>
+                @endcan
             </div>
         </x-slot:toolbar>
 
@@ -139,4 +141,55 @@
             <x-ui.pagination :paginator="$campaigns" :per-page="$perPage" :per-page-options="$this->perPageOptions()" />
         </x-slot:footer>
     </x-ui.table>
+    <x-ui.dialog :show="$formOpen" close="closeForm" size="lg">
+        <form wire:submit="saveCampaign" class="space-y-4 p-6" novalidate>
+            <div>
+                <h2 class="text-lg font-semibold">New campaign</h2>
+                <p class="mt-1 text-sm text-muted-foreground">Saved as a draft. Someone else approves it before it is sent.</p>
+            </div>
+
+            <x-ui.input label="Campaign name" hint="For staff only." wire:model="formName" :error="$errors->first('formName')" required autofocus />
+
+            <x-ui.select
+                label="Audience"
+                wire:model.live="formAudience"
+                :selected="$formAudience"
+                :options="collect(App\Livewire\Notifications\Campaigns::AUDIENCES)->map(fn ($label, $key) => $label.' ('.veyra_number($this->audienceSize($key)).')')->all()"
+                :error="$errors->first('formAudience')"
+            />
+
+            <div x-data="{ t: @js($formTitle), b: @js($formBody) }" class="space-y-4">
+                <div>
+                    <x-ui.input label="Title" wire:model="formTitle" x-on:input="t = $event.target.value" maxlength="65" :error="$errors->first('formTitle')" required />
+                    <p class="mt-1 text-right text-xs text-muted-foreground"><span x-text="t.length"></span>/65</p>
+                </div>
+                <div>
+                    <x-ui.textarea label="Message" rows="3" wire:model="formBody" x-on:input="b = $event.target.value" maxlength="180" :error="$errors->first('formBody')" required />
+                    <p class="mt-1 text-right text-xs text-muted-foreground"><span x-text="b.length"></span>/180</p>
+                </div>
+
+                <div class="rounded-2xl bg-muted/60 p-3">
+                    <p class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Preview</p>
+                    <div class="flex items-start gap-3 rounded-xl bg-card p-3 shadow-sm">
+                        <x-brand.mark size="sm" />
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold" x-text="t || 'Title'"></p>
+                            <p class="line-clamp-2 text-sm text-muted-foreground" x-text="b || 'Your message'"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <x-ui.select label="Opens" wire:model="formLink" :selected="$formLink" :options="App\Livewire\Notifications\Campaigns::LINKS" :error="$errors->first('formLink')" />
+                <x-ui.input label="Send at" type="datetime-local" wire:model="formScheduledFor" hint="Leave empty to send as soon as it is approved." :error="$errors->first('formScheduledFor')" />
+            </div>
+
+            <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                <x-ui.button variant="ghost" wire:click="closeForm">Cancel</x-ui.button>
+                <x-ui.button type="submit" wire:loading.attr="disabled" wire:target="saveCampaign">Save draft</x-ui.button>
+            </div>
+        </form>
+    </x-ui.dialog>
+
 </div>

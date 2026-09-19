@@ -140,7 +140,7 @@
             @endif
 
             {{-- ---- decision bar -------------------------------------- --}}
-            <x-ui.card title="Decision" description="Every action records a reason code, the policy clause, and whether a human or a rule decided.">
+            <x-ui.card title="Decision" description="Choose an action. Each decision records its reason and the rule it relates to.">
                 @if ($reportCase->status->isOpen())
                     <div class="flex flex-wrap items-center gap-2">
                         @foreach ($ladder as $rung)

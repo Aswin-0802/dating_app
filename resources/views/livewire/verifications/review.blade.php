@@ -154,7 +154,7 @@
             </x-ui.card>
 
             {{-- ---- automated signals --------------------------------- --}}
-            <x-ui.card title="Automated signals" description="Computed at submission. Every value here is stored, not recalculated.">
+            <x-ui.card title="Automated signals" description="Automated checks run when the selfie was submitted.">
                 <div class="grid gap-2 sm:grid-cols-2">
                     @foreach ($verification->signals as $signal)
                         <div class="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">

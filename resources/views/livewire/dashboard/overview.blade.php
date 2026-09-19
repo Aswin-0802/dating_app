@@ -8,6 +8,17 @@
 
 <div class="space-y-4 md:space-y-6">
 
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
+            <p class="text-sm text-muted-foreground">Community health, safety workload and verification at a glance. Figures refresh every 5 minutes.</p>
+        </div>
+        <div class="flex shrink-0 gap-2">
+            <x-ui.button variant="outline" size="sm" icon="arrow-path" wire:click="refreshMetrics" wire:loading.attr="disabled" wire:target="refreshMetrics">Refresh</x-ui.button>
+            <x-ui.button variant="outline" size="sm" icon="download" wire:click="export">Export CSV</x-ui.button>
+        </div>
+    </div>
+
     {{-- ---- headline ---------------------------------------------------- --}}
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
         <x-ui.stat-card
@@ -26,11 +37,11 @@
         />
 
         <x-ui.stat-card
-            label="Report rate / 1k matches"
-            :value="$overview['report_rate_per_1k_matches']"
+            label="Reports per 1,000 matches"
+            :value="$overview['matches'] >= 100 ? veyra_number($overview['report_rate_per_1k_matches'], 1) : '—'"
             icon="flag"
             invert-delta
-            hint="The earliest quality alarm there is"
+            :hint="$overview['matches'] >= 100 ? 'Lower is better' : 'Shown once there are 100 matches'"
         />
 
         <x-ui.stat-card
@@ -57,7 +68,7 @@
         {{-- ---- funnel -------------------------------------------------- --}}
         <x-ui.card
             title="Member funnel"
-            description="Where people fall out. Step-to-step conversion matters more than the total."
+            description="How many members reach each step, from sign-up to a first reply."
         >
             <div class="space-y-2.5">
                 @foreach ($funnel as $stage)
@@ -93,8 +104,15 @@
         {{-- ---- city balance -------------------------------------------- --}}
         <x-ui.card
             title="Gender balance by city"
-            description="A city past 60/40 cannot produce matches for the majority side, however good the product is."
+            description="Share of men and women in each city. A balance beyond 60/40 makes matching harder."
         >
+            @if ($cityBalance->isEmpty())
+                <x-ui.empty-state
+                    icon="map-pin"
+                    heading="Not enough members yet"
+                    description="A city appears here once it has 20 members."
+                />
+            @else
             <div class="space-y-2.5">
                 @foreach ($cityBalance as $city)
                     <div class="flex items-center gap-3">
@@ -129,6 +147,7 @@
                     <span class="size-2 rounded-full bg-chart-1"></span> Women
                 </span>
             </div>
+            @endif
         </x-ui.card>
 
         {{-- ---- signups ------------------------------------------------- --}}
@@ -149,7 +168,7 @@
         {{-- ---- safety load --------------------------------------------- --}}
         <x-ui.card
             title="Safety load"
-            description="Reports filed against enforcement issued, last 60 days."
+            description="Reports received and enforcement actions taken, last 60 days."
         >
             <x-ui.chart
                 type="line"
@@ -173,7 +192,7 @@
         {{-- ---- concentration ------------------------------------------- --}}
         <x-ui.card
             title="Attention concentration"
-            description="Under a uniform model the top decile would receive 10%."
+            description="How evenly likes are spread across profiles."
         >
             <div class="space-y-4">
                 <div>
@@ -190,8 +209,7 @@
                     </div>
 
                     <p class="mt-1.5 text-xs text-muted-foreground">
-                        {{ round($concentration['top_decile_share'] / 10, 1) }}× their share. Runaway
-                        concentration predicts churn among everyone else.
+                        An even spread would be 10%. Higher values mean fewer members receive most of the attention.
                     </p>
                 </div>
 
@@ -222,15 +240,14 @@
             </div>
 
             <p class="mt-3 text-xs text-muted-foreground">
-                Somebody who gets no match in their first two days rarely returns, and
-                no amount of later polish recovers them.
+                Members who match early are far more likely to stay.
             </p>
         </x-ui.card>
 
         {{-- ---- retention ----------------------------------------------- --}}
         <x-ui.card
             title="Retention by verification"
-            description="The business case for stricter verification."
+            description="How many members return after 1, 7 and 30 days."
         >
             <div class="space-y-3">
                 @foreach (['verified' => 'Verified', 'unverified' => 'Unverified'] as $key => $label)

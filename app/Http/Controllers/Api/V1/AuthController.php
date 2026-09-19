@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\MeResource;
 use App\Models\AppUser;
 use App\Services\Members\MemberAccounts;
+use App\Support\ProfileOptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -21,7 +22,7 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'display_name' => ['required', 'string', 'min:2', 'max:60'],
+            'display_name' => ['required', 'string', 'min:2', 'max:60', ProfileOptions::NAME_RULE],
             'email' => ['required', 'email', 'max:255', 'unique:app_users,email'],
             'password' => ['required', Password::min(8)->letters()->numbers()],
             // Enforced at the schema boundary as well as in the app: an

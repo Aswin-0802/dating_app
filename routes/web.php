@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Site\MemberSessionController;
 use App\Livewire\Member;
@@ -37,6 +38,13 @@ Route::view('privacy', 'site.legal', ['page' => 'privacy'])->name('site.privacy'
 Route::middleware('guest:member')->group(function (): void {
     Route::get('login', Member\Auth\Login::class)->name('member.login');
     Route::get('join', Member\Auth\Register::class)->name('member.register');
+
+    Route::controller(PasswordResetController::class)->group(function (): void {
+        Route::get('forgot-password', 'create')->defaults('audience', 'member')->name('member.password.request');
+        Route::post('forgot-password', 'store')->defaults('audience', 'member')->middleware('throttle:5,1')->name('member.password.email');
+        Route::get('reset-password/{token}', 'edit')->defaults('audience', 'member')->name('member.password.reset');
+        Route::post('reset-password', 'update')->defaults('audience', 'member')->middleware('throttle:5,1')->name('member.password.update');
+    });
 });
 
 Route::post('logout', [MemberSessionController::class, 'destroy'])
@@ -66,6 +74,13 @@ Route::middleware(['auth:member', 'member.active'])
 Route::middleware('guest')->group(function (): void {
     Route::get('admin/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('admin/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:6,1');
+
+    Route::controller(PasswordResetController::class)->group(function (): void {
+        Route::get('admin/forgot-password', 'create')->defaults('audience', 'staff')->name('password.request');
+        Route::post('admin/forgot-password', 'store')->defaults('audience', 'staff')->middleware('throttle:5,1')->name('password.email');
+        Route::get('admin/reset-password/{token}', 'edit')->defaults('audience', 'staff')->name('password.reset');
+        Route::post('admin/reset-password', 'update')->defaults('audience', 'staff')->middleware('throttle:5,1')->name('password.update');
+    });
 });
 
 Route::post('admin/logout', [AuthenticatedSessionController::class, 'destroy'])
