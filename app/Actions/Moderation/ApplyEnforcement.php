@@ -164,6 +164,48 @@ final class ApplyEnforcement
         });
     }
 
+    /**
+     * End a restriction whose time is up.
+     *
+     * Recorded as an automation action, not a human lift: nobody decided this,
+     * the clock did, and a moderator's name on it would misread the audit
+     * trail. Called by the scheduler, so a shadow ban or feature limit can
+     * never outlive its end date because everyone forgot about it.
+     */
+    public function expire(Ban $ban): ModerationAction
+    {
+        return DB::transaction(function () use ($ban): ModerationAction {
+            $ban->forceFill([
+                'lifted_at' => now(),
+                'lift_reason' => 'Expired automatically',
+            ])->save();
+
+            $action = ModerationAction::query()->create([
+                'uuid' => (string) Str::uuid(),
+                'subject_app_user_id' => $ban->app_user_id,
+                'actor_id' => null,
+                'actor_type' => 'automation',
+                'ladder_step' => LadderStep::Lift,
+                'reason_code' => ReasonCode::ExpiredAutomatically,
+                'policy_clause' => ReasonCode::ExpiredAutomatically->policyClause(),
+                'internal_note' => "{$ban->type->label()} reached its end date.",
+                'user_facing_message' => ReasonCode::ExpiredAutomatically->statement(),
+                'notified_user' => false,
+            ]);
+
+            $this->recomputeMirror($ban->appUser);
+
+            $this->logger->log(
+                module: 'enforcement',
+                action: 'expired',
+                subject: $ban->appUser,
+                description: "{$ban->type->label()} expired for {$ban->appUser?->display_name}",
+            );
+
+            return $action;
+        });
+    }
+
     private function guard(
         LadderStep $step,
         ReasonCode $reason,

@@ -38,6 +38,11 @@
                     @if ($appUser->is_premium)
                         <x-ui.badge variant="accent" icon="sparkles">
                             {{ App\Support\Masters::plan($appUser->premium_tier)?->name ?? ucfirst($appUser->premium_tier ?? 'Premium') }}
+                            @if ($appUser->premium_until)
+                                · until {{ veyra_date($appUser->premium_until) }}
+                            @else
+                                · no end date
+                            @endif
                         </x-ui.badge>
                     @endif
                 </div>
@@ -71,6 +76,12 @@
             </div>
 
             <div class="flex shrink-0 flex-wrap items-center gap-2">
+                @can('edit_users')
+                    <x-ui.button variant="outline" size="sm" icon="sparkles" wire:click="openPlanForm">
+                        {{ $appUser->is_premium ? 'Change plan' : 'Give plan' }}
+                    </x-ui.button>
+                @endcan
+
                 @can('warn_users')
                     <x-ui.button variant="outline" size="sm" icon="warning" wire:click="openStep('warn')">Warn</x-ui.button>
                 @endcan
@@ -373,6 +384,88 @@
                 @endif
             </x-ui.card>
 
+        @elseif ($tab === 'billing')
+            <x-ui.card
+                title="Plan"
+                :description="$appUser->is_premium
+                    ? 'On '.(App\Support\Masters::plan($appUser->premium_tier)?->name ?? $appUser->premium_tier).($appUser->premium_until ? ' until '.veyra_date($appUser->premium_until) : ', with no end date')
+                    : 'On the free tier.'"
+            >
+                @can('edit_users')
+                    <x-slot:action>
+                        <div class="flex gap-2">
+                            <x-ui.button size="sm" variant="outline" icon="sparkles" wire:click="openPlanForm">
+                                {{ $appUser->is_premium ? 'Change plan' : 'Give plan' }}
+                            </x-ui.button>
+                            @if ($appUser->is_premium)
+                                <x-ui.button
+                                    size="sm"
+                                    variant="ghost"
+                                    class="text-destructive"
+                                    wire:click="removePlan"
+                                    wire:confirm="Remove this plan? The member goes back to the free tier straight away."
+                                >Remove</x-ui.button>
+                            @endif
+                        </div>
+                    </x-slot:action>
+                @endcan
+
+                @if ($tabData['subscriptions']->isEmpty())
+                    <x-ui.empty-state
+                        icon="sparkles"
+                        heading="No plan history"
+                        description="Nothing has been bought or granted for this member yet."
+                    />
+                @else
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-border text-left text-xs text-muted-foreground">
+                                    <th class="py-2 pr-3 font-medium">Plan</th>
+                                    <th class="py-2 pr-3 font-medium">From</th>
+                                    <th class="py-2 pr-3 font-medium">Until</th>
+                                    <th class="py-2 pr-3 font-medium">How</th>
+                                    <th class="py-2 pr-3 text-right font-medium">Paid</th>
+                                    <th class="py-2 pr-3 font-medium">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                @foreach ($tabData['subscriptions'] as $subscription)
+                                    <tr wire:key="sub-{{ $subscription->id }}">
+                                        <td class="py-2.5 pr-3 font-medium">{{ $subscription->plan_name }}</td>
+                                        <td class="py-2.5 pr-3 text-muted-foreground">{{ veyra_date($subscription->starts_at) }}</td>
+                                        <td class="py-2.5 pr-3 text-muted-foreground">
+                                            {{ $subscription->ends_at ? veyra_date($subscription->ends_at) : 'No end date' }}
+                                        </td>
+                                        <td class="py-2.5 pr-3 text-muted-foreground">
+                                            {{ $subscription->source === 'payment' ? 'Paid online' : 'Given by staff' }}
+                                            @if ($subscription->grantedBy)
+                                                <span class="block text-xs">{{ $subscription->grantedBy->name }}</span>
+                                            @endif
+                                            @if ($subscription->note)
+                                                <span class="block text-xs italic">{{ $subscription->note }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="tabular py-2.5 pr-3 text-right">
+                                            {{ $subscription->amount !== null ? App\Support\Currency::format($subscription->amount) : '—' }}
+                                        </td>
+                                        <td class="py-2.5 pr-3">
+                                            @if ($subscription->status === 'active')
+                                                <x-ui.badge size="sm" variant="success" dot>Active</x-ui.badge>
+                                            @elseif ($subscription->status === 'expired')
+                                                <x-ui.badge size="sm" variant="muted">Ended</x-ui.badge>
+                                            @else
+                                                <x-ui.badge size="sm" variant="warning">Replaced</x-ui.badge>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </x-ui.card>
+
         @elseif ($tab === 'devices')
             <div class="grid gap-4 md:gap-6 lg:grid-cols-2">
                 <x-ui.card title="Devices" flush>
@@ -436,6 +529,62 @@
             </x-ui.card>
         @endif
     </div>
+    <x-ui.dialog :show="$planFormOpen" close="closePlanForm">
+        <form wire:submit="savePlan" class="space-y-4 p-6" novalidate>
+            <div>
+                <h2 class="text-lg font-semibold">{{ $appUser->is_premium ? 'Change plan' : 'Give plan' }}</h2>
+                <p class="mt-1 text-sm text-muted-foreground">{{ $appUser->display_name }}</p>
+            </div>
+
+            @if (App\Support\Masters::plans()->isEmpty())
+                <p class="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    There are no plans on sale. Add one in
+                    <a href="{{ route('admin.masters.plans') }}" wire:navigate class="font-medium text-primary hover:underline">Masters → Subscription plans</a>.
+                </p>
+            @else
+                <x-ui.select
+                    label="Plan"
+                    wire:model="planSlug"
+                    :selected="$planSlug"
+                    :options="App\Support\Masters::plans()->mapWithKeys(fn ($p) => [$p->slug => $p->name.' · '.App\Support\Currency::format($p->monthly_price).' / month'])->all()"
+                    :error="$errors->first('planSlug')"
+                    required
+                />
+
+                <x-ui.select
+                    label="How long"
+                    wire:model.live="planLength"
+                    :selected="$planLength"
+                    :options="['1m' => 'One month', '12m' => 'One year', 'custom' => 'Until a date I choose', 'open' => 'No end date']"
+                    :error="$errors->first('planLength')"
+                />
+
+                @if ($planLength === 'custom')
+                    <x-ui.input label="Ends on" type="date" wire:model="planEndsAt" :error="$errors->first('planEndsAt')" required />
+                @endif
+
+                <x-ui.input
+                    label="Note"
+                    wire:model="planNote"
+                    placeholder="Paid by bank transfer, ref 4471"
+                    hint="Internal only. The member never sees it."
+                    :error="$errors->first('planNote')"
+                />
+
+                <p class="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                    The member gets everything the plan unlocks straight away, and it ends by itself on the date above.
+                </p>
+            @endif
+
+            <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                <x-ui.button variant="ghost" wire:click="closePlanForm">Cancel</x-ui.button>
+                @if (App\Support\Masters::plans()->isNotEmpty())
+                    <x-ui.button type="submit">Save plan</x-ui.button>
+                @endif
+            </div>
+        </form>
+    </x-ui.dialog>
+
     <x-veyra.enforcement-dialog
         :step="$pendingStep"
         :target="$appUser->display_name.' · '.$appUser->email"
