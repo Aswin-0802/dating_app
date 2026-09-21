@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Veyra — User Manual</title>
+<meta name="description" content="How to run the Veyra console day to day, screen by screen.">
+<link rel="stylesheet" href="assets/doc.css">
+</head>
+<body>
+<main class="sheet">
+
+<header class="cover">
+    <p class="eyebrow">User manual</p>
+    <h1>Running Veyra</h1>
+    <p class="lede">Everything the console does, screen by screen: keeping members safe, answering their questions, taking
+    their money and telling them things — with the reasoning behind each screen, so you know not just where to click but
+    when to.</p>
+    <dl>
+        <div><dt>Document</dt><dd>User manual</dd></div>
+        <div><dt>Audience</dt><dd>Admins, moderators, support</dd></div>
+        <div><dt>Companion</dt><dd><a href="project-overview.html">Project overview</a></dd></div>
+        <div><dt>Reading time</dt><dd>About 40 minutes</dd></div>
+    </dl>
+</header>
+
+<nav class="toc">
+    <h2>Contents</h2>
+    <ol>
+        <li><a href="#start">Signing in and finding your way</a></li>
+        <li><a href="#dashboard">The dashboard</a></li>
+        <li><a href="#members">Members</a></li>
+        <li><a href="#verification">Photo verification</a></li>
+        <li><a href="#cases">Reports and cases</a></li>
+        <li><a href="#enforcement">Enforcement and appeals</a></li>
+        <li><a href="#conversations">Conversations</a></li>
+        <li><a href="#billing">Billing</a></li>
+        <li><a href="#notifications">Notifications</a></li>
+        <li><a href="#masters">Masters</a></li>
+        <li><a href="#staff">Staff, roles and the audit log</a></li>
+        <li><a href="#settings">Settings and branding</a></li>
+        <li><a href="#golive">Going live</a></li>
+        <li><a href="#questions">Common questions</a></li>
+    </ol>
+</nav>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="start">1. Signing in and finding your way</h2>
+
+<p>The console lives at <code>/admin</code>. Members sign in somewhere else entirely, so a member's email and password will
+never open the console — and yours will not open the member app.</p>
+
+<figure>
+    <img src="images/admin-login.png" alt="The console sign-in page">
+    <figcaption>Sign in at /admin. Forgotten passwords are reset by email from the link below the form.</figcaption>
+</figure>
+
+<ol class="steps">
+    <li>Open <code>/admin</code> and sign in with your work email address.</li>
+    <li>If you have forgotten your password, use <strong>Forgot password</strong>. The link that arrives is valid for one hour.</li>
+    <li>After five wrong attempts the form pauses for a minute. This is deliberate and will clear on its own.</li>
+</ol>
+
+<h3>What you can see depends on your role</h3>
+
+<p>The menu is filtered by what you are allowed to do. If a colleague describes a screen you cannot find, you do not have
+that permission — ask an administrator rather than hunting for it.</p>
+
+<h3>The parts of every screen</h3>
+
+<table>
+    <thead><tr><th>Where</th><th>What it is</th></tr></thead>
+    <tbody>
+        <tr><td>Left</td><td>The menu, grouped by the job it does: Community, Trust &amp; Safety, Billing, Operations, Administration</td></tr>
+        <tr><td>Red badges</td><td>Work waiting for you: open cases, pending verifications, appeals, overdue shadow-ban reviews, plans ending this week</td></tr>
+        <tr><td>Top centre</td><td>Search. Press <strong>Ctrl+K</strong> from anywhere to find a member, a case or a verification by name, email or reference</td></tr>
+        <tr><td>Top right</td><td>Light or dark mode, your notifications, and your own account menu</td></tr>
+    </tbody>
+</table>
+
+<div class="note">
+    <span class="label">Tip</span>
+    <p>Filters are kept in the address bar. When you have a view you use every morning, bookmark it — it will open with the
+    same filters applied.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="dashboard">2. The dashboard</h2>
+
+<figure>
+    <img src="images/admin-dashboard.png" alt="Dashboard with key figures, funnel and safety charts">
+    <figcaption>The first screen after signing in.</figcaption>
+</figure>
+
+<p>The numbers are chosen to describe a dating product rather than a website. The ones worth watching daily:</p>
+
+<table>
+    <thead><tr><th>Figure</th><th>What it tells you</th><th>When to worry</th></tr></thead>
+    <tbody>
+        <tr><td>Sign-up funnel</td><td>How many finish a profile, verify, swipe, match, and get a reply</td><td>A step that drops sharply usually means something broke, not that people lost interest</td></tr>
+        <tr><td>Gender balance by city</td><td>The structural health of each market</td><td>Past roughly 65/35 a city stops working for the larger side</td></tr>
+        <tr><td>Reports per 1,000 matches</td><td>Whether the community is getting worse</td><td>A rising line while matches are flat</td></tr>
+        <tr><td>Verification turnaround</td><td>How long members wait to be verified</td><td>Anything over a day: members give up</td></tr>
+        <tr><td>Likes to the top 10%</td><td>How concentrated attention is</td><td>Very high means most members are being ignored</td></tr>
+    </tbody>
+</table>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="members">3. Members</h2>
+
+<figure>
+    <img src="images/admin-users.png" alt="The members list with filters and risk badges">
+    <figcaption>Community → Users. Twelve filters, and rows tinted by risk.</figcaption>
+</figure>
+
+<h3>Finding somebody</h3>
+
+<ol class="steps">
+    <li>Type a name or email into the search box, or press <strong>Ctrl+K</strong> from anywhere.</li>
+    <li>Use the filters for a group rather than a person: everyone unverified in Mumbai, everyone reported this week, everyone on a paid plan.</li>
+    <li><strong>Export CSV</strong> takes whatever the filters currently show. Exports that include email addresses are recorded in the audit log.</li>
+</ol>
+
+<h3>Reading a member's record</h3>
+
+<figure>
+    <img src="images/admin-user-detail.png" alt="A member record with tabs for profile, photos, matches, reports, enforcement, billing, devices and timeline">
+    <figcaption>One member, with everything about them behind tabs.</figcaption>
+</figure>
+
+<table>
+    <thead><tr><th>Tab</th><th>Use it to answer</th></tr></thead>
+    <tbody>
+        <tr><td>Profile</td><td>Who they say they are, and how complete it is</td></tr>
+        <tr><td>Photos</td><td>What they are showing, and what moderation decided</td></tr>
+        <tr><td>Matches</td><td>Whether they are actually using the product</td></tr>
+        <tr><td>Reports</td><td>What others have said about them — and what they have said about others</td></tr>
+        <tr><td>Enforcement</td><td>Every decision ever taken, with reason and who took it</td></tr>
+        <tr><td>Billing</td><td>What they pay, until when, and how it started</td></tr>
+        <tr><td>Devices</td><td>Whether this account shares a device with others — a strong signal of a repeat offender</td></tr>
+        <tr><td>Timeline</td><td>Everything staff have done to this account</td></tr>
+    </tbody>
+</table>
+
+<h3>The risk badge</h3>
+<p>The coloured score next to a member's name can be expanded. It lists the factors that produced it, each with its points.
+It is a stored calculation, not a guess — so if it says 72, the factors underneath add up to 72.</p>
+
+<div class="warn">
+    <span class="label">Important</span>
+    <p>A high risk score is a reason to look, never a reason to act on its own. Every enforcement decision needs evidence you
+    can point at.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="verification">4. Photo verification</h2>
+
+<figure>
+    <img src="images/admin-verifications.png" alt="The verification queue sorted by risk with SLA pills">
+    <figcaption>The queue, riskiest first. The coloured pills are how long somebody has been waiting.</figcaption>
+</figure>
+
+<p>Members take a selfie holding a gesture code the server gives them. Your job is to decide whether the person in the selfie
+is the person in the profile photos.</p>
+
+<ol class="steps">
+    <li>Open the oldest breaching item — the red pills are people waiting longest.</li>
+    <li>Compare the selfie on the left with the profile photos on the right. The slider overlays them; zoom moves together.</li>
+    <li>Read the signals row: face-match score, liveness, <strong>and how many other accounts share this face</strong>.</li>
+    <li>Approve, or reject with a reason from the list. Reasons are fixed wording, not free text, so every member gets the same explanation for the same problem.</li>
+</ol>
+
+<div class="warn">
+    <span class="label">Suspected minors</span>
+    <p>If the estimated age suggests a minor, Approve is disabled and the item moves to the restricted queue. Only staff with
+    that permission see it. Never work around this.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="cases">5. Reports and cases</h2>
+
+<p>When members report somebody, the reports are gathered into a single <strong>case</strong> about that person. You act once,
+and the decision covers every report behind it.</p>
+
+<figure>
+    <img src="images/admin-cases.png" alt="The case queue with severity and SLA columns">
+    <figcaption>Trust &amp; Safety → Cases. Critical first, and SLA shows what is overdue.</figcaption>
+</figure>
+
+<h3>Working a case</h3>
+
+<ol class="steps">
+    <li><strong>Claim it.</strong> Opening a case claims it, so two people do not work the same one.</li>
+    <li><strong>Read the evidence.</strong> A reported message is shown with the ten messages either side of it. Context changes the meaning of a sentence more often than you would expect.</li>
+    <li><strong>Check who reported.</strong> Each reporter carries a credibility figure based on their past reports. Five reports from one friendship group is not the same as five from strangers.</li>
+    <li><strong>Look at history.</strong> The prior-actions counter tells you whether this is a first mistake or a pattern.</li>
+    <li><strong>Decide.</strong> Pick a step on the ladder. Every decision needs a reason code, a policy clause, an internal note, and you choose whether the member is told.</li>
+</ol>
+
+<div class="note">
+    <span class="label">The ladder</span>
+    <p>Warn → limit features → shadow ban → suspend → permanent ban. Start at the step the behaviour deserves, not always at
+    the bottom: a scam account does not get a warning first.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="enforcement">6. Enforcement and appeals</h2>
+
+<figure>
+    <img src="images/admin-bans.png" alt="The bans list showing type, reason, expiry and review dates">
+    <figcaption>Trust &amp; Safety → Enforcement → Bans.</figcaption>
+</figure>
+
+<table>
+    <thead><tr><th>Step</th><th>What the member experiences</th><th>Use when</th></tr></thead>
+    <tbody>
+        <tr><td>Warn</td><td>A notice, nothing else changes</td><td>A first, minor problem</td></tr>
+        <tr><td>Feature limit</td><td>Specific things stop working</td><td>Misuse of one feature</td></tr>
+        <tr><td>Shadow ban</td><td>Everything looks normal to them, but they are not shown to others</td><td>Suspected but unproven abuse. Always has a review date</td></tr>
+        <tr><td>Suspend</td><td>Locked out for a set time, told why, can appeal</td><td>Confirmed serious behaviour</td></tr>
+        <tr><td>Permanent ban</td><td>Account closed, device optionally blocked</td><td>Fraud, threats, anything involving minors</td></tr>
+    </tbody>
+</table>
+
+<div class="warn">
+    <span class="label">Shadow bans expire</span>
+    <p>Every shadow ban has a review date, and <strong>Shadow ban reviews</strong> shows overdue ones in red. A shadow ban
+    nobody revisits is a permanent silent punishment — which is exactly what this queue exists to prevent.</p>
+</div>
+
+<h3>Appeals</h3>
+
+<figure>
+    <img src="images/admin-appeals.png" alt="The appeals queue">
+    <figcaption>Trust &amp; Safety → Appeals.</figcaption>
+</figure>
+
+<p>A restricted member can appeal. The system will not let the appeal go to the person who made the original decision, and
+moderators cannot decide appeals at all — so there is always an independent reviewer. Overturning an appeal lifts the
+restriction and links the reversal to the original action, so the record shows what happened and why.</p>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="conversations">7. Conversations</h2>
+
+<figure>
+    <img src="images/admin-conversations.png" alt="The conversations list showing metadata only">
+    <figcaption>Metadata only: who, when, how many messages, whether anything was flagged.</figcaption>
+</figure>
+
+<p>Members' private messages are private. This screen shows that a conversation exists and how it is behaving, not what was
+said.</p>
+
+<div class="warn">
+    <span class="label">Revealing a message</span>
+    <p>If an investigation genuinely needs the content, you need the permission, and you must type a justification and link
+    the case. Doing so writes your name into two logs, one of which your organisation reviews. Never reveal a message out of
+    curiosity — it is visible, and it is a disciplinary matter.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="billing">8. Billing</h2>
+
+<h3>Payments</h3>
+
+<figure>
+    <img src="images/admin-billing-payments.png" alt="The payments screen with totals for taken, waiting and failed">
+    <figcaption>Billing → Payments. Every attempt to pay, successful or not.</figcaption>
+</figure>
+
+<table>
+    <thead><tr><th>Status</th><th>Meaning</th><th>What to do</th></tr></thead>
+    <tbody>
+        <tr><td><span class="pill ok">Paid</span></td><td>The gateway confirmed it; the plan is active</td><td>Nothing</td></tr>
+        <tr><td><span class="pill warn">Waiting</span></td><td>Started but not confirmed. Common with bank transfers and slow methods</td><td>Press <strong>Check gateway</strong>. If it went through, the plan is applied immediately</td></tr>
+        <tr><td><span class="pill stop">Failed</span></td><td>The payment did not go through. Nothing was taken</td><td>Nothing, unless many fail at once — then check the gateway keys</td></tr>
+    </tbody>
+</table>
+
+<div class="note">
+    <span class="label">Member says "money left my account but I have no plan"</span>
+    <p>Find the payment by their email, press <strong>Check gateway</strong>. Nine times out of ten the webhook was delayed
+    and this fixes it instantly. If the gateway still has nothing, the money has not actually left — banks show pending card
+    authorisations that never complete.</p>
+</div>
+
+<h3>Subscriptions</h3>
+
+<figure>
+    <img src="images/admin-billing-subscriptions.png" alt="The subscriptions screen with active, ending this week and lapsed views">
+    <figcaption>Billing → Subscriptions. "Ending this week" is the list worth checking every Monday.</figcaption>
+</figure>
+
+<h3>Giving somebody a plan</h3>
+
+<figure>
+    <img src="images/admin-user-plan-dialog.png" alt="The give plan dialog on a member record">
+    <figcaption>Users → open a member → Give plan.</figcaption>
+</figure>
+
+<ol class="steps">
+    <li>Open the member and press <strong>Give plan</strong>.</li>
+    <li>Choose the plan and how long: one month, one year, until a date, or no end date.</li>
+    <li>Write a note — "paid by bank transfer, ref 4471". Only staff ever see it, and in six months it is the only reason anyone will know why.</li>
+    <li>Save. The member has everything the plan unlocks straight away, and it ends by itself on the date you chose.</li>
+</ol>
+
+<h3>Plans and gateways</h3>
+
+<p><strong>Billing → Plans</strong> is where you set what is sold: name, monthly and yearly price, what it unlocks, the colour
+of its badge and the "Most popular" highlight. A plan members are on can be hidden but not deleted — they keep what they paid
+for.</p>
+
+<figure>
+    <img src="images/admin-billing-gateways.png" alt="The payment gateways screen showing Stripe and Razorpay cards with webhook addresses">
+    <figcaption>Billing → Payment gateways. The webhook address to register is shown on each card.</figcaption>
+</figure>
+
+<ol class="steps">
+    <li>Press <strong>Configure</strong> on Stripe or Razorpay and paste the keys. They are stored encrypted and never shown again.</li>
+    <li>Copy the <strong>webhook address</strong> shown on the card into the gateway's dashboard, subscribe to the events named there, then paste the signing secret back here.</li>
+    <li>Leave <strong>test mode</strong> on and make a test purchase with a test card. Check it appears under Payments.</li>
+    <li>Turn test mode off when you are ready to take real money.</li>
+</ol>
+
+<div class="warn">
+    <span class="label">Currency</span>
+    <p>Razorpay charges in Indian Rupees; Stripe covers dollars, euros, pounds and rupees. The screen warns you if the
+    currency in Settings → Branding does not match the gateway you switched on, and members are not offered a gateway that
+    cannot take their money.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="notifications">9. Notifications</h2>
+
+<h3>Setting up push</h3>
+
+<figure>
+    <img src="images/admin-push.png" alt="The push notification settings screen">
+    <figcaption>Notifications → Push notifications. Two halves: sending, and receiving in the browser.</figcaption>
+</figure>
+
+<ol class="steps">
+    <li>In the Firebase console, go to <strong>Project settings → Service accounts</strong> and press <strong>Generate new private key</strong>. Upload the file it downloads.</li>
+    <li>Turn <strong>Push notifications</strong> on and press <strong>Check credentials</strong>. Firebase should accept them.</li>
+    <li>For browser notifications, copy the web config from <strong>Project settings → General → Your apps</strong>, and the VAPID key from the <strong>Cloud Messaging</strong> tab. Then turn on <strong>Browser notifications</strong>.</li>
+    <li>Send yourself a test using your own member account's email.</li>
+</ol>
+
+<div class="note">
+    <span class="label">If somebody hands you a "server key"</span>
+    <p>It will not work. Google switched that API off. Only the service account file works now.</p>
+</div>
+
+<h3>Campaigns</h3>
+
+<figure>
+    <img src="images/admin-campaigns.png" alt="The campaigns list">
+    <figcaption>Notifications → Campaigns.</figcaption>
+</figure>
+
+<ol class="steps">
+    <li>Press <strong>New campaign</strong> and choose who it goes to. The audience size is shown before you continue.</li>
+    <li>Write the title and body. Keep it short: a push notification is two lines on a phone.</li>
+    <li>Save as a draft. <strong>Somebody else</strong> must approve it — a push cannot be recalled, so a second pair of eyes is the point.</li>
+    <li>Once approved it goes out within five minutes, sent by the server. Check <strong>Delivery logs</strong> for who received it.</li>
+</ol>
+
+<h3>Templates</h3>
+
+<figure>
+    <img src="images/admin-templates.png" alt="The notification templates screen">
+    <figcaption>Notifications → Templates. Every automatic message members receive.</figcaption>
+</figure>
+
+<p>Edit the wording of automatic messages — new match, new message, verification result, renewal warnings, enforcement
+notices. Placeholders like <code>{{ first_name }}</code> are replaced when sending; a placeholder you invent that is not in
+the list is refused, because <code>{{ frist_name }}</code> reaching ten thousand people is not a mistake anybody catches by
+eye. Templates marked <strong>transactional</strong> carry legal notices and cannot be deleted, only reworded.</p>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="masters">10. Masters</h2>
+
+<p>Masters are the lists the product is built from. Changing them changes what members see immediately, with no developer
+and no deployment.</p>
+
+<table>
+    <thead><tr><th>List</th><th>What it controls</th><th>Limits</th></tr></thead>
+    <tbody>
+        <tr><td>Interests</td><td>What members can pick for their profile</td><td>One in use can be hidden, not deleted</td></tr>
+        <tr><td>Profile questions</td><td>Prompts, education, "looking for", drinking, smoking, children</td><td>Prompts and education accept new entries; the others can only be reworded, reordered or hidden</td></tr>
+        <tr><td>Report categories</td><td>What members choose when reporting, and how urgent each one is</td><td>Safety categories are always available and always Critical</td></tr>
+        <tr><td>Enforcement reasons</td><td>The reason staff pick, and the message the member receives</td><td>Reasons the system records itself cannot be switched off</td></tr>
+        <tr><td>Locations</td><td>Countries, states and cities</td><td>A place with members in it can be hidden, not deleted</td></tr>
+    </tbody>
+</table>
+
+<figure>
+    <img src="images/admin-masters-locations.png" alt="The locations screen with countries, states and cities">
+    <figcaption>Masters → Locations. India ships with all its states and union territories.</figcaption>
+</figure>
+
+<figure>
+    <img src="images/admin-masters-reasons.png" alt="The enforcement reasons screen">
+    <figcaption>Masters → Enforcement reasons. The right-hand column is what the member reads.</figcaption>
+</figure>
+
+<div class="note">
+    <span class="label">Hide rather than delete</span>
+    <p>Hiding keeps history intact: members who chose it keep it, past decisions still read correctly, and nothing that
+    already happened changes. Delete only things nobody has ever used.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="staff">11. Staff, roles and the audit log</h2>
+
+<figure>
+    <img src="images/admin-staff.png" alt="The staff list">
+    <figcaption>Administration → Staff.</figcaption>
+</figure>
+
+<ol class="steps">
+    <li>Add a colleague with their work email and a role. They are emailed a link to set their own password — you never type one for them.</li>
+    <li>Use <strong>Suspend</strong> rather than delete when somebody leaves: their past decisions stay attributed and readable.</li>
+    <li><strong>Performance</strong> shows decisions per day, time to decide and overturn rate. Overturn rate is the quality signal, not volume.</li>
+</ol>
+
+<p><strong>Roles</strong> holds the permission matrix. Saving it records exactly which boxes changed, so a quiet expansion of
+someone's powers is visible afterwards.</p>
+
+<figure>
+    <img src="images/admin-audit.png" alt="The audit log">
+    <figcaption>Administration → Audit log. Every staff action, with before and after values.</figcaption>
+</figure>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="settings">12. Settings and branding</h2>
+
+<figure>
+    <img src="images/admin-settings-branding.png" alt="The branding screen with name, colour, logos and currency">
+    <figcaption>Settings → Branding. One colour re-themes the entire product.</figcaption>
+</figure>
+
+<table>
+    <thead><tr><th>Screen</th><th>Holds</th></tr></thead>
+    <tbody>
+        <tr><td>Branding</td><td>Product name, logos, favicon, brand colour, default theme, company details, website copy, currency, app store and social links</td></tr>
+        <tr><td>Product &amp; safety</td><td>Minimum age, daily like limit, distance, SLA windows, risk weights, maintenance mode</td></tr>
+        <tr><td>Mail / SMTP</td><td>The mail server used for every email. Keep delivery on "do not send" until the details are right</td></tr>
+        <tr><td>Delivery logs</td><td>Email, SMS, payment and member sign-in records</td></tr>
+        <tr><td>Database backup</td><td>A download of the database, on demand</td></tr>
+    </tbody>
+</table>
+
+<div class="warn">
+    <span class="label">Maintenance mode</span>
+    <p>It closes the website, the member app and the API — not the console. Turn it on for upgrades, and remember members see
+    a maintenance page until you turn it off.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="golive">13. Going live</h2>
+
+<p>Work down this list. Anything left undone is something members will notice.</p>
+
+<table>
+    <thead><tr><th>#</th><th>Task</th><th>Where</th></tr></thead>
+    <tbody>
+        <tr><td>1</td><td>Set the product name, logo, favicon and brand colour</td><td>Settings → Branding</td></tr>
+        <tr><td>2</td><td>Choose your currency before anyone pays anything</td><td>Settings → Branding</td></tr>
+        <tr><td>3</td><td>Replace the demo photography and have the legal pages reviewed</td><td>Your own files and your lawyer</td></tr>
+        <tr><td>4</td><td>Enter SMTP details and switch delivery to "Send with SMTP"</td><td>Settings → Mail</td></tr>
+        <tr><td>5</td><td>Send yourself a test email and check it arrives</td><td>Settings → Mail</td></tr>
+        <tr><td>6</td><td>Upload the Firebase key, turn on push, send a test</td><td>Notifications → Push notifications</td></tr>
+        <tr><td>7</td><td>Add gateway keys, register the webhook, buy a plan with a test card</td><td>Billing → Payment gateways</td></tr>
+        <tr><td>8</td><td>Set your real prices and what each plan unlocks</td><td>Billing → Plans</td></tr>
+        <tr><td>9</td><td>Add the countries, states and cities you are launching in; hide the rest</td><td>Masters → Locations</td></tr>
+        <tr><td>10</td><td>Create real staff accounts and remove the demo ones</td><td>Administration → Staff</td></tr>
+        <tr><td>11</td><td>Ask your host to run the scheduler every minute</td><td>Your server</td></tr>
+        <tr><td>12</td><td>Make one real payment with live keys, then refund it</td><td>Billing → Payments</td></tr>
+    </tbody>
+</table>
+
+<div class="warn">
+    <span class="label">The scheduler</span>
+    <p>Without it, plans never end, restrictions never lift, renewal warnings never send and campaigns never go out. It is one
+    line on the server and it is not optional:</p>
+    <pre><code>* * * * * cd /path/to/veyra &amp;&amp; php artisan schedule:run >> /dev/null 2>&amp;1</code></pre>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h2 id="questions">14. Common questions</h2>
+
+<h4>A member says they did not get an email.</h4>
+<p>Settings → Delivery logs → Email. If it says sent, the problem is at their end — usually spam. If nothing is there, check
+that delivery is set to "Send with SMTP" rather than "Do not send".</p>
+
+<h4>A member paid but has no plan.</h4>
+<p>Billing → Payments, search their email, press <strong>Check gateway</strong>. See the billing section above.</p>
+
+<h4>Push notifications are not arriving.</h4>
+<p>Notifications → Push notifications, press <strong>Check credentials</strong>. If Firebase accepts them, the member has
+probably not allowed notifications, or has none of their devices registered — their Account page shows what they have turned
+on. Browser notifications also need an https address.</p>
+
+<h4>Somebody was banned by mistake.</h4>
+<p>Open the member, lift the restriction from the banner at the top, and record why. The lift is linked to the original
+decision, so the record explains itself later.</p>
+
+<h4>A campaign was approved but nothing went out.</h4>
+<p>Check that push is set up, and that the scheduler is running. A campaign waits for the server, not for the browser.</p>
+
+<h4>Can I undo something?</h4>
+<p>Enforcement decisions are never deleted; they are reversed by a later action that references them. Masters entries can be
+hidden. A payment can only be refunded in the gateway's own dashboard — then remove the plan from the member's page.</p>
+
+<h4>Who can see members' messages?</h4>
+<p>Only staff with the message-content permission, only with a written justification, and it is logged and reviewed. Admins do
+not have it by default.</p>
+
+<footer class="doc-end">
+    <p>Veyra user manual · Screenshots are of the running product with demo data. Your own installation will show your
+    branding, your plans and your members. See the <a href="project-overview.html">Project overview</a> for how it is built.</p>
+</footer>
+
+</main>
+</body>
+</html>

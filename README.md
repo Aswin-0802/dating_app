@@ -6,6 +6,21 @@ Laravel 12 · Livewire 3 · Tailwind v4 · MySQL · Sanctum
 
 ---
 
+## Documentation
+
+Two written documents live in [`docs/`](docs/) and open in a browser:
+
+| Document | For | Covers |
+|---|---|---|
+| [Project overview](docs/project-overview.html) | Owners and engineers | What the product is, how it is built, the decisions behind it, and what is deliberately not included |
+| [User manual](docs/user-manual.html) | The people running it | Every console screen with screenshots, plus a go-live checklist and common questions |
+
+Both are written to be printed: open one and press Ctrl+P → Save as PDF. The
+screenshots come from the running product with seeded data, and are regenerated
+rather than drawn.
+
+---
+
 ## Getting it running
 
 Requires PHP 8.2+, Composer, Node 20+, and MySQL. On XAMPP everything below

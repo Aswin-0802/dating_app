@@ -1,0 +1,319 @@
+/*
+ * Shared styling for the Veyra documents.
+ *
+ * Written for two destinations at once: read on screen, and printed to PDF
+ * from the browser. Hence the page rules, the avoided page breaks inside
+ * figures and tables, and colours that survive a black-and-white printer.
+ */
+
+:root {
+    --ink: #1c1420;
+    --muted: #6b6270;
+    --line: #e6e1e7;
+    --paper: #ffffff;
+    --wash: #faf7fa;
+    --brand: #c2265a;
+    --brand-wash: #fdf2f6;
+    --ok: #1c7a54;
+    --warn: #9a6a12;
+    --stop: #b4262c;
+    --mono: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    background: var(--wash);
+    color: var(--ink);
+    font: 16px/1.65 "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+}
+
+.sheet {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: 3.5rem 3rem 5rem;
+    background: var(--paper);
+    box-shadow: 0 1px 3px rgb(28 20 32 / 8%);
+}
+
+/* ---- cover ---------------------------------------------------------------- */
+
+.cover {
+    padding: 4rem 0 3rem;
+    border-bottom: 3px solid var(--brand);
+    margin-bottom: 3rem;
+}
+
+.cover .eyebrow {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brand);
+    margin: 0 0 1rem;
+}
+
+.cover h1 {
+    font-size: 2.85rem;
+    line-height: 1.1;
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.02em;
+}
+
+.cover p.lede {
+    font-size: 1.2rem;
+    color: var(--muted);
+    margin: 0 0 2rem;
+    max-width: 44rem;
+}
+
+.cover dl {
+    display: grid;
+    /* Each dt/dd pair is wrapped, so a label never drifts away from its value. */
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 1.25rem 2rem;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.cover dt {
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.cover dd { margin: 0.15rem 0 0; font-weight: 600; }
+
+/* ---- structure ------------------------------------------------------------- */
+
+h2 {
+    font-size: 1.6rem;
+    letter-spacing: -0.01em;
+    margin: 3.25rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+}
+
+h3 { font-size: 1.15rem; margin: 2rem 0 0.6rem; }
+
+h4 { font-size: 1rem; margin: 1.5rem 0 0.4rem; color: var(--muted); }
+
+p { margin: 0 0 1rem; }
+
+ul, ol { margin: 0 0 1rem; padding-left: 1.4rem; }
+
+li { margin-bottom: 0.4rem; }
+
+a { color: var(--brand); }
+
+code {
+    font-family: var(--mono);
+    font-size: 0.87em;
+    background: var(--wash);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.08em 0.35em;
+}
+
+pre {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    background: #1c1420;
+    color: #f3eef4;
+    padding: 1rem 1.15rem;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+pre code { background: none; border: 0; color: inherit; padding: 0; font-size: inherit; }
+
+/* ---- contents --------------------------------------------------------------- */
+
+.toc {
+    background: var(--wash);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.5rem 1.75rem;
+}
+
+.toc h2 { margin: 0 0 0.75rem; border: 0; padding: 0; font-size: 1.1rem; }
+
+.toc ol { columns: 2; column-gap: 2.5rem; margin: 0; padding-left: 1.2rem; }
+
+.toc a { text-decoration: none; color: var(--ink); }
+
+.toc a:hover { color: var(--brand); text-decoration: underline; }
+
+/* ---- tables ------------------------------------------------------------------ */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 1.5rem;
+    font-size: 0.92rem;
+}
+
+th, td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+}
+
+th {
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 2px solid var(--line);
+}
+
+tbody tr:nth-child(even) { background: var(--wash); }
+
+/* ---- figures ------------------------------------------------------------------ */
+
+figure {
+    margin: 1.5rem 0 2rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--wash);
+}
+
+figure img { display: block; width: 100%; height: auto; }
+
+figcaption {
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    background: var(--paper);
+}
+
+/* ---- call-outs ------------------------------------------------------------------ */
+
+.note, .warn, .do {
+    border-left: 4px solid var(--brand);
+    background: var(--brand-wash);
+    padding: 0.9rem 1.15rem;
+    border-radius: 0 8px 8px 0;
+    margin: 0 0 1.5rem;
+    font-size: 0.94rem;
+}
+
+.note p:last-child, .warn p:last-child, .do p:last-child { margin-bottom: 0; }
+
+.warn { border-left-color: var(--warn); background: #fdf6e7; }
+
+.do { border-left-color: var(--ok); background: #eef7f2; }
+
+.label {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+    color: var(--brand);
+}
+
+.warn .label { color: var(--warn); }
+
+.do .label { color: var(--ok); }
+
+/* ---- steps -------------------------------------------------------------------- */
+
+ol.steps { counter-reset: step; list-style: none; padding-left: 0; }
+
+ol.steps > li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 2.6rem;
+    margin-bottom: 1rem;
+}
+
+ol.steps > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0.05rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+}
+
+/* ---- misc --------------------------------------------------------------------- */
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2rem; }
+
+.meta { font-size: 0.85rem; color: var(--muted); }
+
+.pill {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: var(--brand-wash);
+    color: var(--brand);
+    border: 1px solid #f3d3de;
+}
+
+.pill.ok { background: #eef7f2; color: var(--ok); border-color: #cfe7db; }
+
+.pill.warn { background: #fdf6e7; color: var(--warn); border-color: #f0e0bd; }
+
+.pill.stop { background: #fdeceb; color: var(--stop); border-color: #f4cfcd; }
+
+footer.doc-end {
+    margin-top: 4rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+/* ---- print ---------------------------------------------------------------------- */
+
+@page { size: A4; margin: 16mm 14mm; }
+
+@media print {
+    body { background: #fff; font-size: 10.5pt; }
+
+    .sheet { max-width: none; margin: 0; padding: 0; box-shadow: none; }
+
+    .cover { padding-top: 0; break-after: page; }
+
+    .toc { break-after: page; }
+
+    h2 { break-before: page; break-after: avoid; }
+
+    h2:first-of-type, .toc + h2 { break-before: auto; }
+
+    h3, h4 { break-after: avoid; }
+
+    figure, table, pre, .note, .warn, .do { break-inside: avoid; }
+
+    a { color: inherit; text-decoration: none; }
+}
+
+@media (max-width: 720px) {
+    .sheet { padding: 2rem 1.25rem 3rem; }
+
+    .cover h1 { font-size: 2rem; }
+
+    .toc ol { columns: 1; }
+
+    .grid-2 { grid-template-columns: 1fr; }
+}
