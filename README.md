@@ -145,6 +145,11 @@ console, with no code changes:
   system records itself, such as appeal outcomes and expiry, cannot be turned
   off.
 
+Countries, **states** and cities live in Settings → Locations: India ships with
+all 28 states and 8 union territories, and a city must name its state wherever
+the country has any. Members choose a city grouped as "India · Maharashtra",
+and staff can filter and export members by state.
+
 Plans, interests and profile questions need `edit_general_settings`. Report
 categories and reasons need `edit_moderation_settings`. Notification templates
 can now be added and deleted as well; enforcement notices are protected.
@@ -153,6 +158,63 @@ Every change is recorded in the audit log.
 Password reset is available to staff (`/admin/forgot-password`) and members
 (`/forgot-password`). New staff added under Staff are emailed a link to set
 their own password.
+
+### Subscriptions and payments
+
+Plans are bought or given:
+
+- **Checkout** (member app → Premium): Stripe or Razorpay, whichever is switched
+  on in System → Payment gateways. With both on, the member picks at the point of
+  paying. Stripe uses a hosted Checkout Session, Razorpay a Payment Link, so no
+  card details ever reach this server. A payment counts only when the gateway
+  confirms it — the return page asks the gateway directly, and the webhook is
+  signature-checked — and fulfilment is locked so a return page plus two webhook
+  retries still produce one subscription. Renewing early extends the time left
+  rather than replacing it.
+- **By hand** (Users → a member → Give plan): for bank transfers and goodwill,
+  with a note and an end date. Needs `edit_users`.
+
+Both write the same subscription history, shown on the member's Billing tab and
+in their own "Your payments" list. Real payments write to the payment log.
+
+To go live: create the account, paste the keys into System → Payment gateways
+(they are stored encrypted and never shown again), register the webhook address
+shown on that screen in the gateway's dashboard, paste the signing secret back,
+then turn test mode off. Razorpay charges in INR; Stripe covers USD, EUR, GBP and
+INR. The screen warns when the currency and the gateway disagree.
+
+### Notifications
+
+- **Push** (System → Push notifications) goes through Firebase Cloud Messaging
+  v1. Upload the service account JSON from the Firebase console — the old
+  "server key" API was switched off by Google — and, for browser notifications,
+  the web config and VAPID key. Members turn notifications on from Account;
+  mobile apps post their token to `/api/v1/devices/push-token`. A token Firebase
+  reports as unregistered is deleted rather than retried for ever.
+- **Renewal warnings**: push at 7, 3 and 1 days before a plan ends and an email
+  at 3 days (both lists editable in Settings), plus an email the day it ends.
+  Each reminder is recorded, so the hourly task never repeats one.
+- **Campaigns** are sent by the server, not the browser: approve one and it goes
+  out within five minutes, with a delivery-log row per member — including the
+  ones with no device registered, so the totals match the audience.
+- **SMS** (System → SMS gateways): Twilio, MSG91, Vonage or Textlocal. Used for
+  phone verification — members verify a number from Account, apps through
+  `/api/v1/phone/send-code`. Six digits, ten minutes, five guesses, one code at
+  a time, and every text is written to the SMS log.
+
+### The scheduler
+
+One cron entry drives everything the clock owns — expiring restrictions and
+plans, renewal warnings and campaign sending:
+
+```
+* * * * * cd /path/to/veyra && php artisan schedule:run >> /dev/null 2>&1
+```
+
+On Windows, a Task Scheduler task running `php artisan schedule:run` every
+minute does the same. Without it the product still works — suspensions clear
+themselves on the member's next request — but nothing else ends on time.
+`php artisan veyra:run-due-tasks` can always be run by hand.
 
 ### The website and member app
 

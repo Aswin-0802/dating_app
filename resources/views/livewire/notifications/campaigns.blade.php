@@ -7,6 +7,7 @@
                 <span class="font-medium">{{ $awaitingApproval }}</span>
                 {{ str('campaign')->plural($awaitingApproval) }} waiting for approval. Campaigns are
                 approved by someone other than their author before they are sent.
+                An approved campaign goes out within five minutes, sent by the server rather than this page.
             </p>
         </div>
     @endif
@@ -21,7 +22,18 @@
                         class="h-9 w-full rounded-md border border-input bg-card pl-9 pr-3 text-sm placeholder:text-muted-foreground">
                 </div>
 
-                <x-ui.select size="sm" placeholder="Any status" wire:model.live="status"
+                @unless (App\Support\PushSettings::enabled())
+                <div class="mb-4 flex w-full items-start gap-2 rounded-md border border-warning/30 bg-warning-subtle p-3">
+                    <x-ui.icon name="warning" size="sm" class="mt-0.5 shrink-0 text-warning-subtle-foreground" />
+                    <p class="text-sm text-warning-subtle-foreground">
+                        Push notifications are not set up, so approved campaigns will not leave the building.
+                        Add the Firebase key under
+                        <a href="{{ route('admin.system.push') }}" wire:navigate class="font-medium underline">System → Push notifications</a>.
+                    </p>
+                </div>
+            @endunless
+
+            <x-ui.select size="sm" placeholder="Any status" wire:model.live="status"
                     :options="['draft' => 'Draft', 'scheduled' => 'Scheduled', 'sending' => 'Sending', 'sent' => 'Sent', 'cancelled' => 'Cancelled']"
                     class="w-40" />
             </div>

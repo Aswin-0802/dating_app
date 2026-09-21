@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\Livewire\Notifications;
 
-use App\Enums\AccountStatus;
-use App\Enums\VerificationStatus;
 use App\Livewire\Concerns\WithDataTable;
-use App\Models\AppUser;
 use App\Models\PushCampaign;
 use App\Services\Audit\ActivityLogger;
+use App\Services\Notifications\CampaignAudience;
 use App\Support\Branding;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -172,18 +170,10 @@ class Campaigns extends Component
         session()->flash('status', 'Campaign saved as a draft. Another team member needs to approve it before it is sent.');
     }
 
+    /** Shared with the sender, so the approved count is the sent count. */
     private function audienceQuery(string $audience): Builder
     {
-        $query = AppUser::query()->where('account_status', AccountStatus::Active->value);
-
-        return match ($audience) {
-            'inactive_14' => $query->where('last_active_at', '<', now()->subDays(14)),
-            'unverified' => $query->where('verification_status', '!=', VerificationStatus::Approved->value),
-            'incomplete' => $query->where('profile_completion', '<', 50),
-            'premium' => $query->where('is_premium', true),
-            'free' => $query->where('is_premium', false),
-            default => $query,
-        };
+        return CampaignAudience::query($audience);
     }
 
     /**

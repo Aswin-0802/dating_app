@@ -34,3 +34,9 @@ Schedule::command('veyra:send-renewal-reminders')
     ->hourly()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Approved campaigns whose send time has arrived.
+Schedule::command('veyra:send-campaigns')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\MessageController;
+use App\Http\Controllers\Api\V1\PhoneController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SafetyController;
 use App\Http\Controllers\Api\V1\SwipeController;
@@ -147,6 +148,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
          * silence exactly the accounts under review that we most need to
          * notify about a decision.
          */
+        /*
+         * Phone verification. Throttled hard: each request costs money and an
+         * unthrottled OTP endpoint is a way to run up somebody's SMS bill.
+         */
+        Route::post('phone/send-code', [PhoneController::class, 'sendCode'])
+            ->middleware('throttle:4,10')->name('phone.send-code');
+        Route::post('phone/verify', [PhoneController::class, 'verify'])
+            ->middleware('throttle:10,10')->name('phone.verify');
+
         Route::post('devices/push-token', [DeviceController::class, 'storePushToken'])->name('devices.push-token.store');
         Route::delete('devices/push-token', [DeviceController::class, 'deletePushToken'])->name('devices.push-token.destroy');
         Route::delete('blocks/{uuid}', [SafetyController::class, 'unblock'])->name('blocks.destroy');

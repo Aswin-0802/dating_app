@@ -9,6 +9,7 @@ use App\Livewire\Member\Concerns\InteractsWithMember;
 use App\Models\AppUser;
 use App\Models\PushToken;
 use App\Services\Members\SafetyActions;
+use App\Services\Sms\PhoneVerification;
 use App\Support\PushSettings;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -34,9 +35,19 @@ class Account extends Component
 
     public string $deactivatePassword = '';
 
+    // ---- phone verification ----------------------------------------------------
+
+    public string $phone = '';
+
+    public string $phoneCode = '';
+
+    /** Set once a code has been texted, so the form shows the code box. */
+    public bool $codeSent = false;
+
     public function mount(): void
     {
         $this->email = $this->member()->email;
+        $this->phone = (string) $this->member()->phone;
     }
 
     public function render(): View
@@ -53,6 +64,7 @@ class Account extends Component
             'me' => $me,
             'blocked' => $blocked,
             'pushEnabled' => PushSettings::webEnabled(),
+            'phoneVerificationAvailable' => app(PhoneVerification::class)->available(),
             'pushConfig' => PushSettings::webConfig(),
             'vapidKey' => PushSettings::vapidKey(),
             'devices' => PushToken::query()->where('app_user_id', $me->id)->latest('last_used_at')->get(),
@@ -138,5 +150,50 @@ class Account extends Component
             ->delete();
 
         $this->toast('Notifications turned off for that device.');
+    }
+
+    // ---- phone verification ----------------------------------------------------
+
+    /**
+     * Text a code to the number in the form.
+     *
+     * Validation errors from the service (number taken, texting failed) come
+     * back on the field, so the member is never told a text is on its way
+     * when none was sent.
+     */
+    public function sendPhoneCode(PhoneVerification $verification): void
+    {
+        $this->validate([
+            'phone' => ['required', 'string', 'min:8', 'max:20', 'regex:/^\+?[0-9 ()-]{8,20}$/'],
+        ], [
+            'phone.regex' => 'Use the number in full, with its country code, such as +91 98765 43210.',
+        ]);
+
+        $verification->start($this->member(), $this->phone);
+
+        $this->codeSent = true;
+        $this->phoneCode = '';
+        $this->toast('We have texted you a code.');
+    }
+
+    public function confirmPhoneCode(PhoneVerification $verification): void
+    {
+        $this->validate(['phoneCode' => ['required', 'digits:6']], [
+            'phoneCode.digits' => 'The code is six digits.',
+        ]);
+
+        try {
+            $verification->confirm($this->member(), $this->phoneCode);
+        } catch (ValidationException $e) {
+            // The service talks about a "code"; the form shows "phoneCode".
+            // Without this the member would see nothing at all go wrong.
+            throw ValidationException::withMessages([
+                'phoneCode' => $e->validator->errors()->first(),
+            ]);
+        }
+
+        $this->codeSent = false;
+        $this->phoneCode = '';
+        $this->toast('Your phone number is verified.');
     }
 }

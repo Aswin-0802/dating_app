@@ -29,6 +29,58 @@
         </x-ui.card>
     </form>
 
+    {{-- ---- phone ------------------------------------------------------- --}}
+    @if ($phoneVerificationAvailable || $me->phone_verified_at)
+        <x-ui.card title="Phone number" description="A verified number helps you get back into your account, and lets us text you if something urgent happens.">
+            @if ($me->phone_verified_at && ! $codeSent)
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <p class="text-sm">
+                        <x-ui.icon name="check-badge" size="sm" class="-mt-0.5 mr-1 inline text-success" />
+                        {{ $me->phone }} <span class="text-muted-foreground">· verified</span>
+                    </p>
+                    @if ($phoneVerificationAvailable)
+                        <x-ui.button size="sm" variant="ghost" wire:click="$set('codeSent', false)" x-on:click="$wire.set('phone', '')">Use a different number</x-ui.button>
+                    @endif
+                </div>
+            @endif
+
+            @if ($phoneVerificationAvailable && (! $me->phone_verified_at || $codeSent))
+                <div class="space-y-4">
+                    <form wire:submit="sendPhoneCode" class="flex flex-wrap items-end gap-3" novalidate>
+                        <div class="min-w-0 flex-1 sm:max-w-xs">
+                            <x-ui.input
+                                label="Mobile number"
+                                type="tel"
+                                wire:model="phone"
+                                placeholder="+91 98765 43210"
+                                autocomplete="tel"
+                                :error="$errors->first('phone')"
+                            />
+                        </div>
+                        <x-ui.button type="submit" variant="outline">{{ $codeSent ? 'Send again' : 'Send code' }}</x-ui.button>
+                    </form>
+
+                    @if ($codeSent)
+                        <form wire:submit="confirmPhoneCode" class="flex flex-wrap items-end gap-3 rounded-2xl bg-muted/50 p-4" novalidate>
+                            <div class="min-w-0 flex-1 sm:max-w-[12rem]">
+                                <x-ui.input
+                                    label="Six-digit code"
+                                    inputmode="numeric"
+                                    maxlength="6"
+                                    wire:model="phoneCode"
+                                    placeholder="000000"
+                                    autocomplete="one-time-code"
+                                    :error="$errors->first('phoneCode')"
+                                />
+                            </div>
+                            <x-ui.button type="submit">Verify</x-ui.button>
+                        </form>
+                    @endif
+                </div>
+            @endif
+        </x-ui.card>
+    @endif
+
     {{-- ---- notifications ---------------------------------------------- --}}
     @if ($pushEnabled)
         <x-ui.card title="Notifications" description="Get a notification when you match, when somebody messages you, and before your plan runs out.">
