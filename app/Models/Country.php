@@ -18,6 +18,11 @@ class Country extends Model
         return ['is_active' => 'boolean'];
     }
 
+    public function states(): HasMany
+    {
+        return $this->hasMany(State::class);
+    }
+
     public function cities(): HasMany
     {
         return $this->hasMany(City::class);

@@ -149,8 +149,20 @@ class Profile extends Component
     #[Computed(persist: true)]
     public function cities(): array
     {
-        return City::query()->whereHas('country', fn ($q) => $q->where('is_active', true))->with('country:id,name')->orderBy('name')->get(['id', 'name', 'country_id'])
-            ->groupBy(fn (City $city): string => $city->country?->name ?? 'Other')
+        /*
+         * Grouped "Country · State" rather than a second dropdown: a cascade
+         * means an extra tap and a chance to get stuck, while the optgroup
+         * puts the same information in front of the member for free. Cities in
+         * a hidden state drop out of the list.
+         */
+        return City::query()
+            ->whereHas('country', fn ($q) => $q->where('is_active', true))
+            ->where(fn ($q) => $q->whereNull('state_id')->orWhereHas('state', fn ($s) => $s->where('is_active', true)))
+            ->with(['country:id,name', 'state:id,name'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'country_id', 'state_id'])
+            ->groupBy(fn (City $city): string => ($city->country?->name ?? 'Other')
+                .($city->state === null ? '' : ' · '.$city->state->name))
             ->sortKeys()
             ->map(fn ($group) => $group->pluck('name', 'id')->all())
             ->all();

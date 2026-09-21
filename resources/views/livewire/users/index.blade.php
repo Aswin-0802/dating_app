@@ -41,7 +41,7 @@
                     @endif
                 </x-ui.button>
 
-                <div wire:loading.delay wire:target="search,status,verification,risk,gender,city,premium,source,photos,reported,joined,lastActive">
+                <div wire:loading.delay wire:target="search,status,verification,risk,gender,city,state,premium,source,photos,reported,joined,lastActive">
                     <x-ui.icon name="arrow-path" size="sm" class="animate-spin text-muted-foreground" />
                 </div>
             </div>
@@ -79,6 +79,10 @@
 
                         <x-ui.select size="sm" label="Gender" placeholder="Any"
                             wire:model.live="gender" :options="Gender::labels()" />
+
+                        <x-ui.select size="sm" label="State" placeholder="Anywhere"
+                            wire:model.live="state"
+                            :options="$states->mapWithKeys(fn ($s) => [$s->id => $s->name.', '.($s->country?->iso2 ?? '')])->all()" />
 
                         <x-ui.select size="sm" label="City" placeholder="Anywhere"
                             wire:model.live="city"
@@ -196,7 +200,7 @@
         </thead>
 
         {{-- ---- body --------------------------------------------------- --}}
-        <tbody wire:loading.class="opacity-50" wire:target="search,status,verification,risk,gender,city,premium,source,photos,reported,joined,lastActive,gotoPage,previousPage,nextPage,sort">
+        <tbody wire:loading.class="opacity-50" wire:target="search,status,verification,risk,gender,city,state,premium,source,photos,reported,joined,lastActive,gotoPage,previousPage,nextPage,sort">
             @forelse ($users as $user)
                 <x-ui.table.row :selected="$this->isSelected($user->id)" :tint="$user->risk_band->rowClasses()">
                     <x-ui.table.cell>

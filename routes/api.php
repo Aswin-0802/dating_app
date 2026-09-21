@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\SwipeController;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\Interest;
+use App\Models\State;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -60,12 +61,32 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->get(['iso2', 'name', 'dial_code']),
     ]))->name('countries');
 
+    // ?country=IN lists that country's states; hidden ones are left out so the
+    // apps offer exactly what sign-up accepts.
+    Route::get('states', fn () => response()->json([
+        'data' => State::query()
+            ->where('is_active', true)
+            ->when(request('country'), fn ($q, $iso) => $q->whereHas('country', fn ($c) => $c->where('iso2', $iso)))
+            ->orderBy('sort_order')->orderBy('name')
+            ->get(['id', 'name', 'code', 'country_id']),
+    ]))->name('states');
+
     Route::get('cities', fn () => response()->json([
         'data' => City::query()
             ->when(request('country'), fn ($q, $iso) => $q->whereHas('country', fn ($c) => $c->where('iso2', $iso)))
+            ->when(request('state'), fn ($q, $state) => $q->where('state_id', $state))
+            ->where(fn ($q) => $q->whereNull('state_id')->orWhereHas('state', fn ($st) => $st->where('is_active', true)))
+            ->with('state:id,name')
             ->orderBy('name')
             ->limit(500)
-            ->get(['id', 'name', 'country_id']),
+            ->get(['id', 'name', 'country_id', 'state_id'])
+            ->map(fn (City $city): array => [
+                'id' => $city->id,
+                'name' => $city->name,
+                'country_id' => $city->country_id,
+                'state' => $city->state?->name,
+                'state_id' => $city->state_id,
+            ]),
     ]))->name('cities');
 
     Route::prefix('auth')->name('auth.')->group(function (): void {

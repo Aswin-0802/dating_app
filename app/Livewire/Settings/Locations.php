@@ -6,6 +6,7 @@ namespace App\Livewire\Settings;
 
 use App\Models\City;
 use App\Models\Country;
+use App\Models\State;
 use App\Services\Audit\ActivityLogger;
 use App\Support\Branding;
 use Illuminate\Contracts\View\View;
@@ -42,8 +43,26 @@ class Locations extends Component
 
     public bool $countryActive = true;
 
+    // state form
+    public bool $stateFormOpen = false;
+
+    #[Locked]
+    public ?int $editingStateId = null;
+
+    public string $stateName = '';
+
+    public string $stateCode = '';
+
+    public bool $stateActive = true;
+
+    /** Filters the city list; null shows every city in the country. */
+    #[Url(except: null)]
+    public ?int $state = null;
+
     // city form
     public bool $cityFormOpen = false;
+
+    public ?int $cityStateId = null;
 
     #[Locked]
     public ?int $editingCityId = null;
@@ -68,9 +87,23 @@ class Locations extends Component
         $countries = Country::query()->withCount('cities')->orderBy('name')->get();
         $selected = $countries->firstWhere('id', $this->country);
 
+        $states = $selected === null ? collect() : State::query()
+            ->where('country_id', $selected->id)
+            ->withCount('cities')
+            ->orderBy('sort_order')->orderBy('name')
+            ->get();
+
+        // A state filter left over from another country would silently hide
+        // every city, so it is dropped when it no longer belongs here.
+        if ($this->state !== null && ! $states->contains('id', $this->state)) {
+            $this->state = null;
+        }
+
         $cities = $selected === null ? collect() : City::query()
             ->where('country_id', $selected->id)
+            ->when($this->state !== null, fn ($q) => $q->where('state_id', $this->state))
             ->when($this->citySearch !== '', fn ($q) => $q->where('name', 'like', '%'.$this->citySearch.'%'))
+            ->with('state')
             ->orderBy('name')
             ->get();
 
@@ -80,6 +113,7 @@ class Locations extends Component
         return view('livewire.settings.locations', [
             'countries' => $countries,
             'selected' => $selected,
+            'states' => $states,
             'cities' => $cities,
             'memberCounts' => $members,
             'canEdit' => auth()->user()?->can('edit_general_settings') ?? false,
@@ -98,6 +132,12 @@ class Locations extends Component
     {
         $this->country = $id;
         $this->citySearch = '';
+        $this->state = null;
+    }
+
+    public function filterByState(?int $id): void
+    {
+        $this->state = $id;
     }
 
     // ---- countries ------------------------------------------------------------
@@ -184,6 +224,7 @@ class Locations extends Component
         $this->cityLatitude = $this->cityLongitude = null;
         $this->cityTimezone = 'UTC';
         $this->cityFocus = false;
+        $this->cityStateId = $this->state;
         $this->cityFormOpen = true;
     }
 
@@ -198,6 +239,7 @@ class Locations extends Component
         $this->cityLongitude = $city->longitude !== null ? (string) $city->longitude : null;
         $this->cityTimezone = (string) $city->timezone;
         $this->cityFocus = (bool) $city->is_focus;
+        $this->cityStateId = $city->state_id;
         $this->cityFormOpen = true;
     }
 
@@ -211,12 +253,21 @@ class Locations extends Component
             'cityLongitude' => ['nullable', 'numeric', 'between:-180,180'],
             'cityTimezone' => ['required', 'timezone:all'],
             'cityFocus' => ['boolean'],
+            // Required only where the country actually has states, so
+            // Singapore does not need an imaginary one.
+            'cityStateId' => [
+                Rule::requiredIf(fn (): bool => State::query()->where('country_id', $this->country)->exists()),
+                'nullable',
+                Rule::exists('states', 'id')->where('country_id', $this->country),
+            ],
         ], [
             'cityName.unique' => 'That city is already listed for this country.',
-        ], ['cityName' => 'name', 'cityLatitude' => 'latitude', 'cityLongitude' => 'longitude', 'cityTimezone' => 'time zone']);
+            'cityStateId.required' => 'Choose which state this city is in.',
+        ], ['cityName' => 'name', 'cityLatitude' => 'latitude', 'cityLongitude' => 'longitude', 'cityTimezone' => 'time zone', 'cityStateId' => 'state']);
 
         $city = City::query()->updateOrCreate(['id' => $this->editingCityId], [
             'country_id' => $this->country,
+            'state_id' => $this->cityStateId,
             'name' => trim($this->cityName),
             'latitude' => $this->cityLatitude !== null && $this->cityLatitude !== '' ? (float) $this->cityLatitude : null,
             'longitude' => $this->cityLongitude !== null && $this->cityLongitude !== '' ? (float) $this->cityLongitude : null,
@@ -246,9 +297,111 @@ class Locations extends Component
         session()->flash('status', "{$city->name} deleted.");
     }
 
+    // ---- states ---------------------------------------------------------------
+
+    public function newState(): void
+    {
+        $this->authorize('edit_general_settings');
+        abort_if($this->country === null, 404);
+
+        $this->resetValidation();
+        $this->editingStateId = null;
+        $this->stateName = $this->stateCode = '';
+        $this->stateActive = true;
+        $this->stateFormOpen = true;
+    }
+
+    public function editState(int $id): void
+    {
+        $this->authorize('edit_general_settings');
+        $state = State::query()->findOrFail($id);
+
+        $this->resetValidation();
+        $this->editingStateId = $state->id;
+        $this->stateName = $state->name;
+        $this->stateCode = (string) $state->code;
+        $this->stateActive = (bool) $state->is_active;
+        $this->stateFormOpen = true;
+    }
+
+    public function saveState(ActivityLogger $logger): void
+    {
+        $this->authorize('edit_general_settings');
+        $this->stateCode = strtoupper(trim($this->stateCode));
+
+        $this->validate([
+            'stateName' => [
+                'required', 'string', 'min:2', 'max:80',
+                Rule::unique('states', 'name')->where('country_id', $this->country)->ignore($this->editingStateId),
+            ],
+            'stateCode' => ['nullable', 'regex:/^[A-Z0-9-]{1,10}$/'],
+            'stateActive' => ['boolean'],
+        ], [
+            'stateName.unique' => 'That state is already listed for this country.',
+            'stateCode.regex' => 'Use a short code such as TN or NSW.',
+        ], ['stateName' => 'name', 'stateCode' => 'code']);
+
+        $state = State::query()->updateOrCreate(['id' => $this->editingStateId], [
+            'country_id' => $this->country,
+            'name' => trim($this->stateName),
+            'code' => $this->stateCode ?: null,
+            'is_active' => $this->stateActive,
+        ]);
+
+        $logger->log(
+            module: 'settings',
+            action: $this->editingStateId ? 'state_updated' : 'state_created',
+            subject: $state,
+            description: "Saved state {$state->name}",
+        );
+
+        $this->stateFormOpen = false;
+        session()->flash('status', "{$state->name} saved.");
+    }
+
+    public function deleteState(int $id, ActivityLogger $logger): void
+    {
+        $this->authorize('edit_general_settings');
+        $state = State::query()->withCount('cities')->findOrFail($id);
+
+        if ($state->cities_count > 0) {
+            session()->flash('error', "{$state->name} still has cities in it, so it cannot be deleted. Hide it instead.");
+
+            return;
+        }
+
+        $state->delete();
+        $logger->log(module: 'settings', action: 'state_deleted', description: "Deleted state {$state->name}");
+
+        if ($this->state === $id) {
+            $this->state = null;
+        }
+
+        session()->flash('status', "{$state->name} deleted.");
+    }
+
+    public function toggleStateActive(int $id, ActivityLogger $logger): void
+    {
+        $this->authorize('edit_general_settings');
+        $state = State::query()->findOrFail($id);
+        $state->update(['is_active' => ! $state->is_active]);
+
+        $logger->log(
+            module: 'settings',
+            action: $state->is_active ? 'state_shown' : 'state_hidden',
+            subject: $state,
+            description: ($state->is_active ? 'Showed' : 'Hid')." state {$state->name}",
+        );
+
+        session()->flash('status', $state->is_active
+            ? "{$state->name} is back at sign-up."
+            : "{$state->name} is hidden. Members already there keep it.");
+    }
+
     public function closeForms(): void
     {
         $this->countryFormOpen = false;
         $this->cityFormOpen = false;
+        $this->stateFormOpen = false;
     }
 }

@@ -14,6 +14,7 @@ use App\Livewire\Concerns\WithBulkActions;
 use App\Livewire\Concerns\WithDataTable;
 use App\Models\AppUser;
 use App\Models\City;
+use App\Models\State;
 use App\Services\Audit\ActivityLogger;
 use App\Support\Branding;
 use App\Support\Masters;
@@ -44,6 +45,9 @@ class Index extends Component
 
     #[Url(except: '')]
     public string $city = '';
+
+    #[Url(except: '')]
+    public string $state = '';
 
     #[Url(except: '')]
     public string $premium = '';
@@ -80,6 +84,7 @@ class Index extends Component
         return view('livewire.users.index', [
             'users' => $users,
             'cities' => City::query()->with('country')->orderBy('name')->get(),
+            'states' => State::query()->with('country:id,iso2')->orderBy('name')->get(),
         ])->layout('components.layouts.admin', [
             'title' => 'Users',
             'breadcrumbs' => [
@@ -112,6 +117,7 @@ class Index extends Component
             ->when($this->risk !== '', fn (Builder $q) => $q->where('risk_band', $this->risk))
             ->when($this->gender !== '', fn (Builder $q) => $q->where('gender', $this->gender))
             ->when($this->city !== '', fn (Builder $q) => $q->where('city_id', $this->city))
+            ->when($this->state !== '', fn (Builder $q) => $q->whereHas('city', fn ($c) => $c->where('state_id', $this->state)))
             ->when($this->premium !== '', fn (Builder $q) => $q->where('is_premium', $this->premium === 'yes'))
             ->when($this->source !== '', fn (Builder $q) => $q->where('signup_source', $this->source))
             ->when($this->photos === 'none', fn (Builder $q) => $q->whereDoesntHave('photos'))
@@ -164,7 +170,7 @@ class Index extends Component
     private function filterProperties(): array
     {
         return [
-            'status', 'verification', 'risk', 'gender', 'city',
+            'status', 'verification', 'risk', 'gender', 'city', 'state',
             'premium', 'source', 'photos', 'reported', 'joined', 'lastActive',
         ];
     }
@@ -194,9 +200,11 @@ class Index extends Component
                 continue;
             }
 
-            $active[$property] = $property === 'city'
-                ? (City::query()->find($value)?->name ?? 'City')
-                : ($labels[$property][$value] ?? $value);
+            $active[$property] = match ($property) {
+                'city' => City::query()->find($value)?->name ?? 'City',
+                'state' => State::query()->find($value)?->name ?? 'State',
+                default => $labels[$property][$value] ?? $value,
+            };
         }
 
         return $active;
@@ -279,11 +287,11 @@ class Index extends Component
         return response()->streamDownload(function () use ($query, $withPii): void {
             $out = fopen('php://output', 'w');
             fputcsv($out, array_filter([
-                'ID', 'Name', 'Age', 'Gender', 'City', 'Status', 'Verification', 'Risk band', 'Premium', 'Joined', 'Last active',
+                'ID', 'Name', 'Age', 'Gender', 'City', 'State', 'Status', 'Verification', 'Risk band', 'Premium', 'Joined', 'Last active',
                 $withPii ? 'Email' : null, $withPii ? 'Phone' : null,
             ]));
 
-            $query->with('city')->orderBy('id')->chunk(500, function ($members) use ($out, $withPii): void {
+            $query->with('city.state')->orderBy('id')->chunk(500, function ($members) use ($out, $withPii): void {
                 foreach ($members as $m) {
                     fputcsv($out, array_values(array_filter([
                         'id' => $m->uuid,
@@ -291,6 +299,7 @@ class Index extends Component
                         'age' => $m->age,
                         'gender' => $m->gender?->label(),
                         'city' => $m->city?->name,
+                        'state' => $m->city?->state?->name,
                         'status' => $m->account_status?->label(),
                         'verification' => $m->verification_status?->label(),
                         'risk' => $m->risk_band?->label(),

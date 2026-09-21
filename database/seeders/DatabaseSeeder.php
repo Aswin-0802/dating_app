@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             StaffSeeder::class,
             SettingSeeder::class,
             GeographySeeder::class,
+            StateSeeder::class,
             InterestSeeder::class,
             MasterSeeder::class,
             RiskFactorDefinitionSeeder::class,

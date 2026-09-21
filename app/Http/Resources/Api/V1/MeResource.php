@@ -45,6 +45,7 @@ class MeResource extends JsonResource
             'profile_completion' => $this->profile_completion,
             'city' => $this->whenLoaded('city', fn (): ?array => $this->city ? [
                 'name' => $this->city->name,
+                'state' => $this->city->state?->name,
                 'country' => $this->city->country?->iso2,
             ] : null),
 
