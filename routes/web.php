@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Member\CheckoutController;
 use App\Http\Controllers\Member\PushTokenController;
 use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Site\MemberSessionController;
+use App\Http\Controllers\WebhookController;
 use App\Livewire\Member;
 use Illuminate\Support\Facades\Route;
 
@@ -68,11 +70,29 @@ Route::middleware(['auth:member', 'member.active'])
         Route::get('premium', Member\Premium::class)->name('premium');
         Route::get('account', Member\Account::class)->name('account');
 
+        /*
+         * Checkout. The middle of this flow happens on the gateway's own site;
+         * these are only the way out and the way back.
+         */
+        Route::post('checkout', [CheckoutController::class, 'start'])
+            ->middleware('throttle:10,1')->name('checkout.start');
+        Route::get('checkout/{order}', [CheckoutController::class, 'show'])->name('checkout.show');
+        Route::get('checkout/{order}/return', [CheckoutController::class, 'return'])->name('checkout.return');
+        Route::post('checkout/{order}/refresh', [CheckoutController::class, 'refresh'])
+            ->middleware('throttle:20,1')->name('checkout.refresh');
+
         // Browser push: the token the Firebase SDK hands back, and giving it up.
         Route::post('push/token', [PushTokenController::class, 'store'])->name('push.token.store');
         Route::delete('push/token', [PushTokenController::class, 'destroy'])->name('push.token.destroy');
         Route::get('restricted', Member\Restricted::class)->name('restricted');
     });
+
+/*
+ * Payment webhooks. No session, no CSRF token: the caller is Stripe or
+ * Razorpay, and each request carries a signature the driver checks instead.
+ */
+Route::post('webhooks/payments/{gateway}', WebhookController::class)
+    ->name('webhooks.payments');
 
 /*
  * The Firebase service worker must live at the root of the site, or it cannot

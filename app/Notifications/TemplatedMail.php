@@ -24,6 +24,8 @@ class TemplatedMail extends Notification
         private readonly string $body,
         private readonly ?string $actionText = null,
         private readonly ?string $actionUrl = null,
+        /** Which template this came from — carried so it can be asserted on and logged. */
+        public readonly string $templateKey = '',
     ) {}
 
     /** @return array<int, string> */

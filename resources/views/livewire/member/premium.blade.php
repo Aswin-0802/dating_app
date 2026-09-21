@@ -65,12 +65,54 @@
                             <li class="flex gap-2"><x-ui.icon name="check" size="sm" class="mt-0.5 text-primary" /> {{ $line }}</li>
                         @endforeach
                     </ul>
+
+                    @if ($gateways->isNotEmpty())
+                        <div class="mt-5 space-y-2">
+                            @foreach ([['monthly', $plan->monthly_price, 'month'], ['yearly', $plan->yearly_price, 'year']] as [$period, $price, $unit])
+                                @if ($price !== null)
+                                    <form method="POST" action="{{ route('member.checkout.start') }}">
+                                        @csrf
+                                        <input type="hidden" name="plan" value="{{ $plan->slug }}">
+                                        <input type="hidden" name="period" value="{{ $period }}">
+
+                                        @if ($gateways->count() > 1)
+                                            <label class="sr-only" for="gw-{{ $plan->slug }}-{{ $period }}">Pay with</label>
+                                            <select
+                                                id="gw-{{ $plan->slug }}-{{ $period }}"
+                                                name="gateway"
+                                                class="mb-2 h-9 w-full rounded-md border border-input bg-card px-3 text-sm"
+                                            >
+                                                @foreach ($gateways as $gateway)
+                                                    <option value="{{ $gateway->slug }}">Pay with {{ $gateway->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <input type="hidden" name="gateway" value="{{ $gateways->first()->slug }}">
+                                        @endif
+
+                                        <x-ui.button
+                                            type="submit"
+                                            class="w-full"
+                                            :variant="$period === 'monthly' ? 'default' : 'outline'"
+                                        >
+                                            {{ $isCurrent ? 'Extend' : 'Get' }} {{ $plan->name }} —
+                                            {{ App\Support\Currency::format($price) }} / {{ $unit }}
+                                        </x-ui.button>
+                                    </form>
+                                @endif
+                            @endforeach
+
+                            @if ($gateways->contains(fn ($g) => $g->is_test_mode))
+                                <p class="text-center text-[11px] text-muted-foreground">Test mode — no money will be taken.</p>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             @endforeach
         </div>
     @endif
 
-    @if (! $current && $plans->isNotEmpty())
+    @if ($gateways->isEmpty() && ! $current && $plans->isNotEmpty())
         <div class="rounded-3xl border border-border bg-card p-6 text-center">
             <p class="font-semibold">How to upgrade</p>
             @if ($ios || $android)
@@ -85,6 +127,32 @@
             @else
                 <p class="mt-1 text-sm text-muted-foreground">Premium is coming soon.</p>
             @endif
+        </div>
+    @endif
+
+    @if ($orders->isNotEmpty())
+        <div class="rounded-3xl border border-border bg-card p-6">
+            <h2 class="text-base font-semibold">Your payments</h2>
+            <ul class="mt-3 divide-y divide-border text-sm">
+                @foreach ($orders as $order)
+                    <li class="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                        <span class="min-w-0">
+                            <span class="block truncate font-medium">{{ $order->description }}</span>
+                            <span class="block text-xs text-muted-foreground">{{ veyra_datetime($order->created_at) }}</span>
+                        </span>
+                        <span class="flex items-center gap-2">
+                            <span class="tabular">{{ $order->formattedAmount() }}</span>
+                            @if ($order->isPaid())
+                                <x-ui.badge size="sm" variant="success">Paid</x-ui.badge>
+                            @elseif ($order->status === 'pending')
+                                <a href="{{ route('member.checkout.show', $order) }}" class="text-xs font-medium text-primary hover:underline">Waiting — check</a>
+                            @else
+                                <x-ui.badge size="sm" variant="muted">{{ ucfirst($order->status) }}</x-ui.badge>
+                            @endif
+                        </span>
+                    </li>
+                @endforeach
+            </ul>
         </div>
     @endif
 </div>

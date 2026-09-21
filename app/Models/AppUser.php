@@ -273,6 +273,21 @@ class AppUser extends Authenticatable
 
     // ---- accessors ----
 
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function pushTokens(): HasMany
+    {
+        return $this->hasMany(PushToken::class);
+    }
+
     /** The plan the member is currently on, or null for free (or lapsed) members. */
     public function activePlan(): ?Plan
     {

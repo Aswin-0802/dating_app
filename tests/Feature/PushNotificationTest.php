@@ -294,7 +294,9 @@ class PushNotificationTest extends TestCase
         $this->artisan('veyra:send-renewal-reminders')->assertSuccessful();
         $this->artisan('veyra:send-renewal-reminders')->assertSuccessful();
 
-        Notification::assertSentToTimes($member, TemplatedMail::class, 1);
+        // Exactly one warning, however often the task runs. (The other email
+        // is the "your plan is active" note sent when the plan was granted.)
+        $this->assertSame(1, $this->emailsSent($member, 'billing.renewal_email'));
     }
 
     public function test_a_plan_further_out_than_the_warning_window_is_left_alone(): void
@@ -306,7 +308,15 @@ class PushNotificationTest extends TestCase
 
         $this->artisan('veyra:send-renewal-reminders')->assertSuccessful();
 
-        Notification::assertNothingSentTo($member);
+        $this->assertSame(0, $this->emailsSent($member, 'billing.renewal_email'));
+    }
+
+    /** How many emails from one template reached this member. */
+    private function emailsSent(AppUser $member, string $templateKey): int
+    {
+        return Notification::sent($member, TemplatedMail::class)
+            ->filter(fn (TemplatedMail $mail): bool => $mail->templateKey === $templateKey)
+            ->count();
     }
 
     public function test_push_reminders_go_out_a_week_ahead_when_push_is_on(): void
@@ -353,6 +363,16 @@ class PushNotificationTest extends TestCase
 
         $this->artisan('veyra:send-renewal-reminders')->assertSuccessful();
 
-        Notification::assertNothingSentTo($member);
+        $this->assertSame(0, $this->emailsSent($member, 'billing.renewal_email'));
+    }
+
+    public function test_a_member_is_told_when_their_plan_starts(): void
+    {
+        Notification::fake();
+        $member = AppUser::factory()->create();
+
+        app(Subscriptions::class)->grant($member, Plan::query()->where('slug', 'gold')->firstOrFail(), now()->addMonth());
+
+        $this->assertSame(1, $this->emailsSent($member, 'billing.plan_started'));
     }
 }

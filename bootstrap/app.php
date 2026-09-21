@@ -38,6 +38,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         /*
+         * Payment gateways post from their own servers, so there is no session
+         * and no CSRF token to send. Each webhook is verified by signature in
+         * its driver instead, which is stronger than a session token would be.
+         */
+        $middleware->validateCsrfTokens(except: ['webhooks/*']);
+
+        /*
          * These two are written by JavaScript (document.cookie) so the browser
          * can persist a preference the moment it changes, and read by Blade on
          * the next request so the first painted byte is already correct.

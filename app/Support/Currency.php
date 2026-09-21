@@ -56,6 +56,48 @@ final class Currency
         return self::symbol($code).$number;
     }
 
+    /**
+     * Currencies whose smallest unit is the whole unit — 500 yen is sent as
+     * 500, not 50000.
+     *
+     * None of the four currencies offered are in this list today, but the
+     * conversion below is the one place a gateway integration can silently
+     * charge a member a hundred times too much, so it states the rule rather
+     * than assuming it.
+     */
+    public static function isZeroDecimal(?string $code = null): bool
+    {
+        return in_array(strtoupper($code ?? self::code()), [
+            'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW',
+            'MGA', 'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
+        ], true);
+    }
+
+    /** An amount as the gateways want it: paise, cents. */
+    public static function toMinor(float|int|string|null $amount, ?string $code = null): int
+    {
+        $amount = (float) ($amount ?? 0);
+
+        return (int) round(self::isZeroDecimal($code) ? $amount : $amount * 100);
+    }
+
+    public static function fromMinor(int $minor, ?string $code = null): float
+    {
+        return self::isZeroDecimal($code) ? (float) $minor : $minor / 100;
+    }
+
+    /**
+     * The smallest charge the gateways accept, per their published limits.
+     * Anything under this is refused before a member is sent to pay.
+     */
+    public static function minimumCharge(?string $code = null): float
+    {
+        return match (strtoupper($code ?? self::code())) {
+            'GBP' => 0.30,
+            default => 0.50,
+        };
+    }
+
     /** @return array<string, string> code => "US Dollar ($)" */
     public static function options(): array
     {

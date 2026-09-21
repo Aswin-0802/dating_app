@@ -6,6 +6,7 @@ namespace App\Livewire\Member;
 
 use App\Livewire\Member\Concerns\InteractsWithMember;
 use App\Services\Members\SwipeRecorder;
+use App\Services\Payments\Checkout;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -21,13 +22,17 @@ class Premium extends Component
 {
     use InteractsWithMember;
 
-    public function render(SwipeRecorder $swipes): View
+    public function render(SwipeRecorder $swipes, Checkout $checkout): View
     {
         $me = $this->member();
 
         return view('livewire.member.premium', [
             'me' => $me,
             'likesLeft' => $swipes->likesLeftToday($me),
+            // Empty when no gateway is switched on, and the page falls back to
+            // the store links or support, exactly as before checkout existed.
+            'gateways' => $checkout->availableGateways(),
+            'orders' => $me->orders()->latest()->limit(5)->get(),
         ])->layout('components.layouts.member', ['title' => 'Premium']);
     }
 }

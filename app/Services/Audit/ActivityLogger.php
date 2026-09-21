@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Audit;
 
 use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
@@ -31,7 +32,17 @@ final class ActivityLogger
         ?array $new = null,
         bool $sensitive = false,
     ): ActivityLog {
-        $actor = Auth::user();
+        /*
+         * Only staff can be an actor here.
+         *
+         * Plenty of logged events are set off by a member — a payment landing,
+         * a report being filed — and Auth::user() would then hand back an
+         * AppUser, which has no roles. This log is the staff audit trail, so
+         * those rows are recorded with no actor, which reads correctly: nobody
+         * on the team did it.
+         */
+        $actor = Auth::guard('web')->user();
+        $actor = $actor instanceof User ? $actor : null;
 
         return ActivityLog::query()->create([
             'user_id' => $actor?->getKey(),

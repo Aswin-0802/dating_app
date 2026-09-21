@@ -47,7 +47,7 @@ final class Subscriptions
         ?float $amount = null,
         ?string $currency = null,
     ): Subscription {
-        return DB::transaction(function () use ($member, $plan, $endsAt, $actor, $source, $billingPeriod, $note, $amount, $currency): Subscription {
+        $subscription = DB::transaction(function () use ($member, $plan, $endsAt, $actor, $source, $billingPeriod, $note, $amount, $currency): Subscription {
             $this->closeOpenSubscriptions($member, 'cancelled');
 
             $subscription = Subscription::query()->create([
@@ -89,6 +89,8 @@ final class Subscriptions
             return $subscription;
         });
 
+        // Sent after the transaction commits: a member should never be told
+        // about a plan that a later rollback took away.
         $this->notifier->email($member, 'billing.plan_started', [
             'first_name' => str($member->display_name)->before(' ')->toString(),
             'plan_name' => $plan->name,

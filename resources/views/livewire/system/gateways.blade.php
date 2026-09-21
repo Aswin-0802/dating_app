@@ -45,6 +45,49 @@
                     @endif
                 </div>
 
+                @if ($kind === 'payment')
+                    @php $supported = in_array($gateway->slug, ['stripe', 'razorpay'], true); @endphp
+
+                    @if ($supported)
+                        {{-- The webhook is what confirms a payment, so its address
+                             is shown here rather than buried in documentation. --}}
+                        <div class="mt-3 rounded-lg bg-muted px-3 py-2.5">
+                            <p class="text-xs font-medium">Webhook address</p>
+                            <p class="mt-1 break-all font-mono text-[11px] text-muted-foreground">{{ route('webhooks.payments', $gateway->slug) }}</p>
+                            <p class="mt-1.5 text-[11px] text-muted-foreground">
+                                @if ($gateway->slug === 'stripe')
+                                    Stripe Dashboard → Developers → Webhooks → add this address, subscribe to
+                                    <span class="font-mono">checkout.session.completed</span>, then paste the signing secret (whsec_…) above.
+                                @else
+                                    Razorpay Dashboard → Account &amp; Settings → Webhooks → add this address, tick
+                                    <span class="font-mono">payment_link.paid</span> and <span class="font-mono">payment.failed</span>,
+                                    and use the same secret you type above.
+                                @endif
+                            </p>
+                            @if (! request()->secure() && ! app()->environment('local'))
+                                <p class="mt-1.5 text-[11px] text-destructive">Gateways only send webhooks to https addresses.</p>
+                            @endif
+                        </div>
+                    @else
+                        <div class="mt-3 flex items-start gap-2 rounded-md border border-border bg-muted/50 p-2.5">
+                            <x-ui.icon name="info" size="xs" class="mt-0.5 shrink-0 text-muted-foreground" />
+                            <p class="text-xs text-muted-foreground">
+                                Credentials can be stored, but checkout does not use {{ $gateway->name }} yet — members are offered Stripe and Razorpay.
+                            </p>
+                        </div>
+                    @endif
+
+                    @if ($gateway->is_active && $supported && ! in_array(App\Support\Currency::code(), $gateway->slug === 'razorpay' ? ['INR'] : ['USD', 'EUR', 'GBP', 'INR'], true))
+                        <div class="mt-3 flex items-start gap-2 rounded-md border border-warning/30 bg-warning-subtle p-2.5">
+                            <x-ui.icon name="warning" size="xs" class="mt-0.5 shrink-0 text-warning-subtle-foreground" />
+                            <p class="text-xs text-warning-subtle-foreground">
+                                Your prices are in {{ App\Support\Currency::code() }}, which {{ $gateway->name }} cannot charge.
+                                Members will not be offered it.
+                            </p>
+                        </div>
+                    @endif
+                @endif
+
                 {{-- A gateway switched on but not configured, or live in test
                      mode, takes real money nowhere. Said plainly. --}}
                 @if ($gateway->hasConfigurationWarning() ?? false)

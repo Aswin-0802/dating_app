@@ -67,7 +67,7 @@ final class MemberNotifier
         $body = $this->render($template->body, $values);
 
         try {
-            $member->notify(new TemplatedMail($subject, $body, $actionText, $actionUrl));
+            $member->notify(new TemplatedMail($subject, $body, $actionText, $actionUrl, $templateKey));
         } catch (Throwable $e) {
             $this->log($member, $subject, $templateKey, 'failed', str($e->getMessage())->limit(180)->toString());
             Log::warning("Could not email {$member->email}: {$e->getMessage()}");
