@@ -28,8 +28,8 @@ class SystemSeeder extends Seeder
             ['key' => 'mail.username', 'value' => '', 'type' => 'text', 'label' => 'SMTP username'],
             ['key' => 'mail.password', 'value' => '', 'type' => 'text', 'label' => 'SMTP password', 'description' => 'Stored encrypted and never shown again. Leave blank to keep the current one.'],
             ['key' => 'mail.encryption', 'value' => 'tls', 'type' => 'text', 'label' => 'Encryption'],
-            ['key' => 'mail.from_address', 'value' => 'hello@veyra.test', 'type' => 'text', 'label' => 'From address'],
-            ['key' => 'mail.from_name', 'value' => 'Veyra', 'type' => 'text', 'label' => 'From name'],
+            ['key' => 'mail.from_address', 'value' => 'hello@demo.test', 'type' => 'text', 'label' => 'From address'],
+            ['key' => 'mail.from_name', 'value' => 'Dating App', 'type' => 'text', 'label' => 'From name'],
         ];
     }
 

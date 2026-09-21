@@ -1,6 +1,9 @@
-# Veyra — Trust & Safety Console
+# Dating Platform — Trust & Safety Console
 
-Admin console for a dating platform, plus the REST API its mobile clients use.
+A white-label dating product: a public website, a member app, an admin console and
+the REST API its mobile clients use. The product carries no fixed brand — the
+name, logo, colours, currency, prices and every word a member reads are rows in
+the database, edited from the console.
 
 Laravel 12 · Livewire 3 · Tailwind v4 · MySQL · Sanctum
 

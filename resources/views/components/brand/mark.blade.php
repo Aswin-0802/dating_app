@@ -21,6 +21,12 @@
         default => 'h-9',
     };
 
+    $initialsSize = match ($size) {
+        'sm' => 'text-[13px]',
+        'lg' => 'text-base',
+        default => 'text-sm',
+    };
+
     $fill = $tone === 'sidebar'
         ? 'bg-sidebar-primary text-sidebar-primary-foreground'
         : 'bg-primary text-primary-foreground';
@@ -28,15 +34,18 @@
 
 {{--
     An uploaded logo is shown at its own aspect ratio, capped in height, because
-    buyers upload wordmarks as often as square icons. Without one, a tile in the
-    brand colour keeps a fresh install looking finished.
+    buyers upload wordmarks as often as square icons.
+
+    Without one, the tile carries the initials of whatever the product is
+    called. A fixed glyph would be somebody's logo — this belongs to whoever
+    set the name in Settings → Branding, which is the point of a white-label
+    product.
 --}}
 @if ($logo)
     <img src="{{ $logo }}" alt="{{ Branding::name() }}" {{ $attributes->class([$imageHeight, 'w-auto max-w-40 shrink-0 object-contain']) }}>
 @else
-    <span {{ $attributes->class([$box, $fill, 'flex shrink-0 items-center justify-center rounded-lg']) }} aria-hidden="true">
-        <svg viewBox="0 0 24 24" class="size-1/2" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 8l7 11 7-11" />
-        </svg>
-    </span>
+    <span
+        {{ $attributes->class([$box, $fill, $initialsSize, 'flex shrink-0 items-center justify-center rounded-lg font-bold tracking-tight']) }}
+        aria-hidden="true"
+    >{{ veyra_initials(Branding::name()) }}</span>
 @endif

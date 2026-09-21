@@ -7,6 +7,7 @@ namespace App\Services\Sms;
 use App\Models\AppUser;
 use App\Models\SmsGateway;
 use App\Models\SmsLog;
+use App\Support\Branding;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -113,7 +114,9 @@ final class SmsSender
             'api_key' => (string) ($gateway->credentials['api_key'] ?? ''),
             'api_secret' => (string) ($gateway->credentials['api_secret'] ?? ''),
             'to' => ltrim($to, '+'),
-            'from' => $gateway->sender_id ?: 'Veyra',
+            // Alphanumeric sender ids are capped at 11 characters by the
+            // carriers, so the product name is trimmed rather than rejected.
+            'from' => $gateway->sender_id ?: str(Branding::name())->limit(11, '')->toString(),
             'text' => $body,
         ]);
 
@@ -130,7 +133,7 @@ final class SmsSender
         $response = Http::asForm()->timeout(15)->post('https://api.textlocal.in/send/', [
             'apikey' => (string) ($gateway->credentials['api_key'] ?? ''),
             'numbers' => ltrim($to, '+'),
-            'sender' => $gateway->sender_id ?: 'TXTLCL',
+            'sender' => $gateway->sender_id ?: str(Branding::name())->limit(6, '')->upper()->toString(),
             'message' => $body,
         ]);
 

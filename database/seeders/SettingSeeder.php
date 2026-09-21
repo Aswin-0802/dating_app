@@ -27,7 +27,7 @@ class SettingSeeder extends Seeder
              * need an upload field and a colour needs a picker, and a live
              * preview is what stops somebody shipping an unreadable palette.
              */
-            ['key' => 'brand.name', 'value' => 'Veyra', 'type' => 'text', 'group' => 'branding', 'label' => 'Product name', 'is_public' => true],
+            ['key' => 'brand.name', 'value' => 'Dating App', 'type' => 'text', 'group' => 'branding', 'label' => 'Product name', 'is_public' => true],
             ['key' => 'brand.tagline', 'value' => 'Trust & Safety Console', 'type' => 'text', 'group' => 'branding', 'label' => 'Admin tagline', 'description' => 'Shown under the name in the admin sidebar.'],
             ['key' => 'brand.primary_color', 'value' => '#c2265a', 'type' => 'text', 'group' => 'branding', 'label' => 'Brand colour', 'is_public' => true],
             ['key' => 'brand.theme_mode', 'value' => 'system', 'type' => 'text', 'group' => 'branding', 'label' => 'Default theme', 'description' => 'light, dark or system. Each person can still switch their own.'],
@@ -35,10 +35,10 @@ class SettingSeeder extends Seeder
             ['key' => 'brand.logo', 'value' => '', 'type' => 'image', 'group' => 'branding', 'label' => 'Website logo', 'is_public' => true],
             ['key' => 'brand.favicon', 'value' => '', 'type' => 'image', 'group' => 'branding', 'label' => 'Favicon', 'is_public' => true],
             ['key' => 'brand.login_image', 'value' => '', 'type' => 'image', 'group' => 'branding', 'label' => 'Sign-in page image'],
-            ['key' => 'brand.support_email', 'value' => 'support@veyra.test', 'type' => 'text', 'group' => 'branding', 'label' => 'Support email', 'is_public' => true],
+            ['key' => 'brand.support_email', 'value' => 'support@demo.test', 'type' => 'text', 'group' => 'branding', 'label' => 'Support email', 'is_public' => true],
 
             ['key' => 'business.name', 'value' => 'Veyra Ltd', 'type' => 'text', 'group' => 'branding', 'label' => 'Company name', 'is_public' => true],
-            ['key' => 'business.email', 'value' => 'hello@veyra.test', 'type' => 'text', 'group' => 'branding', 'label' => 'Company email', 'is_public' => true],
+            ['key' => 'business.email', 'value' => 'hello@demo.test', 'type' => 'text', 'group' => 'branding', 'label' => 'Company email', 'is_public' => true],
             ['key' => 'business.phone', 'value' => '', 'type' => 'text', 'group' => 'branding', 'label' => 'Company phone', 'is_public' => true],
             ['key' => 'business.address', 'value' => '', 'type' => 'textarea', 'group' => 'branding', 'label' => 'Company address', 'is_public' => true],
 

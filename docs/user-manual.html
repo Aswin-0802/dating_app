@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Veyra — User Manual</title>
-<meta name="description" content="How to run the Veyra console day to day, screen by screen.">
+<title>Dating Platform — User Manual</title>
+<meta name="description" content="How to run the console day to day, screen by screen.">
 <link rel="stylesheet" href="assets/doc.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
 
 <header class="cover">
     <p class="eyebrow">User manual</p>
-    <h1>Running Veyra</h1>
+    <h1>Running the console</h1>
     <p class="lede">Everything the console does, screen by screen: keeping members safe, answering their questions, taking
     their money and telling them things — with the reasoning behind each screen, so you know not just where to click but
     when to.</p>
@@ -60,6 +60,15 @@ never open the console — and yours will not open the member app.</p>
     <li>If you have forgotten your password, use <strong>Forgot password</strong>. The link that arrives is valid for one hour.</li>
     <li>After five wrong attempts the form pauses for a minute. This is deliberate and will clear on its own.</li>
 </ol>
+
+<div class="note">
+    <span class="label">No fixed brand</span>
+    <p>The product does not carry a name of its own. The name, logo, favicon, colours, currency, plan names and prices, the
+    profile questions, the interests, the report categories and every message a member receives are <strong>rows in the
+    database</strong>, edited in the console — no code, no deployment. The screenshots here show a demo configuration named
+    "Dating App"; that name is a setting, and the mark beside it is drawn from it. Change it in Settings → Branding and the
+    website, the member app, the console and the emails all follow within a second.</p>
+</div>
 
 <h3>What you can see depends on your role</h3>
 
@@ -484,7 +493,7 @@ someone's powers is visible afterwards.</p>
     <span class="label">The scheduler</span>
     <p>Without it, plans never end, restrictions never lift, renewal warnings never send and campaigns never go out. It is one
     line on the server and it is not optional:</p>
-    <pre><code>* * * * * cd /path/to/veyra &amp;&amp; php artisan schedule:run >> /dev/null 2>&amp;1</code></pre>
+    <pre><code>* * * * * cd /path/to/the-app &amp;&amp; php artisan schedule:run >> /dev/null 2>&amp;1</code></pre>
 </div>
 
 <!-- ------------------------------------------------------------------ -->
@@ -518,7 +527,7 @@ hidden. A payment can only be refunded in the gateway's own dashboard — then r
 not have it by default.</p>
 
 <footer class="doc-end">
-    <p>Veyra user manual · Screenshots are of the running product with demo data. Your own installation will show your
+    <p>User manual · Screenshots are of the running product with demo data. Your own installation will show your
     branding, your plans and your members. See the <a href="project-overview.html">Project overview</a> for how it is built.</p>
 </footer>
 

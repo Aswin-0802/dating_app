@@ -132,6 +132,6 @@ class BrandingTest extends TestCase
             ->call('save')
             ->assertForbidden();
 
-        $this->assertSame('Veyra', veyra_setting('brand.name'));
+        $this->assertSame('Dating App', veyra_setting('brand.name'));
     }
 }

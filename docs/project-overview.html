@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Veyra — Project Overview</title>
-<meta name="description" content="What the Veyra dating platform is, how it is built, and what it takes to run it.">
+<title>Dating Platform — Project Overview</title>
+<meta name="description" content="What this dating platform is, how it is built, and what it takes to run it.">
 <link rel="stylesheet" href="assets/doc.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
 
 <header class="cover">
     <p class="eyebrow">Project overview</p>
-    <h1>Veyra</h1>
+    <h1>Dating Platform</h1>
     <p class="lede">A dating platform with a trust &amp; safety console at its centre: member apps and a public website on
     one side, and the tools to verify, moderate, charge and communicate with those members on the other.</p>
     <dl>
@@ -26,7 +26,7 @@
 <nav class="toc">
     <h2>Contents</h2>
     <ol>
-        <li><a href="#what">What Veyra is</a></li>
+        <li><a href="#what">What the platform is</a></li>
         <li><a href="#who">Who uses it</a></li>
         <li><a href="#modules">What is included</a></li>
         <li><a href="#members-see">What members see</a></li>
@@ -44,9 +44,9 @@
 </nav>
 
 <!-- ------------------------------------------------------------------ -->
-<h2 id="what">1. What Veyra is</h2>
+<h2 id="what">1. What the platform is</h2>
 
-<p>Veyra is a complete dating product in three parts that share one database and one set of rules:</p>
+<p>This is a complete dating product in three parts that share one database and one set of rules:</p>
 
 <ul>
     <li><strong>A public website</strong> — the marketing pages, pricing and sign-up that a visitor sees first.</li>
@@ -61,8 +61,17 @@ aggregated case handling, a graduated enforcement ladder, appeals reviewed by so
 and an audit trail of every staff action are built into the core, because those are the things that decide whether a
 dating product survives contact with real users.</p>
 
+<div class="note">
+    <span class="label">No fixed brand</span>
+    <p>The product does not carry a name of its own. The name, logo, favicon, colours, currency, plan names and prices, the
+    profile questions, the interests, the report categories and every message a member receives are <strong>rows in the
+    database</strong>, edited in the console — no code, no deployment. The screenshots here show a demo configuration named
+    "Dating App"; that name is a setting, and the mark beside it is drawn from it. Change it in Settings → Branding and the
+    website, the member app, the console and the emails all follow within a second.</p>
+</div>
+
 <figure>
-    <img src="images/admin-dashboard.png" alt="The Veyra console dashboard showing sign-ups, matching health and safety figures">
+    <img src="images/admin-dashboard.png" alt="The console dashboard showing sign-ups, matching health and safety figures">
     <figcaption>The console opens on the numbers that describe a dating product's health — not generic page views.</figcaption>
 </figure>
 
@@ -169,7 +178,7 @@ changed in the console applies identically on both.</p>
   Http/         controllers for the API, webhooks and the few plain endpoints
 resources/views/
   components/ui      about forty primitives every screen is built from
-  components/veyra   risk badges, status badges, SLA pills, the enforcement dialog
+  components/…      the domain pieces: risk badges, status badges, SLA pills, the enforcement dialog
   livewire/          one view per screen
 routes/         web.php · admin.php · api.php · console.php (the scheduler)
 tests/          Feature tests plus acceptance suites that run against seeded data</code></pre>
@@ -312,7 +321,7 @@ an email on the day it ends. The schedule is editable, and each reminder is reco
 <h3>The scheduler</h3>
 <p>One entry drives everything the clock owns — expiring restrictions and plans, renewal warnings, campaign sending:</p>
 
-<pre><code>* * * * * cd /path/to/veyra &amp;&amp; php artisan schedule:run >> /dev/null 2>&amp;1</code></pre>
+<pre><code>* * * * * cd /path/to/the-app &amp;&amp; php artisan schedule:run >> /dev/null 2>&amp;1</code></pre>
 
 <p>On Windows the same command runs as a Task Scheduler task every minute. Without it the product still works — suspensions
 clear themselves the next time a member loads a page — but nothing else ends on time.</p>
@@ -388,7 +397,7 @@ and cases every time, so a screenshot taken today matches the product tomorrow.<
 </ul>
 
 <footer class="doc-end">
-    <p>Veyra project overview · Generated from the working product, not from a plan. The companion <a href="user-manual.html">User Manual</a>
+    <p>Project overview · Generated from the working product, not from a plan. The companion <a href="user-manual.html">User Manual</a>
     covers day-to-day operation screen by screen.</p>
 </footer>
 

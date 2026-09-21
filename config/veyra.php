@@ -19,7 +19,7 @@ declare(strict_types=1);
 return [
 
     'brand' => [
-        'name' => 'Veyra',
+        'name' => 'Dating App',
         'tagline' => 'Trust & Safety Console',
     ],
 

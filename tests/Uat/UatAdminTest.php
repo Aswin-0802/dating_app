@@ -53,14 +53,14 @@ class UatAdminTest extends UatTestCase
 
     public function test_a01_valid_staff_login_lands_on_dashboard(): void
     {
-        $this->post('/admin/login', ['email' => 'admin@veyra.test', 'password' => 'password'])
+        $this->post('/admin/login', ['email' => 'admin@demo.test', 'password' => 'password'])
             ->assertRedirect(route('admin.dashboard'));
         $this->assertAuthenticated('web');
     }
 
     public function test_a02_wrong_password_is_refused_with_a_message(): void
     {
-        $this->from('/admin/login')->post('/admin/login', ['email' => 'admin@veyra.test', 'password' => 'nope'])
+        $this->from('/admin/login')->post('/admin/login', ['email' => 'admin@demo.test', 'password' => 'nope'])
             ->assertRedirect('/admin/login')->assertSessionHasErrors('email');
         $this->assertGuest('web');
     }
@@ -73,22 +73,22 @@ class UatAdminTest extends UatTestCase
     public function test_a04_brute_force_is_throttled(): void
     {
         for ($i = 0; $i < 6; $i++) {
-            $this->post('/admin/login', ['email' => 'admin@veyra.test', 'password' => 'wrong'.$i]);
+            $this->post('/admin/login', ['email' => 'admin@demo.test', 'password' => 'wrong'.$i]);
         }
-        $this->post('/admin/login', ['email' => 'admin@veyra.test', 'password' => 'wrong'])
+        $this->post('/admin/login', ['email' => 'admin@demo.test', 'password' => 'wrong'])
             ->assertStatus(429);
     }
 
     public function test_a05_suspended_staff_cannot_sign_in(): void
     {
-        $this->staff('mod1@veyra.test')->forceFill(['status' => 'suspended'])->save();
-        $this->post('/admin/login', ['email' => 'mod1@veyra.test', 'password' => 'password']);
+        $this->staff('mod1@demo.test')->forceFill(['status' => 'suspended'])->save();
+        $this->post('/admin/login', ['email' => 'mod1@demo.test', 'password' => 'password']);
         $this->get('/admin')->assertRedirect('/admin/login');
     }
 
     public function test_a06_logout_ends_the_session(): void
     {
-        $this->actingAs($this->staff('admin@veyra.test'))->post('/admin/logout')->assertRedirect();
+        $this->actingAs($this->staff('admin@demo.test'))->post('/admin/logout')->assertRedirect();
         $this->assertGuest('web');
     }
 
@@ -107,7 +107,7 @@ class UatAdminTest extends UatTestCase
 
     public function test_a09_staff_can_change_own_password(): void
     {
-        $html = $this->actingAs($this->staff('admin@veyra.test'))->get('/admin/profile')->assertOk()->getContent();
+        $html = $this->actingAs($this->staff('admin@demo.test'))->get('/admin/profile')->assertOk()->getContent();
         $this->assertStringContainsString('type="password"', $html,
             'EXPECTED a change-password form on /admin/profile (reference admin has change-password).');
     }
@@ -118,10 +118,10 @@ class UatAdminTest extends UatTestCase
     public static function roleMatrix(): array
     {
         return [
-            'Moderator' => ['mod1@veyra.test', ['/admin', '/admin/cases', '/admin/verifications'], ['/admin/roles', '/admin/settings/mail', '/admin/staff', '/admin/settings/branding']],
-            'Support' => ['support1@veyra.test', ['/admin', '/admin/users'], ['/admin/roles', '/admin/system/backup', '/admin/audit/message-access']],
-            'Analyst' => ['analyst1@veyra.test', ['/admin', '/admin/analytics/funnel'], ['/admin/roles', '/admin/staff', '/admin/settings/mail', '/admin/conversations']],
-            'Admin' => ['ops@veyra.test', ['/admin', '/admin/staff', '/admin/settings/mail', '/admin/settings/branding'], ['/admin/verifications/restricted']],
+            'Moderator' => ['mod1@demo.test', ['/admin', '/admin/cases', '/admin/verifications'], ['/admin/roles', '/admin/settings/mail', '/admin/staff', '/admin/settings/branding']],
+            'Support' => ['support1@demo.test', ['/admin', '/admin/users'], ['/admin/roles', '/admin/system/backup', '/admin/audit/message-access']],
+            'Analyst' => ['analyst1@demo.test', ['/admin', '/admin/analytics/funnel'], ['/admin/roles', '/admin/staff', '/admin/settings/mail', '/admin/conversations']],
+            'Admin' => ['ops@demo.test', ['/admin', '/admin/staff', '/admin/settings/mail', '/admin/settings/branding'], ['/admin/verifications/restricted']],
         ];
     }
 
@@ -157,7 +157,7 @@ class UatAdminTest extends UatTestCase
 
     public function test_b03_role_permission_change_saves_and_is_audited(): void
     {
-        $admin = $this->staff('admin@veyra.test');
+        $admin = $this->staff('admin@demo.test');
         $role = Role::findByName('Support', 'web');
         $permission = Permission::findByName('export_users', 'web');
         $had = $role->hasPermissionTo($permission);
@@ -173,22 +173,22 @@ class UatAdminTest extends UatTestCase
 
     public function test_b04_new_role_can_be_created(): void
     {
-        $html = $this->actingAs($this->staff('admin@veyra.test'))->get('/admin/roles')->getContent();
+        $html = $this->actingAs($this->staff('admin@demo.test'))->get('/admin/roles')->getContent();
         $this->assertTrue(str_contains($html, 'New role') || str_contains($html, 'Add role') || str_contains($html, 'Create role'),
             'EXPECTED a way to create a role (reference admin: roles/add-role).');
     }
 
     public function test_b05_staff_can_be_added_and_edited(): void
     {
-        $html = $this->actingAs($this->staff('admin@veyra.test'))->get('/admin/staff')->getContent();
+        $html = $this->actingAs($this->staff('admin@demo.test'))->get('/admin/staff')->getContent();
         $this->assertTrue(str_contains($html, 'Add staff') || str_contains($html, 'Invite staff') || str_contains($html, 'New staff'),
             'EXPECTED a way to add staff and change their role (reference admin: users/create, users/edit).');
     }
 
     public function test_b06_staff_status_toggle_and_self_protection(): void
     {
-        $admin = $this->staff('admin@veyra.test');
-        $mod = $this->staff('mod1@veyra.test');
+        $admin = $this->staff('admin@demo.test');
+        $mod = $this->staff('mod1@demo.test');
 
         Livewire::actingAs($admin)->test(StaffIndex::class)->call('toggleStatus', $mod->id);
         $this->assertSame('suspended', $mod->fresh()->status, 'EXPECTED the moderator to be suspended.');
@@ -203,7 +203,7 @@ class UatAdminTest extends UatTestCase
     {
         $v = Verification::query()->where('queue', 'standard')->whereIn('status', ['pending', 'in_review'])->where('minor_suspected', false)->firstOrFail();
 
-        Livewire::actingAs($this->staff('mod1@veyra.test'))->test(Review::class, ['verification' => $v])->call('approve')->assertHasNoErrors();
+        Livewire::actingAs($this->staff('mod1@demo.test'))->test(Review::class, ['verification' => $v])->call('approve')->assertHasNoErrors();
 
         $this->assertSame('approved', $v->fresh()->status->value);
         $this->assertSame('approved', $v->appUser->fresh()->verification_status->value, 'EXPECTED member verification_status = approved.');
@@ -212,7 +212,7 @@ class UatAdminTest extends UatTestCase
     public function test_c02_reject_needs_a_reason(): void
     {
         $v = Verification::query()->where('queue', 'standard')->whereIn('status', ['pending', 'in_review'])->firstOrFail();
-        Livewire::actingAs($this->staff('mod1@veyra.test'))->test(Review::class, ['verification' => $v])
+        Livewire::actingAs($this->staff('mod1@demo.test'))->test(Review::class, ['verification' => $v])
             ->set('reasonCode', '')->call('reject')->assertHasErrors('reasonCode');
         $this->assertNotSame('rejected', $v->fresh()->status->value);
     }
@@ -221,14 +221,14 @@ class UatAdminTest extends UatTestCase
     {
         $v = Verification::query()->where('minor_suspected', true)->firstOrFail();
         $v->forceFill(['status' => 'pending', 'reviewed_by' => null, 'reviewed_at' => null])->save();
-        Livewire::actingAs($this->staff('lead@veyra.test'))->test(Review::class, ['verification' => $v])->call('approve');
+        Livewire::actingAs($this->staff('lead@demo.test'))->test(Review::class, ['verification' => $v])->call('approve');
         $this->assertNotSame('approved', $v->fresh()->status->value, 'EXPECTED approval to be refused for a minor-safety flag.');
     }
 
     public function test_c04_restricted_queue_is_invisible_to_moderators(): void
     {
         $v = Verification::query()->where('queue', 'restricted_minor')->firstOrFail();
-        $this->actingAs($this->staff('mod1@veyra.test'));
+        $this->actingAs($this->staff('mod1@demo.test'));
         $this->get('/admin/verifications/restricted')->assertNotFound();
         $this->get(route('admin.verifications.review', $v))->assertNotFound();
     }
@@ -252,7 +252,7 @@ class UatAdminTest extends UatTestCase
     public function test_d01_claim_assigns_the_case(): void
     {
         $case = $this->openCase(unclaimed: true);
-        $mod = $this->staff('mod1@veyra.test');
+        $mod = $this->staff('mod1@demo.test');
         Livewire::actingAs($mod)->test(CaseShow::class, ['reportCase' => $case])->call('claim');
         $this->assertSame($mod->id, $case->fresh()->claimed_by);
     }
@@ -260,7 +260,7 @@ class UatAdminTest extends UatTestCase
     public function test_d02_suspension_needs_a_note_then_applies(): void
     {
         $case = $this->openCase();
-        $mod = $this->staff('mod1@veyra.test');
+        $mod = $this->staff('mod1@demo.test');
 
         Livewire::actingAs($mod)->test(CaseShow::class, ['reportCase' => $case])
             ->call('openStep', 'suspend')->set('reasonCode', 'harassment_confirmed')->set('note', '')
@@ -277,7 +277,7 @@ class UatAdminTest extends UatTestCase
 
     public function test_d03_moderator_cannot_permanently_ban(): void
     {
-        Livewire::actingAs($this->staff('mod1@veyra.test'))->test(CaseShow::class, ['reportCase' => $this->openCase()])
+        Livewire::actingAs($this->staff('mod1@demo.test'))->test(CaseShow::class, ['reportCase' => $this->openCase()])
             ->call('openStep', 'permanent_ban')->set('reasonCode', 'harassment_confirmed')->set('note', 'x')
             ->call('confirmStep')->assertForbidden();
     }
@@ -285,7 +285,7 @@ class UatAdminTest extends UatTestCase
     public function test_d04_lifting_a_ban_restores_the_account(): void
     {
         $ban = Ban::query()->active()->whereIn('type', ['suspension', 'feature_limit', 'permanent_ban'])->firstOrFail();
-        Livewire::actingAs($this->staff('senior1@veyra.test'))->test(Bans::class)->call('lift', $ban->id);
+        Livewire::actingAs($this->staff('senior1@demo.test'))->test(Bans::class)->call('lift', $ban->id);
         $this->assertNotNull($ban->fresh()->lifted_at);
         $this->assertSame(AccountStatus::Active, $ban->appUser->fresh()->account_status, 'EXPECTED account active after lift.');
     }
@@ -293,14 +293,14 @@ class UatAdminTest extends UatTestCase
     public function test_d05_shadow_review_extension_requires_a_date(): void
     {
         $ban = Ban::query()->active()->where('type', 'shadow_ban')->firstOrFail();
-        Livewire::actingAs($this->staff('lead@veyra.test'))->test(ShadowBanReviews::class)
+        Livewire::actingAs($this->staff('lead@demo.test'))->test(ShadowBanReviews::class)
             ->call('startExtend', $ban->id)->set('newReviewDate', null)->call('extend')->assertHasErrors();
     }
 
     public function test_d06_member_page_actions_are_wired(): void
     {
         $member = AppUser::query()->where('account_status', 'active')->firstOrFail();
-        $html = $this->actingAs($this->staff('admin@veyra.test'))->get(route('admin.users.show', $member))->getContent();
+        $html = $this->actingAs($this->staff('admin@demo.test'))->get(route('admin.users.show', $member))->getContent();
 
         preg_match('#Actions.*?Ban permanently#s', $html, $m);
         $this->assertStringContainsString('wire:click', $m[0] ?? '',
@@ -309,10 +309,10 @@ class UatAdminTest extends UatTestCase
 
     public function test_d07_members_export_works(): void
     {
-        $html = $this->actingAs($this->staff('admin@veyra.test'))->get('/admin/users')->getContent();
+        $html = $this->actingAs($this->staff('admin@demo.test'))->get('/admin/users')->getContent();
         $this->assertStringContainsString('wire:click="export"', $html, 'EXPECTED the Export button to download a CSV; it has no handler.');
 
-        Livewire::actingAs($this->staff('admin@veyra.test'))->test(Index::class)
+        Livewire::actingAs($this->staff('admin@demo.test'))->test(Index::class)
             ->call('export')
             ->assertFileDownloaded();
     }
@@ -322,7 +322,7 @@ class UatAdminTest extends UatTestCase
         $member = AppUser::query()->where('account_status', 'active')->firstOrFail();
         $before = ModerationAction::query()->where('subject_app_user_id', $member->id)->count();
 
-        Livewire::actingAs($this->staff('mod1@veyra.test'))->test(Show::class, ['appUser' => $member])
+        Livewire::actingAs($this->staff('mod1@demo.test'))->test(Show::class, ['appUser' => $member])
             ->call('openStep', 'warn')
             ->call('confirmStep')->assertHasErrors('reasonCode')
             ->set('reasonCode', 'harassment_confirmed')
@@ -335,7 +335,7 @@ class UatAdminTest extends UatTestCase
     {
         $member = AppUser::query()->where('account_status', 'active')->firstOrFail();
 
-        Livewire::actingAs($this->staff('mod1@veyra.test'))->test(Show::class, ['appUser' => $member])
+        Livewire::actingAs($this->staff('mod1@demo.test'))->test(Show::class, ['appUser' => $member])
             ->call('openStep', 'permanent_ban')->assertForbidden();
     }
 
@@ -344,7 +344,7 @@ class UatAdminTest extends UatTestCase
         $member = AppUser::query()->findOrFail(MatchRecord::query()->value('app_user_one_id'));
 
         foreach (['profile', 'photos', 'matches', 'reports', 'enforcement', 'devices', 'timeline'] as $tab) {
-            Livewire::actingAs($this->staff('admin@veyra.test'))->test(Show::class, ['appUser' => $member])
+            Livewire::actingAs($this->staff('admin@demo.test'))->test(Show::class, ['appUser' => $member])
                 ->call('setTab', $tab)
                 ->assertDontSee('not built yet');
         }
@@ -356,7 +356,7 @@ class UatAdminTest extends UatTestCase
     {
         $appeal = Appeal::query()->whereNotNull('original_decider_id')->whereIn('status', ['new', 'assigned', 'in_review'])->firstOrFail();
 
-        Livewire::actingAs($this->staff('admin@veyra.test'))->test(AppealShow::class, ['appeal' => $appeal])
+        Livewire::actingAs($this->staff('admin@demo.test'))->test(AppealShow::class, ['appeal' => $appeal])
             ->set('assignTo', $appeal->original_decider_id)->call('assign')->assertHasErrors('assignTo');
     }
 
@@ -376,14 +376,14 @@ class UatAdminTest extends UatTestCase
         $conversation = Conversation::query()->where('messages_count', '>', 0)->firstOrFail();
         $baseline = MessageAccessLog::query()->count();
 
-        Livewire::actingAs($this->staff('support1@veyra.test'))->test(ConversationShow::class, ['conversation' => $conversation])
+        Livewire::actingAs($this->staff('support1@demo.test'))->test(ConversationShow::class, ['conversation' => $conversation])
             ->set('reasonCode', 'case_review')->set('justification', 'Checking a report in detail')->call('reveal');
         $this->assertSame($baseline, MessageAccessLog::query()->count(), 'EXPECTED Support (no view_message_content) to be refused.');
 
-        Livewire::actingAs($this->staff('lead@veyra.test'))->test(ConversationShow::class, ['conversation' => $conversation])
+        Livewire::actingAs($this->staff('lead@demo.test'))->test(ConversationShow::class, ['conversation' => $conversation])
             ->set('reasonCode', 'case_review')->set('justification', 'short')->call('reveal')->assertHasErrors('justification');
 
-        Livewire::actingAs($this->staff('lead@veyra.test'))->test(ConversationShow::class, ['conversation' => $conversation])
+        Livewire::actingAs($this->staff('lead@demo.test'))->test(ConversationShow::class, ['conversation' => $conversation])
             ->set('reasonCode', 'case_review')->set('justification', 'Reviewing reported harassment in this thread.')->call('reveal')->assertHasNoErrors();
         $this->assertSame($baseline + 1, MessageAccessLog::query()->count(), 'EXPECTED exactly one access-log row.');
     }
@@ -391,7 +391,7 @@ class UatAdminTest extends UatTestCase
     public function test_f02_conversation_index_never_contains_message_bodies(): void
     {
         $body = (string) \DB::table('messages')->whereNotNull('body')->where('body', '!=', '')->value('body');
-        $this->actingAs($this->staff('admin@veyra.test'))->get('/admin/conversations')->assertDontSee($body);
+        $this->actingAs($this->staff('admin@demo.test'))->get('/admin/conversations')->assertDontSee($body);
     }
 
     // ================================================================ G. notifications
@@ -424,13 +424,13 @@ class UatAdminTest extends UatTestCase
         $campaign = PushCampaign::query()->firstOrFail();
         $campaign->forceFill(['status' => 'sent'])->save();
 
-        Livewire::actingAs($this->staff('admin@veyra.test'))->test(Campaigns::class)->call('cancel', $campaign->id);
+        Livewire::actingAs($this->staff('admin@demo.test'))->test(Campaigns::class)->call('cancel', $campaign->id);
         $this->assertSame('sent', $campaign->fresh()->status, 'EXPECTED a sent campaign to stay "sent".');
     }
 
     public function test_g04_a_new_campaign_can_be_created(): void
     {
-        $html = $this->actingAs($this->staff('admin@veyra.test'))->get('/admin/notifications')->getContent();
+        $html = $this->actingAs($this->staff('admin@demo.test'))->get('/admin/notifications')->getContent();
         $this->assertTrue(str_contains($html, 'New campaign') || str_contains($html, 'Create campaign'),
             'EXPECTED a way to create a push campaign; only seeded campaigns can be approved or cancelled.');
     }
@@ -440,7 +440,7 @@ class UatAdminTest extends UatTestCase
     public function test_h01_settings_save_and_take_effect(): void
     {
         $setting = Setting::query()->where('key', 'matching.daily_like_limit_free')->firstOrFail();
-        Livewire::actingAs($this->staff('admin@veyra.test'))->test(SettingsIndex::class, ['group' => 'matching'])
+        Livewire::actingAs($this->staff('admin@demo.test'))->test(SettingsIndex::class, ['group' => 'matching'])
             ->set("values.{$setting->id}", 42)->call('save');
         $this->assertSame(42, veyra_setting('matching.daily_like_limit_free'));
     }
@@ -448,7 +448,7 @@ class UatAdminTest extends UatTestCase
     public function test_h02_negative_limits_are_rejected(): void
     {
         $setting = Setting::query()->where('key', 'matching.daily_like_limit_free')->firstOrFail();
-        Livewire::actingAs($this->staff('admin@veyra.test'))->test(SettingsIndex::class, ['group' => 'matching'])
+        Livewire::actingAs($this->staff('admin@demo.test'))->test(SettingsIndex::class, ['group' => 'matching'])
             ->set("values.{$setting->id}", -5)->call('save');
         $this->assertGreaterThanOrEqual(0, (int) $setting->fresh()->value, 'EXPECTED a negative like limit to be refused by validation.');
     }
@@ -462,21 +462,21 @@ class UatAdminTest extends UatTestCase
 
     public function test_h04_mail_settings_validate(): void
     {
-        $mail = Livewire::actingAs($this->staff('admin@veyra.test'))->test(Mail::class);
+        $mail = Livewire::actingAs($this->staff('admin@demo.test'))->test(Mail::class);
         $mail->set('values.mail.port', 99999)->call('save')->assertHasErrors('values.mail.port');
     }
 
     public function test_h05_backup_delete_cannot_escape_the_backup_folder(): void
     {
         \Storage::disk('local')->put('keep.sql', 'x');
-        Livewire::actingAs($this->staff('admin@veyra.test'))->test(Backup::class)->call('delete', '../keep.sql');
+        Livewire::actingAs($this->staff('admin@demo.test'))->test(Backup::class)->call('delete', '../keep.sql');
         \Storage::disk('local')->assertExists('keep.sql');
         \Storage::disk('local')->delete('keep.sql');
     }
 
     public function test_h06_geography_masters_can_be_managed(): void
     {
-        $this->actingAs($this->staff('admin@veyra.test'))->get(route('admin.masters.locations'))->assertOk();
+        $this->actingAs($this->staff('admin@demo.test'))->get(route('admin.masters.locations'))->assertOk();
         $this->assertTrue(\Route::has('admin.masters.locations'),
             'EXPECTED country/state/city management (reference admin: masters/country|state|city).');
     }
@@ -492,7 +492,7 @@ class UatAdminTest extends UatTestCase
 
     public function test_i02_unknown_records_are_404_not_500(): void
     {
-        $this->actingAs($this->staff('admin@veyra.test'));
+        $this->actingAs($this->staff('admin@demo.test'));
         foreach (['/admin/users/00000000-0000-0000-0000-000000000000', '/admin/cases/VEY-0000-000000', '/admin/appeals/nope', '/admin/conversations/nope', '/admin/verifications/999999', '/admin/roles/9999/permissions'] as $path) {
             $this->assertSame(404, $this->get($path)->status(), "EXPECTED 404 for {$path}");
         }
@@ -501,7 +501,7 @@ class UatAdminTest extends UatTestCase
     public function test_i03_command_palette_search_finds_members(): void
     {
         $member = AppUser::query()->firstOrFail();
-        Livewire::actingAs($this->staff('admin@veyra.test'))->test(CommandPalette::class)
+        Livewire::actingAs($this->staff('admin@demo.test'))->test(CommandPalette::class)
             ->set('query', substr($member->display_name, 0, 4))->assertSee($member->display_name);
     }
 }
