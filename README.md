@@ -26,22 +26,71 @@ rather than drawn.
 
 ## Getting it running
 
-Requires PHP 8.2+, Composer, Node 20+, and MySQL. On XAMPP everything below
-works as-is.
+### What you need
+
+| | |
+|---|---|
+| PHP | 8.2 or newer, with `pdo_mysql`, `mbstring`, `openssl`, `gd`, `fileinfo`, `zip`, `bcmath`, `exif` |
+| Composer | 2.x |
+| Node | 20 or newer (only to build the CSS and JS) |
+| MySQL | 8.x (MariaDB 10.6+ works too) |
+
+XAMPP ships with everything except Composer and Node. Nothing else is needed —
+no Redis, no queue worker, no Docker.
+
+### Install
 
 ```bash
-git clone <repo> && cd dating_app
+git clone https://github.com/Aswin-0802/dating_app.git
+cd dating_app
 cp .env.example .env
 
-# Create the databases (the second one is for the test suite).
+# Two databases: the app, and one the test suite is allowed to wipe.
 mysql -u root -e "CREATE DATABASE dating_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -u root -e "CREATE DATABASE dating_app_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-composer setup   # install, key, storage link, migrate, seed, npm install, build
-composer dev     # serve + queue + scheduler + vite
+composer setup   # install, app key, storage link, migrate, seed, npm install, build
+composer dev     # serve + queue + scheduler + vite, all in one terminal
 ```
 
+On Windows the `mysql` command lives at `C:\xampp\mysql\bin\mysql.exe`, or you
+can create the two databases in phpMyAdmin instead.
+
 Then open <http://localhost:8000>.
+
+<details>
+<summary>If <code>composer setup</code> stops half way</summary>
+
+Run it by hand and you will see which step failed:
+
+```bash
+composer install
+php artisan key:generate
+php artisan storage:link
+php artisan migrate:fresh --seed
+npm install && npm run build
+php artisan serve
+```
+
+The usual causes: MySQL is not running, the two databases do not exist, or
+`DB_USERNAME` / `DB_PASSWORD` in `.env` do not match your MySQL account.
+Seeding downloads member photos once — set `VEYRA_SEED_PHOTOS=generated` to
+draw them locally instead, or `none` to skip them.
+
+</details>
+
+### Keep the clock running
+
+One entry drives everything with a date on it — restrictions that expire, plans
+that end, renewal warnings, campaigns waiting to go out:
+
+```bash
+* * * * * cd /path/to/the-app && php artisan schedule:run >> /dev/null 2>&1
+```
+
+`composer dev` does this for you while you are developing. On Windows in
+production, a Task Scheduler task running `php artisan schedule:run` every
+minute does the same job.
 
 | URL | Who it is for |
 |---|---|
@@ -66,7 +115,11 @@ Password for all of them: `password`.
 
 Signing in as more than one of these is the quickest way to see how much of the
 console is permission-shaped — restricted areas are absent from the navigation
-rather than present and refused.
+rather than present and refused. The [user manual](docs/user-manual.html) has a
+table of exactly which menus each role gets.
+
+**Delete these accounts before you launch.** They are published here with a
+known password.
 
 ### Seeding
 
