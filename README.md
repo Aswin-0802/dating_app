@@ -54,13 +54,13 @@ Every seeded member signs in with the password `password`. Staff accounts:
 
 | Account | Role | What it can do |
 |---|---|---|
-| `admin@veyra.test` | Super Admin | Everything |
-| `ops@veyra.test` | Admin | Platform operations — but not message content, appeals, or safety policy |
-| `lead@veyra.test` | T&S Lead | Safety policy, the restricted queue, appeals |
-| `senior1@veyra.test` | Senior Moderator | Full enforcement ladder, appeals |
-| `mod1@veyra.test` | Moderator | Cases and enforcement up to suspension |
-| `support1@veyra.test` | Support | Member PII, no enforcement, no message content |
-| `analyst1@veyra.test` | Analyst | Aggregates only, no PII |
+| `admin@demo.test` | Super Admin | Everything |
+| `ops@demo.test` | Admin | Platform operations — but not message content, appeals, or safety policy |
+| `lead@demo.test` | T&S Lead | Safety policy, the restricted queue, appeals |
+| `senior1@demo.test` | Senior Moderator | Full enforcement ladder, appeals |
+| `mod1@demo.test` | Moderator | Cases and enforcement up to suspension |
+| `support1@demo.test` | Support | Member PII, no enforcement, no message content |
+| `analyst1@demo.test` | Analyst | Aggregates only, no PII |
 
 Password for all of them: `password`.
 
@@ -226,7 +226,7 @@ One cron entry drives everything the clock owns — expiring restrictions and
 plans, renewal warnings and campaign sending:
 
 ```
-* * * * * cd /path/to/veyra && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /path/to/the-app && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 On Windows, a Task Scheduler task running `php artisan schedule:run` every
