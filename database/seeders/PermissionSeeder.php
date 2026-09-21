@@ -107,6 +107,7 @@ class PermissionSeeder extends Seeder
              */
             'Billing' => [
                 ['payments', 'View payments and subscriptions'],
+                ['billing_settings', 'Change plans and payment gateways'],
                 ['export_payments', 'Export payments'],
                 ['grant_plans', 'Give or remove a member\'s plan'],
             ],

@@ -128,14 +128,14 @@ final class Navigation
                         'label' => 'Plans',
                         'icon' => 'star',
                         'route' => 'admin.billing.plans',
-                        'permission' => 'settings',
+                        'permission' => 'billing_settings',
                         'active' => ['admin.billing.plans'],
                     ],
                     [
                         'label' => 'Payment gateways',
                         'icon' => 'lock',
                         'route' => 'admin.billing.gateways',
-                        'permission' => 'settings',
+                        'permission' => 'billing_settings',
                         'active' => ['admin.billing.gateways'],
                     ],
                 ],
@@ -152,8 +152,8 @@ final class Navigation
                             ['label' => 'Templates', 'route' => 'admin.notifications.templates', 'permission' => 'notification_templates'],
                             ['label' => 'Delivery logs', 'route' => 'admin.notifications.logs', 'permission' => 'push_logs'],
                             // Setting a channel up belongs with using it.
-                            ['label' => 'Push notifications', 'route' => 'admin.notifications.push', 'permission' => 'settings'],
-                            ['label' => 'SMS gateways', 'route' => 'admin.notifications.sms', 'permission' => 'settings'],
+                            ['label' => 'Push notifications', 'route' => 'admin.notifications.push', 'permission' => 'edit_general_settings'],
+                            ['label' => 'SMS gateways', 'route' => 'admin.notifications.sms', 'permission' => 'edit_general_settings'],
                         ],
                         'active' => ['admin.notifications.*'],
                     ],
@@ -222,10 +222,12 @@ final class Navigation
                         'children' => [
                             // First, because it is the first thing anybody
                             // re-branding the product looks for.
-                            ['label' => 'Branding', 'route' => 'admin.settings.branding', 'permission' => 'settings'],
+                            ['label' => 'Branding', 'route' => 'admin.settings.branding', 'permission' => 'edit_general_settings'],
+                            // Product & safety stays on `settings`: it is where
+                            // the Trust & Safety Lead sets moderation policy.
                             ['label' => 'Product & safety', 'route' => 'admin.settings.general', 'permission' => 'settings'],
-                            ['label' => 'Mail / SMTP', 'route' => 'admin.settings.mail', 'permission' => 'settings'],
-                            ['label' => 'Delivery logs', 'route' => 'admin.settings.logs', 'permission' => 'settings'],
+                            ['label' => 'Mail / SMTP', 'route' => 'admin.settings.mail', 'permission' => 'edit_general_settings'],
+                            ['label' => 'Delivery logs', 'route' => 'admin.settings.logs', 'permission' => 'edit_general_settings'],
                             ['label' => 'Database backup', 'route' => 'admin.settings.backup', 'permission' => 'run_maintenance_jobs'],
                         ],
                     ],

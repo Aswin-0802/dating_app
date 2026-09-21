@@ -169,10 +169,10 @@ Route::middleware(['auth:web', 'auth.session', 'staff.active'])->group(function 
              * approved campaign that never leaves the building.
              */
             Route::get('push', System\Push::class)
-                ->middleware('permission:settings')->name('push');
+                ->middleware('permission:edit_general_settings')->name('push');
 
             Route::get('sms', System\Gateways::class)
-                ->middleware('permission:settings')->defaults('kind', 'sms')->name('sms');
+                ->middleware('permission:edit_general_settings')->defaults('kind', 'sms')->name('sms');
         });
 
     /*
@@ -194,10 +194,10 @@ Route::middleware(['auth:web', 'auth.session', 'staff.active'])->group(function 
             ->middleware('permission:payments')->name('subscriptions');
 
         Route::get('plans', Billing\Plans::class)
-            ->middleware('permission:settings')->name('plans');
+            ->middleware('permission:billing_settings')->name('plans');
 
         Route::get('gateways', System\Gateways::class)
-            ->middleware('permission:settings')->defaults('kind', 'payment')->name('gateways');
+            ->middleware('permission:billing_settings')->defaults('kind', 'payment')->name('gateways');
     });
 
     /*
@@ -247,11 +247,19 @@ Route::middleware(['auth:web', 'auth.session', 'staff.active'])->group(function 
     Route::middleware('permission:settings')->prefix('settings')->name('settings.')->group(function (): void {
         Route::get('/', Settings\Index::class)->name('general');
         // Before {group}, which would otherwise swallow it as a group name.
-        Route::get('branding', Settings\Branding::class)->name('branding');
+        /*
+         * Brand and plumbing belong to platform operations, not to safety.
+         * `settings` alone is not enough: the Trust & Safety Lead holds it for
+         * moderation policy, and has no business in the logo or the mail server.
+         */
+        Route::get('branding', Settings\Branding::class)
+            ->middleware('permission:edit_general_settings')->name('branding');
 
-        // Platform plumbing: mail, the delivery logs and the database backup.
-        Route::get('mail', System\Mail::class)->name('mail');
-        Route::get('logs/{kind?}', System\Logs::class)->name('logs');
+        Route::get('mail', System\Mail::class)
+            ->middleware('permission:edit_general_settings')->name('mail');
+
+        Route::get('logs/{kind?}', System\Logs::class)
+            ->middleware('permission:edit_general_settings')->name('logs');
         Route::get('backup', System\Backup::class)
             ->middleware('permission:run_maintenance_jobs')->name('backup');
 

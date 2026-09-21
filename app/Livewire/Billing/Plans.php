@@ -215,11 +215,11 @@ class Plans extends Component
 
     private function canEdit(): bool
     {
-        return auth()->user()?->can('edit_general_settings') ?? false;
+        return auth()->user()?->can('billing_settings') ?? false;
     }
 
     private function authorizeEdit(): void
     {
-        $this->authorize('edit_general_settings');
+        $this->authorize('billing_settings');
     }
 }
