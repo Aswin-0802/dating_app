@@ -118,10 +118,10 @@ class UatAdminTest extends UatTestCase
     public static function roleMatrix(): array
     {
         return [
-            'Moderator' => ['mod1@veyra.test', ['/admin', '/admin/cases', '/admin/verifications'], ['/admin/roles', '/admin/system/mail', '/admin/staff', '/admin/settings/branding']],
+            'Moderator' => ['mod1@veyra.test', ['/admin', '/admin/cases', '/admin/verifications'], ['/admin/roles', '/admin/settings/mail', '/admin/staff', '/admin/settings/branding']],
             'Support' => ['support1@veyra.test', ['/admin', '/admin/users'], ['/admin/roles', '/admin/system/backup', '/admin/audit/message-access']],
-            'Analyst' => ['analyst1@veyra.test', ['/admin', '/admin/analytics/funnel'], ['/admin/roles', '/admin/staff', '/admin/system/mail', '/admin/conversations']],
-            'Admin' => ['ops@veyra.test', ['/admin', '/admin/staff', '/admin/system/mail', '/admin/settings/branding'], ['/admin/verifications/restricted']],
+            'Analyst' => ['analyst1@veyra.test', ['/admin', '/admin/analytics/funnel'], ['/admin/roles', '/admin/staff', '/admin/settings/mail', '/admin/conversations']],
+            'Admin' => ['ops@veyra.test', ['/admin', '/admin/staff', '/admin/settings/mail', '/admin/settings/branding'], ['/admin/verifications/restricted']],
         ];
     }
 
@@ -235,14 +235,23 @@ class UatAdminTest extends UatTestCase
 
     // ================================================================ D. cases & enforcement
 
-    private function openCase(): ReportCase
+    /**
+     * An open case to work with.
+     *
+     * `$unclaimed` matters: claiming is a no-op on a case somebody already
+     * holds, so a test about claiming has to start from one nobody has.
+     */
+    private function openCase(bool $unclaimed = false): ReportCase
     {
-        return ReportCase::query()->whereIn('status', ['new', 'claimed', 'in_review'])->firstOrFail();
+        return ReportCase::query()
+            ->whereIn('status', ['new', 'claimed', 'in_review'])
+            ->when($unclaimed, fn ($q) => $q->whereNull('claimed_by'))
+            ->firstOrFail();
     }
 
     public function test_d01_claim_assigns_the_case(): void
     {
-        $case = $this->openCase();
+        $case = $this->openCase(unclaimed: true);
         $mod = $this->staff('mod1@veyra.test');
         Livewire::actingAs($mod)->test(CaseShow::class, ['reportCase' => $case])->call('claim');
         $this->assertSame($mod->id, $case->fresh()->claimed_by);
@@ -467,8 +476,8 @@ class UatAdminTest extends UatTestCase
 
     public function test_h06_geography_masters_can_be_managed(): void
     {
-        $this->actingAs($this->staff('admin@veyra.test'))->get(route('admin.settings.locations'))->assertOk();
-        $this->assertTrue(\Route::has('admin.settings.locations'),
+        $this->actingAs($this->staff('admin@veyra.test'))->get(route('admin.masters.locations'))->assertOk();
+        $this->assertTrue(\Route::has('admin.masters.locations'),
             'EXPECTED country/state/city management (reference admin: masters/country|state|city).');
     }
 

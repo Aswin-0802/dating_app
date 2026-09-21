@@ -8,6 +8,7 @@ use App\Models\Appeal;
 use App\Models\Ban;
 use App\Models\ReportCase;
 use App\Models\Role;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Verification;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -106,6 +107,12 @@ class VeyraServiceProvider extends ServiceProvider
                     'verifications_pending' => Verification::query()->inQueue('standard')->open()->count(),
                     'appeals_open' => Appeal::query()->open()->count(),
                     'shadow_reviews_due' => Ban::query()->reviewDue()->count(),
+                    // Plans ending within the week: the one billing number
+                    // somebody can actually act on.
+                    'subscriptions_ending' => Subscription::query()->active()
+                        ->whereNotNull('ends_at')
+                        ->whereBetween('ends_at', [now(), now()->addDays(7)])
+                        ->count(),
                 ];
             });
         });

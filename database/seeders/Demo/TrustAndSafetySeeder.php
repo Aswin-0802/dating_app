@@ -599,15 +599,22 @@ class TrustAndSafetySeeder extends Seeder
 
         foreach ($cases as $index => $case) {
             /*
-             * The first two decisions are shadow bans outright. At 50 members
-             * there are only about nine enforcement decisions in total, and the
-             * ladder roll can produce none at all — which empties the shadow
-             * ban review queue, the one screen built to prove shadow bans get
-             * revisited. At demo scale two out of hundreds changes nothing.
+             * The first four decisions are dealt rather than rolled: two shadow
+             * bans, a suspension and a feature limit.
+             *
+             * At 50 members there are only about nine enforcement decisions in
+             * total, and the ladder roll can produce none of a given type —
+             * which empties the screen built to prove that type is handled
+             * (the shadow ban review queue, or the list of members currently
+             * serving a suspension). At demo scale four out of hundreds changes
+             * nothing.
              */
-            $step = $index < 2
-                ? LadderStep::ShadowBan
-                : $this->stepFor(Severity::from($case->severity), $faker);
+            $step = match (true) {
+                $index < 2 => LadderStep::ShadowBan,
+                $index === 2 => LadderStep::Suspend,
+                $index === 3 => LadderStep::FeatureLimit,
+                default => $this->stepFor(Severity::from($case->severity), $faker),
+            };
             $isShadow = $step->createsBan() && $this->banTypeFor($step) === 'shadow_ban';
             $reason = $this->reasonFor($faker);
             $actor = $faker->randomElement($moderators);
@@ -623,7 +630,9 @@ class TrustAndSafetySeeder extends Seeder
              * timed ban already expired, and the active-enforcement screens —
              * including the shadow ban review queue — would open empty.
              */
-            $decidedAt = $faker->boolean(50)
+            // The dealt four are dated recently on purpose, so they are still
+            // in force rather than expiring before anybody opens the screen.
+            $decidedAt = $index < 4 || $faker->boolean(50)
                 ? now()->subHours($faker->numberBetween(1, max(2, (int) (($durationHours ?? 336) * 0.7))))
                 : Carbon::parse($case->created_at)->addHours($faker->numberBetween(1, 120));
 

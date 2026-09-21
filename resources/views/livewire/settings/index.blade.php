@@ -3,7 +3,6 @@
     <div class="flex flex-wrap gap-1">
         <a href="{{ route('admin.settings.branding') }}" wire:navigate class="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Branding</a>
         <a href="{{ route('admin.settings.general') }}" wire:navigate class="rounded-md bg-primary-subtle px-3 py-1.5 text-sm font-medium text-primary-subtle-foreground">Product &amp; safety settings</a>
-        <a href="{{ route('admin.settings.locations') }}" wire:navigate class="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Locations</a>
     </div>
 
     <div class="grid gap-4 md:gap-6 lg:grid-cols-[220px_1fr]">

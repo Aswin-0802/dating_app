@@ -100,6 +100,17 @@ class PermissionSeeder extends Seeder
                 ['push_logs', 'View delivery logs'],
             ],
 
+            /*
+             * Billing is its own group so finance and support can see money
+             * without being handed safety powers, and so a moderator never
+             * sees revenue at all.
+             */
+            'Billing' => [
+                ['payments', 'View payments and subscriptions'],
+                ['export_payments', 'Export payments'],
+                ['grant_plans', 'Give or remove a member\'s plan'],
+            ],
+
             'Staff' => [
                 ['staff', 'View staff'],
                 ['add_staff', 'Add staff'],

@@ -539,7 +539,7 @@
             @if (App\Support\Masters::plans()->isEmpty())
                 <p class="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
                     There are no plans on sale. Add one in
-                    <a href="{{ route('admin.masters.plans') }}" wire:navigate class="font-medium text-primary hover:underline">Masters → Subscription plans</a>.
+                    <a href="{{ route('admin.billing.plans') }}" wire:navigate class="font-medium text-primary hover:underline">Masters → Subscription plans</a>.
                 </p>
             @else
                 <x-ui.select

@@ -7,8 +7,8 @@ namespace Tests\Feature;
 use App\Enums\ReasonCode;
 use App\Enums\ReportCategory;
 use App\Enums\Severity;
+use App\Livewire\Billing\Plans;
 use App\Livewire\Masters\Interests;
-use App\Livewire\Masters\Plans;
 use App\Livewire\Masters\ProfileQuestions;
 use App\Livewire\Masters\Reasons;
 use App\Livewire\Masters\ReportCategories;
@@ -119,7 +119,7 @@ class MastersTest extends TestCase
             ->call('create')
             ->assertForbidden();
 
-        $this->actingAs($this->staff(Role::MODERATOR))->get(route('admin.masters.plans'))->assertForbidden();
+        $this->actingAs($this->staff(Role::MODERATOR))->get(route('admin.billing.plans'))->assertForbidden();
     }
 
     // ---- interests --------------------------------------------------------------
@@ -294,8 +294,11 @@ class MastersTest extends TestCase
     {
         $admin = $this->staff(Role::SUPER_ADMIN);
 
-        foreach (['plans', 'interests', 'profile-options', 'report-categories', 'reasons'] as $screen) {
+        foreach (['interests', 'profile-options', 'report-categories', 'reasons', 'locations'] as $screen) {
             $this->actingAs($admin)->get(route('admin.masters.'.$screen))->assertOk();
         }
+
+        // Plans moved to Billing, where the rest of the money lives.
+        $this->actingAs($admin)->get(route('admin.billing.plans'))->assertOk();
     }
 }

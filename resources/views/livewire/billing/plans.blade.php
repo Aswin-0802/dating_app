@@ -1,5 +1,5 @@
 <div class="space-y-4 md:space-y-6">
-    @include('livewire.masters.partials.tabs', ['active' => 'admin.masters.plans'])
+    @include('livewire.billing.partials.tabs', ['active' => 'admin.billing.plans'])
 
     <x-ui.card title="Subscription plans" description="What members can buy, shown on the website and in the member app. The free tier is always offered and needs no plan.">
         @if ($canEdit)

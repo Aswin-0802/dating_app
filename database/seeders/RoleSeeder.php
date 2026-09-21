@@ -49,6 +49,7 @@ class RoleSeeder extends Seeder
                 'view_staff_performance',
                 'roles',
                 'activity_log', 'login_log', 'export_audit_logs', 'message_access_log',
+                'payments', 'export_payments', 'grant_plans',
                 'settings', 'edit_general_settings', 'edit_matching_settings', 'edit_api_settings',
                 'automation_rules', 'run_maintenance_jobs', 'manage_api_tokens',
             ],
@@ -112,6 +113,7 @@ class RoleSeeder extends Seeder
                 'bans', 'blocks',
                 'appeals',
                 'notifications', 'create_campaigns', 'notification_templates', 'push_logs',
+                'payments', 'grant_plans',
             ],
 
             // Analysts work from rollups and de-identified lists.

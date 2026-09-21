@@ -6,7 +6,7 @@
     <div class="flex flex-wrap items-center gap-1">
         @foreach ($kinds as $key => $meta)
             <a
-                href="{{ route('admin.system.logs', $key) }}"
+                href="{{ route('admin.settings.logs', $key) }}"
                 wire:navigate
                 @class([
                     'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',

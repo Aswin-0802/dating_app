@@ -149,7 +149,7 @@ class PushNotificationTest extends TestCase
         // key body rather than its header, which the form shows as a hint.
         $secret = substr(json_decode($account, true)['private_key'], 40, 60);
 
-        $this->actingAs($admin)->get(route('admin.system.push'))
+        $this->actingAs($admin)->get(route('admin.notifications.push'))
             ->assertOk()
             ->assertSee('veyra-test')
             ->assertDontSee($secret);

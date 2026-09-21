@@ -100,6 +100,46 @@ final class Navigation
                     ],
                 ],
             ],
+            /*
+             * Billing is one section rather than three scattered screens.
+             * "Did this member pay?" and "what are we selling?" were in
+             * different menus before, which is how a payment ends up being
+             * chased in the gateway's own dashboard instead of here.
+             */
+            [
+                'label' => 'Billing',
+                'items' => [
+                    [
+                        'label' => 'Payments',
+                        'icon' => 'document',
+                        'route' => 'admin.billing.payments',
+                        'permission' => 'payments',
+                        'active' => ['admin.billing.payments'],
+                    ],
+                    [
+                        'label' => 'Subscriptions',
+                        'icon' => 'sparkles',
+                        'route' => 'admin.billing.subscriptions',
+                        'permission' => 'payments',
+                        'active' => ['admin.billing.subscriptions'],
+                        'badge' => 'subscriptions_ending',
+                    ],
+                    [
+                        'label' => 'Plans',
+                        'icon' => 'star',
+                        'route' => 'admin.billing.plans',
+                        'permission' => 'settings',
+                        'active' => ['admin.billing.plans'],
+                    ],
+                    [
+                        'label' => 'Payment gateways',
+                        'icon' => 'lock',
+                        'route' => 'admin.billing.gateways',
+                        'permission' => 'settings',
+                        'active' => ['admin.billing.gateways'],
+                    ],
+                ],
+            ],
             [
                 'label' => 'Operations',
                 'items' => [
@@ -111,6 +151,9 @@ final class Navigation
                             ['label' => 'Campaigns', 'route' => 'admin.notifications.campaigns', 'permission' => 'notifications'],
                             ['label' => 'Templates', 'route' => 'admin.notifications.templates', 'permission' => 'notification_templates'],
                             ['label' => 'Delivery logs', 'route' => 'admin.notifications.logs', 'permission' => 'push_logs'],
+                            // Setting a channel up belongs with using it.
+                            ['label' => 'Push notifications', 'route' => 'admin.notifications.push', 'permission' => 'settings'],
+                            ['label' => 'SMS gateways', 'route' => 'admin.notifications.sms', 'permission' => 'settings'],
                         ],
                         'active' => ['admin.notifications.*'],
                     ],
@@ -152,10 +195,11 @@ final class Navigation
                         'active' => ['admin.audit.*'],
                     ],
                     /*
-                     * Masters: the lists the product is built from — plans,
-                     * interests, profile questions, report categories and
-                     * enforcement reasons. Content, not configuration: an
-                     * operator changes them without touching code.
+                     * Masters: the lists the product is built from —
+                     * interests, profile questions, report categories,
+                     * enforcement reasons and places. Content, not
+                     * configuration: an operator changes them without
+                     * touching code.
                      */
                     [
                         'label' => 'Masters',
@@ -163,11 +207,11 @@ final class Navigation
                         'permission' => 'settings',
                         'active' => ['admin.masters.*'],
                         'children' => [
-                            ['label' => 'Subscription plans', 'route' => 'admin.masters.plans', 'permission' => 'settings'],
                             ['label' => 'Interests', 'route' => 'admin.masters.interests', 'permission' => 'settings'],
                             ['label' => 'Profile questions', 'route' => 'admin.masters.profile-options', 'permission' => 'settings'],
                             ['label' => 'Report categories', 'route' => 'admin.masters.report-categories', 'permission' => 'settings'],
                             ['label' => 'Enforcement reasons', 'route' => 'admin.masters.reasons', 'permission' => 'settings'],
+                            ['label' => 'Locations', 'route' => 'admin.masters.locations', 'permission' => 'settings'],
                         ],
                     ],
                     [
@@ -180,30 +224,9 @@ final class Navigation
                             // re-branding the product looks for.
                             ['label' => 'Branding', 'route' => 'admin.settings.branding', 'permission' => 'settings'],
                             ['label' => 'Product & safety', 'route' => 'admin.settings.general', 'permission' => 'settings'],
-                            ['label' => 'Locations', 'route' => 'admin.settings.locations', 'permission' => 'settings'],
-                        ],
-                    ],
-                    /*
-                     * System sits apart from Settings on purpose.
-                     *
-                     * Settings is product and safety policy; System is
-                     * infrastructure — mail, payment and SMS providers and
-                     * their delivery logs. The people who own them are rarely
-                     * the same, and mixing the two puts "switch the payment
-                     * provider" next to "change what counts as a ban".
-                     */
-                    [
-                        'label' => 'System',
-                        'icon' => 'adjustments',
-                        'permission' => 'settings',
-                        'active' => ['admin.system.*'],
-                        'children' => [
-                            ['label' => 'Mail / SMTP', 'route' => 'admin.system.mail', 'permission' => 'settings'],
-                            ['label' => 'Payment gateways', 'route' => 'admin.system.payments', 'permission' => 'settings'],
-                            ['label' => 'Push notifications', 'route' => 'admin.system.push', 'permission' => 'settings'],
-                            ['label' => 'SMS gateways', 'route' => 'admin.system.sms', 'permission' => 'settings'],
-                            ['label' => 'Delivery logs', 'route' => 'admin.system.logs', 'permission' => 'settings'],
-                            ['label' => 'Database backup', 'route' => 'admin.system.backup', 'permission' => 'run_maintenance_jobs'],
+                            ['label' => 'Mail / SMTP', 'route' => 'admin.settings.mail', 'permission' => 'settings'],
+                            ['label' => 'Delivery logs', 'route' => 'admin.settings.logs', 'permission' => 'settings'],
+                            ['label' => 'Database backup', 'route' => 'admin.settings.backup', 'permission' => 'run_maintenance_jobs'],
                         ],
                     ],
                 ],

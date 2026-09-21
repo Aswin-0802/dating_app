@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\VerificationSelfieController;
 use App\Livewire\Account;
 use App\Livewire\Appeals;
 use App\Livewire\Audit;
+use App\Livewire\Billing;
 use App\Livewire\Cases;
 use App\Livewire\Conversations;
 use App\Livewire\Dashboard;
@@ -160,7 +161,44 @@ Route::middleware(['auth:web', 'auth.session', 'staff.active'])->group(function 
 
             Route::get('logs', Notifications\Logs::class)
                 ->middleware('permission:push_logs')->name('logs');
+
+            /*
+             * Setting a channel up sits with using it: an operator wiring up
+             * Firebase is doing so to send something, and having the keys in a
+             * different menu from the campaigns is how you end up with an
+             * approved campaign that never leaves the building.
+             */
+            Route::get('push', System\Push::class)
+                ->middleware('permission:settings')->name('push');
+
+            Route::get('sms', System\Gateways::class)
+                ->middleware('permission:settings')->defaults('kind', 'sms')->name('sms');
         });
+
+    /*
+    |----------------------------------------------------------------------
+    | Billing — everything about money in one place
+    |----------------------------------------------------------------------
+    |
+    | Payments and subscriptions need only `payments`, so finance and support
+    | can answer "did this go through?" without being handed safety powers.
+    | Changing what is sold, or which gateway takes the money, still needs the
+    | settings permissions.
+    |
+    */
+    Route::prefix('billing')->name('billing.')->group(function (): void {
+        Route::get('payments', Billing\Payments::class)
+            ->middleware('permission:payments')->name('payments');
+
+        Route::get('subscriptions', Billing\Subscriptions::class)
+            ->middleware('permission:payments')->name('subscriptions');
+
+        Route::get('plans', Billing\Plans::class)
+            ->middleware('permission:settings')->name('plans');
+
+        Route::get('gateways', System\Gateways::class)
+            ->middleware('permission:settings')->defaults('kind', 'payment')->name('gateways');
+    });
 
     /*
     |----------------------------------------------------------------------
@@ -172,33 +210,6 @@ Route::middleware(['auth:web', 'auth.session', 'staff.active'])->group(function 
         Route::get('matching', Dashboard\MatchingHealth::class)->name('matching');
         Route::get('safety', Dashboard\SafetyTrends::class)->name('safety');
         Route::get('retention', Dashboard\Retention::class)->name('retention');
-    });
-
-    /*
-    |----------------------------------------------------------------------
-    | System — platform integrations, kept apart from the dating-app settings
-    |----------------------------------------------------------------------
-    |
-    | Mail, payment and SMS providers plus their delivery logs. Separated from
-    | Settings on purpose: those are product and safety policy, these are
-    | infrastructure, and the people who own them are rarely the same.
-    |
-    */
-    Route::middleware('permission:settings')->prefix('system')->name('system.')->group(function (): void {
-        Route::get('mail', System\Mail::class)->name('mail');
-
-        Route::get('payments', System\Gateways::class)
-            ->defaults('kind', 'payment')->name('payments');
-
-        Route::get('push', System\Push::class)->name('push');
-
-        Route::get('sms', System\Gateways::class)
-            ->defaults('kind', 'sms')->name('sms');
-
-        Route::get('logs/{kind?}', System\Logs::class)->name('logs');
-
-        Route::get('backup', System\Backup::class)
-            ->middleware('permission:run_maintenance_jobs')->name('backup');
     });
 
     /*
@@ -224,18 +235,26 @@ Route::middleware(['auth:web', 'auth.session', 'staff.active'])->group(function 
     });
 
     Route::middleware('permission:settings')->prefix('masters')->name('masters.')->group(function (): void {
-        Route::get('plans', Masters\Plans::class)->name('plans');
         Route::get('interests', Masters\Interests::class)->name('interests');
         Route::get('profile-questions', Masters\ProfileQuestions::class)->name('profile-options');
         Route::get('report-categories', Masters\ReportCategories::class)->name('report-categories');
         Route::get('reasons', Masters\Reasons::class)->name('reasons');
+
+        // Countries, states and cities are master data like the rest.
+        Route::get('locations', Settings\Locations::class)->name('locations');
     });
 
     Route::middleware('permission:settings')->prefix('settings')->name('settings.')->group(function (): void {
         Route::get('/', Settings\Index::class)->name('general');
         // Before {group}, which would otherwise swallow it as a group name.
         Route::get('branding', Settings\Branding::class)->name('branding');
-        Route::get('locations', Settings\Locations::class)->name('locations');
+
+        // Platform plumbing: mail, the delivery logs and the database backup.
+        Route::get('mail', System\Mail::class)->name('mail');
+        Route::get('logs/{kind?}', System\Logs::class)->name('logs');
+        Route::get('backup', System\Backup::class)
+            ->middleware('permission:run_maintenance_jobs')->name('backup');
+
         Route::get('{group}', Settings\Index::class)->name('group');
     });
 

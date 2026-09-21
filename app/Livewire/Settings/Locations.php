@@ -122,7 +122,7 @@ class Locations extends Component
             'title' => 'Locations',
             'breadcrumbs' => [
                 ['label' => Branding::name(), 'href' => route('admin.dashboard')],
-                ['label' => 'Settings', 'href' => route('admin.settings.general')],
+                ['label' => 'Masters'],
                 ['label' => 'Locations'],
             ],
         ]);

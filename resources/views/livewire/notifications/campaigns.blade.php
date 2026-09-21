@@ -28,7 +28,7 @@
                     <p class="text-sm text-warning-subtle-foreground">
                         Push notifications are not set up, so approved campaigns will not leave the building.
                         Add the Firebase key under
-                        <a href="{{ route('admin.system.push') }}" wire:navigate class="font-medium underline">System → Push notifications</a>.
+                        <a href="{{ route('admin.notifications.push') }}" wire:navigate class="font-medium underline">System → Push notifications</a>.
                     </p>
                 </div>
             @endunless

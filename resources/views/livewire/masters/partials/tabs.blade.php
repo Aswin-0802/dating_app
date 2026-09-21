@@ -1,10 +1,10 @@
 @php
     $tabs = [
-        'admin.masters.plans' => 'Subscription plans',
         'admin.masters.interests' => 'Interests',
         'admin.masters.profile-options' => 'Profile questions',
         'admin.masters.report-categories' => 'Report categories',
         'admin.masters.reasons' => 'Enforcement reasons',
+        'admin.masters.locations' => 'Locations',
     ];
 @endphp
 

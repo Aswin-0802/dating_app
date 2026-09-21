@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Livewire\Masters;
+namespace App\Livewire\Billing;
 
 use App\Models\AppUser;
 use App\Models\Plan;
@@ -56,7 +56,7 @@ class Plans extends Component
         $members = AppUser::query()->where('is_premium', true)
             ->groupBy('premium_tier')->selectRaw('premium_tier, COUNT(*) c')->pluck('c', 'premium_tier');
 
-        return view('livewire.masters.plans', [
+        return view('livewire.billing.plans', [
             'plans' => $plans,
             'memberCounts' => $members,
             'canEdit' => $this->canEdit(),
@@ -64,7 +64,7 @@ class Plans extends Component
             'title' => 'Subscription plans',
             'breadcrumbs' => [
                 ['label' => Branding::name(), 'href' => route('admin.dashboard')],
-                ['label' => 'Masters'],
+                ['label' => 'Billing'],
                 ['label' => 'Subscription plans'],
             ],
         ]);
