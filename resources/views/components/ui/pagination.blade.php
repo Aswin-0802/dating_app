@@ -23,9 +23,9 @@
 <div class="flex flex-col items-center justify-between gap-3 sm:flex-row">
     <div class="flex items-center gap-3">
         <p class="text-sm text-muted-foreground">
-            Showing <span class="tabular font-medium text-foreground">{{ veyra_number($from) }}</span>–<span
-                class="tabular font-medium text-foreground">{{ veyra_number($to) }}</span>
-            of <span class="tabular font-medium text-foreground">{{ veyra_number($total) }}</span>
+            Showing <span class="tabular font-medium text-foreground">{{ platform_number($from) }}</span>–<span
+                class="tabular font-medium text-foreground">{{ platform_number($to) }}</span>
+            of <span class="tabular font-medium text-foreground">{{ platform_number($total) }}</span>
         </p>
 
         @if ($perPageOptions)

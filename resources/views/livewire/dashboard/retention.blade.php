@@ -9,7 +9,7 @@
                     <div class="mb-3 flex items-center justify-between">
                         <p class="font-medium">{{ $label }}</p>
                         <p class="text-xs text-muted-foreground">
-                            {{ veyra_compact_number($retention[$key]['cohort']) }} members
+                            {{ platform_compact_number($retention[$key]['cohort']) }} members
                         </p>
                     </div>
 
@@ -18,7 +18,7 @@
                             <div>
                                 <div class="mb-1 flex items-center justify-between text-sm">
                                     <span class="text-muted-foreground">{{ $dayLabel }}</span>
-                                    <span class="tabular font-medium">{{ veyra_percent($retention[$key][$day]) }}</span>
+                                    <span class="tabular font-medium">{{ platform_percent($retention[$key][$day]) }}</span>
                                 </div>
                                 <div class="h-2 overflow-hidden rounded-full bg-muted">
                                     <div

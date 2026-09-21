@@ -82,7 +82,7 @@
                     </x-ui.table.cell>
 
                     <x-ui.table.cell align="right" muted>
-                        {{ $member->last_login_at ? veyra_duration($member->last_login_at).' ago' : 'Never' }}
+                        {{ $member->last_login_at ? platform_duration($member->last_login_at).' ago' : 'Never' }}
                     </x-ui.table.cell>
 
                     <x-ui.table.cell align="right">

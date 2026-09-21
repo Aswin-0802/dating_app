@@ -20,8 +20,8 @@
     $dueAt = $dueAt ? Carbon::parse($dueAt) : null;
 
     $breached = $dueAt && $now->greaterThan($dueAt);
-    $warningHours = (int) config('veyra.sla.pill.warning_hours', 1);
-    $breachHours = (int) config('veyra.sla.pill.breach_hours', 4);
+    $warningHours = (int) config('platform.sla.pill.warning_hours', 1);
+    $breachHours = (int) config('platform.sla.pill.breach_hours', 4);
 
     if ($dueAt) {
         // Inside the last quarter of the window counts as "at risk".
@@ -38,16 +38,16 @@
         default => 'bg-muted text-muted-foreground',
     };
 
-    $text = $label ?? veyra_duration($since);
+    $text = $label ?? platform_duration($since);
 @endphp
 
 <span
     {{ $attributes->class(['inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium tabular whitespace-nowrap', $classes]) }}
-    @if ($dueAt) title="Due {{ veyra_datetime($dueAt) }}" @endif
+    @if ($dueAt) title="Due {{ platform_datetime($dueAt) }}" @endif
 >
     <x-ui.icon name="clock" size="xs" />
     {{ $text }}
     @if ($breached && $dueAt)
-        <span class="opacity-80">· over by {{ veyra_duration($dueAt) }}</span>
+        <span class="opacity-80">· over by {{ platform_duration($dueAt) }}</span>
     @endif
 </span>

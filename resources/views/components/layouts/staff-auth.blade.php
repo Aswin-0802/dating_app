@@ -7,7 +7,7 @@
 @php
     use App\Support\Branding;
 
-    $theme = request()->cookie('veyra_theme', Branding::themeMode());
+    $theme = request()->cookie('platform_theme', Branding::themeMode());
     // The buyer's own sign-in artwork when uploaded; stock photography otherwise.
     $panelImage = Branding::loginImageUrl() ?? asset('images/site/couple-silhouette.jpg');
 @endphp

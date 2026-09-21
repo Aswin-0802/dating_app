@@ -426,7 +426,7 @@ final class PlaceholderPhotoGenerator
     {
         if (! extension_loaded('gd')) {
             throw new RuntimeException(
-                'ext-gd is required to generate demo photos. Set VEYRA_SEED_PHOTOS=none to skip them.',
+                'ext-gd is required to generate demo photos. Set PLATFORM_SEED_PHOTOS=none to skip them.',
             );
         }
     }

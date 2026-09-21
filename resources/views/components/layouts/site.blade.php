@@ -6,7 +6,7 @@
 @php
     use App\Support\Branding;
 
-    $theme = request()->cookie('veyra_theme', Branding::themeMode());
+    $theme = request()->cookie('platform_theme', Branding::themeMode());
     $home = request()->routeIs('home') ? '' : route('home');
     $member = auth('member')->user();
 
@@ -159,7 +159,7 @@
     @if (session('status'))
         <script>
             window.addEventListener('DOMContentLoaded', function () {
-                window.dispatchEvent(new CustomEvent('veyra:toast', { detail: { message: @json(session('status')), type: 'success' } }));
+                window.dispatchEvent(new CustomEvent('platform:toast', { detail: { message: @json(session('status')), type: 'success' } }));
             });
         </script>
     @endif

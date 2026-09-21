@@ -109,7 +109,7 @@
                     <p class="mb-2 text-xs font-medium text-muted-foreground">Account status</p>
                     <div class="flex flex-wrap gap-2">
                         @foreach (AccountStatus::cases() as $status)
-                            <x-veyra.status-badge :status="$status" />
+                            <x-platform.status-badge :status="$status" />
                         @endforeach
                     </div>
                 </div>
@@ -118,7 +118,7 @@
                     <p class="mb-2 text-xs font-medium text-muted-foreground">Verification</p>
                     <div class="flex flex-wrap gap-2">
                         @foreach (VerificationStatus::cases() as $status)
-                            <x-veyra.status-badge :status="$status" />
+                            <x-platform.status-badge :status="$status" />
                         @endforeach
                     </div>
                 </div>
@@ -127,7 +127,7 @@
                     <p class="mb-2 text-xs font-medium text-muted-foreground">Case status</p>
                     <div class="flex flex-wrap gap-2">
                         @foreach (CaseStatus::cases() as $status)
-                            <x-veyra.status-badge :status="$status" />
+                            <x-platform.status-badge :status="$status" />
                         @endforeach
                     </div>
                 </div>
@@ -136,10 +136,10 @@
                     <p class="mb-2 text-xs font-medium text-muted-foreground">Severity &amp; appeals</p>
                     <div class="flex flex-wrap gap-2">
                         @foreach (Severity::cases() as $severity)
-                            <x-veyra.status-badge :status="$severity" />
+                            <x-platform.status-badge :status="$severity" />
                         @endforeach
                         @foreach (AppealStatus::cases() as $status)
-                            <x-veyra.status-badge :status="$status" />
+                            <x-platform.status-badge :status="$status" />
                         @endforeach
                     </div>
                 </div>
@@ -148,7 +148,7 @@
                     <p class="mb-2 text-xs font-medium text-muted-foreground">Enforcement</p>
                     <div class="flex flex-wrap gap-2">
                         @foreach (BanType::cases() as $type)
-                            <x-veyra.status-badge :status="$type" />
+                            <x-platform.status-badge :status="$type" />
                         @endforeach
                     </div>
                 </div>
@@ -161,10 +161,10 @@
             description="Click a badge with factors. The listed factors are the stored rows that produced the score — they always sum to the number shown."
         >
             <div class="flex flex-wrap items-center gap-3">
-                <x-veyra.risk-badge :score="12" />
-                <x-veyra.risk-badge :score="38" />
-                <x-veyra.risk-badge :score="61" />
-                <x-veyra.risk-badge :score="96" :factors="$sampleFactors" />
+                <x-platform.risk-badge :score="12" />
+                <x-platform.risk-badge :score="38" />
+                <x-platform.risk-badge :score="61" />
+                <x-platform.risk-badge :score="96" :factors="$sampleFactors" />
             </div>
 
             <p class="mt-3 text-xs text-muted-foreground">
@@ -175,10 +175,10 @@
         {{-- ---------------------------------------------------------------- --}}
         <x-ui.card title="SLA pills" description="Colour comes from the deadline when there is one. A breach always says by how much.">
             <div class="flex flex-wrap items-center gap-3">
-                <x-veyra.sla-pill :since="now()->subMinutes(12)" />
-                <x-veyra.sla-pill :since="now()->subHours(2)" />
-                <x-veyra.sla-pill :since="now()->subHours(9)" />
-                <x-veyra.sla-pill :since="now()->subHours(30)" :due-at="now()->subHours(6)" />
+                <x-platform.sla-pill :since="now()->subMinutes(12)" />
+                <x-platform.sla-pill :since="now()->subHours(2)" />
+                <x-platform.sla-pill :since="now()->subHours(9)" />
+                <x-platform.sla-pill :since="now()->subHours(30)" :due-at="now()->subHours(6)" />
             </div>
         </x-ui.card>
 
@@ -375,8 +375,8 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-6">
-                    <x-veyra.user-cell name="Ines Dubois" :age="28" meta="London · joined 4 Mar 2026" verified />
-                    <x-veyra.user-cell name="Diego Santos" :age="34" meta="Sao Paulo · 3 reports" size="md" />
+                    <x-platform.user-cell name="Ines Dubois" :age="28" meta="London · joined 4 Mar 2026" verified />
+                    <x-platform.user-cell name="Diego Santos" :age="34" meta="Sao Paulo · 3 reports" size="md" />
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -454,15 +454,15 @@
                     <x-ui.table.row :selected="$index < 3" :tint="$band->rowClasses()">
                         <x-ui.table.cell><x-ui.checkbox role="checkbox" :checked="$index < 3" /></x-ui.table.cell>
                         <x-ui.table.cell>
-                            <x-veyra.user-cell :name="$name" :age="$age" :meta="$city" :verified="$verified" />
+                            <x-platform.user-cell :name="$name" :age="$age" :meta="$city" :verified="$verified" />
                         </x-ui.table.cell>
-                        <x-ui.table.cell><x-veyra.status-badge :status="$status" /></x-ui.table.cell>
-                        <x-ui.table.cell><x-veyra.status-badge :status="$verification" /></x-ui.table.cell>
+                        <x-ui.table.cell><x-platform.status-badge :status="$status" /></x-ui.table.cell>
+                        <x-ui.table.cell><x-platform.status-badge :status="$verification" /></x-ui.table.cell>
                         <x-ui.table.cell>
-                            <x-veyra.risk-badge :score="$risk" :factors="$risk > 50 ? $sampleFactors : null" />
+                            <x-platform.risk-badge :score="$risk" :factors="$risk > 50 ? $sampleFactors : null" />
                         </x-ui.table.cell>
                         <x-ui.table.cell align="right" numeric>{{ $matches }}</x-ui.table.cell>
-                        <x-ui.table.cell align="right" muted>{{ veyra_duration(now()->subHours($index * 9 + 2)) }} ago</x-ui.table.cell>
+                        <x-ui.table.cell align="right" muted>{{ platform_duration(now()->subHours($index * 9 + 2)) }} ago</x-ui.table.cell>
                     </x-ui.table.row>
                 @endforeach
 

@@ -70,9 +70,9 @@ class CampaignsAndSmsTest extends TestCase
 
         PushSettings::storeServiceAccount(json_encode([
             'type' => 'service_account',
-            'project_id' => 'veyra-test',
+            'project_id' => 'platform-test',
             'private_key' => $key,
-            'client_email' => 'push@veyra-test.iam.gserviceaccount.com',
+            'client_email' => 'push@platform-test.iam.gserviceaccount.com',
         ], JSON_THROW_ON_ERROR));
 
         Setting::put('push.enabled', true);
@@ -80,7 +80,7 @@ class CampaignsAndSmsTest extends TestCase
 
         Http::fake([
             'oauth2.googleapis.com/*' => Http::response(['access_token' => 'ya29.test', 'expires_in' => 3600]),
-            'fcm.googleapis.com/*' => Http::response(['name' => 'projects/veyra-test/messages/1']),
+            'fcm.googleapis.com/*' => Http::response(['name' => 'projects/platform-test/messages/1']),
         ]);
     }
 
@@ -114,7 +114,7 @@ class CampaignsAndSmsTest extends TestCase
         $unreachable = AppUser::factory()->create();
         $campaign = $this->campaign();
 
-        $this->artisan('veyra:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         $campaign->refresh();
         $this->assertSame('sent', $campaign->status);
@@ -137,8 +137,8 @@ class CampaignsAndSmsTest extends TestCase
 
         $campaign = $this->campaign();
 
-        $this->artisan('veyra:send-campaigns')->assertSuccessful();
-        $this->artisan('veyra:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         $this->assertSame(1, PushLog::query()->where('push_campaign_id', $campaign->id)->where('status', 'sent')->count());
     }
@@ -151,7 +151,7 @@ class CampaignsAndSmsTest extends TestCase
         $unapproved = $this->campaign(['approved_at' => null, 'approved_by' => null]);
         $future = $this->campaign(['scheduled_for' => now()->addDay()]);
 
-        $this->artisan('veyra:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         $this->assertSame('scheduled', $unapproved->fresh()->status);
         $this->assertSame('scheduled', $future->fresh()->status);
@@ -163,7 +163,7 @@ class CampaignsAndSmsTest extends TestCase
         Http::fake();
         $campaign = $this->campaign();
 
-        $this->artisan('veyra:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         $this->assertSame('scheduled', $campaign->fresh()->status);
         Http::assertNothingSent();
@@ -189,7 +189,7 @@ class CampaignsAndSmsTest extends TestCase
         Http::fake(['api.twilio.com/*' => Http::response(['sid' => 'SM123', 'status' => 'queued'], 201)]);
 
         $member = AppUser::factory()->create();
-        $sent = app(SmsSender::class)->send('+91 98765 43210', 'Hello from Veyra', $member);
+        $sent = app(SmsSender::class)->send('+91 98765 43210', 'Hello from Platform', $member);
 
         $this->assertTrue($sent);
         $this->assertDatabaseHas('sms_logs', ['to' => '+919876543210', 'gateway' => 'twilio', 'status' => 'sent']);

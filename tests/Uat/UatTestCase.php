@@ -28,7 +28,7 @@ abstract class UatTestCase extends TestCase
     {
         if (! self::$seeded) {
             // Fast and offline: no photo downloads or image rendering.
-            config(['veyra.seed.photos' => 'none', 'veyra.seed.scale' => 'tiny']);
+            config(['platform.seed.photos' => 'none', 'platform.seed.scale' => 'tiny']);
 
             $this->artisan('migrate:fresh', ['--seed' => true]);
             $this->app[Kernel::class]->setArtisan(null);

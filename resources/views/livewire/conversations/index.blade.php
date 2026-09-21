@@ -35,7 +35,7 @@
             </div>
 
             <p class="text-xs text-muted-foreground">
-                {{ veyra_number($flaggedTotal) }} flagged
+                {{ platform_number($flaggedTotal) }} flagged
             </p>
         </x-slot:toolbar>
 
@@ -103,10 +103,10 @@
                         @endif
                     </x-ui.table.cell>
 
-                    <x-ui.table.cell align="right" muted>{{ veyra_date($conversation->started_at) }}</x-ui.table.cell>
+                    <x-ui.table.cell align="right" muted>{{ platform_date($conversation->started_at) }}</x-ui.table.cell>
 
                     <x-ui.table.cell align="right" muted>
-                        {{ $conversation->last_message_at ? veyra_duration($conversation->last_message_at).' ago' : '—' }}
+                        {{ $conversation->last_message_at ? platform_duration($conversation->last_message_at).' ago' : '—' }}
                     </x-ui.table.cell>
 
                     <x-ui.table.cell align="right">

@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
-class VeyraServiceProvider extends ServiceProvider
+class PlatformServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
@@ -47,12 +47,12 @@ class VeyraServiceProvider extends ServiceProvider
     {
         $limiter = function (string $key, int $default, int $minutes = 1, bool $halveForNewAccounts = false) {
             RateLimiter::for($key, function (Request $request) use ($key, $default, $minutes, $halveForNewAccounts) {
-                $attempts = (int) veyra_setting("api.rate_limit_{$key}", $default);
+                $attempts = (int) platform_setting("api.rate_limit_{$key}", $default);
                 $member = $request->user();
 
                 if ($halveForNewAccounts
-                    && veyra_setting('api.new_account_throttle', true)
-                    && $member?->created_at?->gt(now()->subHours((int) config('veyra.api.new_account_hours', 24)))) {
+                    && platform_setting('api.new_account_throttle', true)
+                    && $member?->created_at?->gt(now()->subHours((int) config('platform.api.new_account_hours', 24)))) {
                     $attempts = max(1, intdiv($attempts, 2));
                 }
 
@@ -96,12 +96,12 @@ class VeyraServiceProvider extends ServiceProvider
      */
     private function shareNavigationCounts(): void
     {
-        $this->app->bind('veyra.nav-counts', function (): array {
+        $this->app->bind('platform.nav-counts', function (): array {
             if (! Schema::hasTable('report_cases')) {
                 return [];
             }
 
-            return cache()->remember('veyra.nav-counts', now()->addSeconds(30), function (): array {
+            return cache()->remember('platform.nav-counts', now()->addSeconds(30), function (): array {
                 return [
                     'cases_open' => ReportCase::query()->open()->count(),
                     'verifications_pending' => Verification::query()->inQueue('standard')->open()->count(),

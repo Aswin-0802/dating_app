@@ -138,7 +138,7 @@
                     <li class="flex flex-wrap items-center justify-between gap-2 py-2.5">
                         <span class="min-w-0">
                             <span class="block truncate font-medium">{{ $order->description }}</span>
-                            <span class="block text-xs text-muted-foreground">{{ veyra_datetime($order->created_at) }}</span>
+                            <span class="block text-xs text-muted-foreground">{{ platform_datetime($order->created_at) }}</span>
                         </span>
                         <span class="flex items-center gap-2">
                             <span class="tabular">{{ $order->formattedAmount() }}</span>

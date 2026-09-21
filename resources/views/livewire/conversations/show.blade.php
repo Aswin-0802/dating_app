@@ -121,7 +121,7 @@
                                     <x-ui.badge variant="destructive" size="sm">Removed</x-ui.badge>
                                 @endif
                                 <span class="text-[10px] text-muted-foreground">
-                                    {{ veyra_datetime($message->created_at) }}
+                                    {{ platform_datetime($message->created_at) }}
                                 </span>
                             </div>
                         </div>
@@ -137,7 +137,7 @@
                         @continue($participant === null)
 
                         <div class="space-y-1.5">
-                            <x-veyra.user-cell
+                            <x-platform.user-cell
                                 :name="$participant->display_name"
                                 :age="$participant->age"
                                 :photo="$participant->primaryPhoto?->thumb_url"
@@ -145,8 +145,8 @@
                                 size="md"
                             />
                             <div class="flex flex-wrap gap-1">
-                                <x-veyra.status-badge :status="$participant->account_status" size="sm" />
-                                <x-veyra.risk-badge :score="$participant->risk_score" :band="$participant->risk_band" />
+                                <x-platform.status-badge :status="$participant->account_status" size="sm" />
+                                <x-platform.risk-badge :score="$participant->risk_score" :band="$participant->risk_band" />
                             </div>
                         </div>
                     @endforeach
@@ -156,10 +156,10 @@
             <x-ui.card title="Thread">
                 <dl class="divide-y divide-border text-sm">
                     @foreach ([
-                        'Started' => veyra_datetime($conversation->started_at),
-                        'Last message' => veyra_datetime($conversation->last_message_at),
-                        'Messages' => veyra_number($conversation->messages_count),
-                        'Matched' => veyra_date($match?->matched_at),
+                        'Started' => platform_datetime($conversation->started_at),
+                        'Last message' => platform_datetime($conversation->last_message_at),
+                        'Messages' => platform_number($conversation->messages_count),
+                        'Matched' => platform_date($match?->matched_at),
                         'Status' => ucfirst($conversation->status),
                     ] as $label => $value)
                         <div class="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
 
 /*
 |--------------------------------------------------------------------------
-| Veyra global helpers
+| Platform global helpers
 |--------------------------------------------------------------------------
 |
 | Autoloaded through composer's `files` block. Kept small on purpose — anything
@@ -19,14 +19,14 @@ use Illuminate\Support\Facades\Schema;
 |
 */
 
-if (! function_exists('veyra_setting')) {
+if (! function_exists('platform_setting')) {
     /**
-     * Read an operator-editable setting, falling back to config/veyra.php.
+     * Read an operator-editable setting, falling back to config/platform.php.
      *
      * Guarded against a missing table so `migrate:fresh` and early boot do not
      * explode before the settings table exists.
      */
-    function veyra_setting(string $key, mixed $default = null): mixed
+    function platform_setting(string $key, mixed $default = null): mixed
     {
         /*
          * Delegates to Setting::allValues(), which caches through the cache
@@ -42,27 +42,27 @@ if (! function_exists('veyra_setting')) {
             // missing table throws, which the catch below already handles.
             $values = Setting::allValues();
         } catch (Throwable) {
-            return $default ?? config("veyra.{$key}");
+            return $default ?? config("platform.{$key}");
         }
 
-        return $values[$key] ?? $default ?? config("veyra.{$key}");
+        return $values[$key] ?? $default ?? config("platform.{$key}");
     }
 }
 
-if (! function_exists('veyra_number')) {
+if (! function_exists('platform_number')) {
     /** 1234567 -> "1,234,567" */
-    function veyra_number(int|float|null $value, int $decimals = 0): string
+    function platform_number(int|float|null $value, int $decimals = 0): string
     {
         return number_format((float) ($value ?? 0), $decimals, '.', ',');
     }
 }
 
-if (! function_exists('veyra_compact_number')) {
+if (! function_exists('platform_compact_number')) {
     /**
      * 1234 -> "1.2k", 1500000 -> "1.5M". Used in stat tiles where the exact
      * figure is available on hover but the headline must stay short.
      */
-    function veyra_compact_number(int|float|null $value): string
+    function platform_compact_number(int|float|null $value): string
     {
         $value = (float) ($value ?? 0);
         $abs = abs($value);
@@ -90,16 +90,16 @@ if (! function_exists('veyra_compact_number')) {
     }
 }
 
-if (! function_exists('veyra_percent')) {
-    function veyra_percent(int|float|null $value, int $decimals = 1): string
+if (! function_exists('platform_percent')) {
+    function platform_percent(int|float|null $value, int $decimals = 1): string
     {
         return number_format((float) ($value ?? 0), $decimals, '.', ',').'%';
     }
 }
 
-if (! function_exists('veyra_date')) {
+if (! function_exists('platform_date')) {
     /** "17 Sep 2026" — no ext-intl, so the format is explicit. */
-    function veyra_date(Carbon|string|null $value): string
+    function platform_date(Carbon|string|null $value): string
     {
         if ($value === null) {
             return '—';
@@ -109,9 +109,9 @@ if (! function_exists('veyra_date')) {
     }
 }
 
-if (! function_exists('veyra_datetime')) {
+if (! function_exists('platform_datetime')) {
     /** "17 Sep 2026, 14:05" */
-    function veyra_datetime(Carbon|string|null $value): string
+    function platform_datetime(Carbon|string|null $value): string
     {
         if ($value === null) {
             return '—';
@@ -121,14 +121,14 @@ if (! function_exists('veyra_datetime')) {
     }
 }
 
-if (! function_exists('veyra_duration')) {
+if (! function_exists('platform_duration')) {
     /**
      * A compact elapsed-time label for queue age pills: "8m", "3h 12m", "2d 4h".
      *
      * Deliberately not Carbon's diffForHumans() — moderators scan these in
      * columns, and "about 3 hours ago" is both longer and less precise.
      */
-    function veyra_duration(Carbon|string|null $from, Carbon|string|null $to = null): string
+    function platform_duration(Carbon|string|null $from, Carbon|string|null $to = null): string
     {
         if ($from === null) {
             return '—';
@@ -156,9 +156,9 @@ if (! function_exists('veyra_duration')) {
     }
 }
 
-if (! function_exists('veyra_hours_label')) {
+if (! function_exists('platform_hours_label')) {
     /** 24 -> "24 hours", 168 -> "7 days", 720 -> "30 days" */
-    function veyra_hours_label(?int $hours): string
+    function platform_hours_label(?int $hours): string
     {
         if ($hours === null) {
             return 'Permanent';
@@ -174,9 +174,9 @@ if (! function_exists('veyra_hours_label')) {
     }
 }
 
-if (! function_exists('veyra_initials')) {
+if (! function_exists('platform_initials')) {
     /** Avatar fallback: "Ada Lovelace" -> "AL". */
-    function veyra_initials(?string $name): string
+    function platform_initials(?string $name): string
     {
         $parts = preg_split('/\s+/', trim((string) $name)) ?: [];
         $parts = array_values(array_filter($parts));

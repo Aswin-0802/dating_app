@@ -176,7 +176,7 @@ class BillingScreensTest extends TestCase
         app(Subscriptions::class)->grant($member, Plan::query()->where('slug', 'gold')->firstOrFail(), now()->addDay());
 
         $this->travel(2)->days();
-        $this->artisan('veyra:run-due-tasks')->assertSuccessful();
+        $this->artisan('platform:run-due-tasks')->assertSuccessful();
 
         $component = Livewire::actingAs($this->staff(Role::ADMIN))->test(SubscriptionsScreen::class);
 

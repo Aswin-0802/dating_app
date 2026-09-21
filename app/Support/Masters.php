@@ -25,7 +25,7 @@ use Throwable;
  */
 final class Masters
 {
-    private const CACHE_KEY = 'veyra.masters';
+    private const CACHE_KEY = 'platform.masters';
 
     /** @var array<string, mixed>|null */
     private static ?array $memo = null;

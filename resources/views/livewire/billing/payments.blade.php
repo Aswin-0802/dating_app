@@ -12,18 +12,18 @@
                     <p class="tabular mt-1 text-2xl font-semibold">{{ $this->formatMinor((int) $minor, $currency) }}</p>
                 @endforeach
             @endif
-            <p class="mt-1 text-xs text-muted-foreground">{{ veyra_number($totals['count']) }} paid</p>
+            <p class="mt-1 text-xs text-muted-foreground">{{ platform_number($totals['count']) }} paid</p>
         </x-ui.card>
 
         <x-ui.card>
             <p class="text-xs text-muted-foreground">Waiting</p>
-            <p class="tabular mt-1 text-2xl font-semibold">{{ veyra_number($totals['pending']) }}</p>
+            <p class="tabular mt-1 text-2xl font-semibold">{{ platform_number($totals['pending']) }}</p>
             <p class="mt-1 text-xs text-muted-foreground">Started but never confirmed</p>
         </x-ui.card>
 
         <x-ui.card>
             <p class="text-xs text-muted-foreground">Failed</p>
-            <p class="tabular mt-1 text-2xl font-semibold">{{ veyra_number($totals['failed']) }}</p>
+            <p class="tabular mt-1 text-2xl font-semibold">{{ platform_number($totals['failed']) }}</p>
             <p class="mt-1 text-xs text-muted-foreground">A run of these usually means a key or a card rule</p>
         </x-ui.card>
     </div>
@@ -85,7 +85,7 @@
                     <tbody class="divide-y divide-border">
                         @foreach ($orders as $order)
                             <tr wire:key="order-{{ $order->id }}">
-                                <td class="whitespace-nowrap py-2.5 pr-3 text-muted-foreground">{{ veyra_datetime($order->created_at) }}</td>
+                                <td class="whitespace-nowrap py-2.5 pr-3 text-muted-foreground">{{ platform_datetime($order->created_at) }}</td>
                                 <td class="py-2.5 pr-3">
                                     @if ($order->appUser)
                                         <a href="{{ route('admin.users.show', $order->appUser) }}" wire:navigate class="font-medium hover:underline">

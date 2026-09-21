@@ -2,7 +2,7 @@
     use App\Support\Navigation;
 
     $sections = Navigation::sections();
-    $counts = app()->bound('veyra.nav-counts') ? app('veyra.nav-counts') : [];
+    $counts = app()->bound('platform.nav-counts') ? app('platform.nav-counts') : [];
 @endphp
 
 {{--
@@ -21,7 +21,7 @@
         <a href="{{ route('admin.dashboard') }}" wire:navigate class="flex min-w-0 items-center gap-2.5">
             <x-brand.mark variant="admin" size="sm" tone="sidebar" />
 
-            <span class="veyra-nav-label min-w-0">
+            <span class="platform-nav-label min-w-0">
                 <span class="block truncate text-sm font-semibold leading-tight">{{ App\Support\Branding::name() }}</span>
                 <span class="block truncate text-[11px] leading-tight text-sidebar-muted-foreground">
                     {{ App\Support\Branding::tagline() }}
@@ -35,7 +35,7 @@
         @foreach ($sections as $section)
             <div class="space-y-0.5">
                 @if ($section['label'])
-                    <p class="veyra-nav-section-label px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-sidebar-muted-foreground">
+                    <p class="platform-nav-section-label px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-sidebar-muted-foreground">
                         {{ $section['label'] }}
                     </p>
                 @endif
@@ -49,22 +49,22 @@
                                 type="button"
                                 @click="open = !open"
                                 @class([
-                                    'veyra-nav-link flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors',
+                                    'platform-nav-link flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors',
                                     'bg-sidebar-accent text-sidebar-accent-foreground' => $active,
                                     'text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground' => ! $active,
                                 ])
                             >
                                 <x-ui.icon :name="$item['icon']" size="sm" class="shrink-0" />
-                                <span class="veyra-nav-label min-w-0 flex-1 truncate text-left">{{ $item['label'] }}</span>
+                                <span class="platform-nav-label min-w-0 flex-1 truncate text-left">{{ $item['label'] }}</span>
                                 <x-ui.icon
                                     name="chevron-down"
                                     size="xs"
-                                    class="veyra-nav-chevron shrink-0 transition-transform"
+                                    class="platform-nav-chevron shrink-0 transition-transform"
                                     ::class="open && 'rotate-180'"
                                 />
                             </button>
 
-                            <div x-show="open" x-collapse class="veyra-nav-label mt-0.5 space-y-0.5 pl-9">
+                            <div x-show="open" x-collapse class="platform-nav-label mt-0.5 space-y-0.5 pl-9">
                                 @foreach ($item['children'] as $child)
                                     @php
                                         $childActive = request()->routeIs($child['route']);
@@ -84,7 +84,7 @@
 
                                         @if ($childCount)
                                             <span class="tabular shrink-0 rounded-full bg-sidebar-primary px-1.5 py-px text-[10px] font-semibold text-sidebar-primary-foreground">
-                                                {{ veyra_compact_number($childCount) }}
+                                                {{ platform_compact_number($childCount) }}
                                             </span>
                                         @endif
                                     </a>
@@ -100,7 +100,7 @@
                             @if ($active) aria-current="page" @endif
                             title="{{ $item['label'] }}"
                             @class([
-                                'veyra-nav-link relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors',
+                                'platform-nav-link relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors',
                                 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' => $active,
                                 'text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground' => ! $active,
                             ])
@@ -111,11 +111,11 @@
                             @endif
 
                             <x-ui.icon :name="$item['icon']" size="sm" class="shrink-0" />
-                            <span class="veyra-nav-label min-w-0 flex-1 truncate">{{ $item['label'] }}</span>
+                            <span class="platform-nav-label min-w-0 flex-1 truncate">{{ $item['label'] }}</span>
 
                             @if ($count)
-                                <span class="veyra-nav-badge tabular shrink-0 rounded-full bg-sidebar-primary px-1.5 py-px text-[10px] font-semibold text-sidebar-primary-foreground">
-                                    {{ veyra_compact_number($count) }}
+                                <span class="platform-nav-badge tabular shrink-0 rounded-full bg-sidebar-primary px-1.5 py-px text-[10px] font-semibold text-sidebar-primary-foreground">
+                                    {{ platform_compact_number($count) }}
                                 </span>
                             @endif
                         </a>
@@ -136,7 +136,7 @@
                     class="shrink-0"
                 />
 
-                <div class="veyra-nav-label min-w-0 flex-1">
+                <div class="platform-nav-label min-w-0 flex-1">
                     <p class="truncate text-sm font-medium leading-tight">{{ auth()->user()->name }}</p>
                     <p class="truncate text-[11px] leading-tight text-sidebar-muted-foreground">
                         {{ auth()->user()->getRoleNames()->first() ?? 'No role' }}

@@ -5,7 +5,7 @@
 ])
 
 {{--
-    Renders any Veyra enum that uses the HasBadge trait.
+    Renders any Platform enum that uses the HasBadge trait.
 
     Colour is never the only signal — an icon or the label always carries the
     meaning too, which keeps this readable for colourblind users and satisfies

@@ -54,11 +54,11 @@
                     </x-ui.table.cell>
 
                     <x-ui.table.cell align="right" numeric muted>
-                        {{ veyra_compact_number($backup['bytes'] / 1024) }} KB
+                        {{ platform_compact_number($backup['bytes'] / 1024) }} KB
                     </x-ui.table.cell>
 
                     <x-ui.table.cell align="right" muted>
-                        {{ veyra_datetime(\Illuminate\Support\Carbon::createFromTimestamp($backup['created_at'])) }}
+                        {{ platform_datetime(\Illuminate\Support\Carbon::createFromTimestamp($backup['created_at'])) }}
                     </x-ui.table.cell>
 
                     <x-ui.table.cell align="right">

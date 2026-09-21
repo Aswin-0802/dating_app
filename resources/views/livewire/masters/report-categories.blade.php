@@ -27,8 +27,8 @@
                                 @endif
                             </td>
                             <td class="py-2.5 pr-3 text-muted-foreground">{{ $category->group() }}</td>
-                            <td class="py-2.5 pr-3"><x-veyra.status-badge :status="$category->defaultSeverity()" size="sm" /></td>
-                            <td class="tabular py-2.5 pr-3 text-right">{{ veyra_number($counts[$category->value] ?? 0) }}</td>
+                            <td class="py-2.5 pr-3"><x-platform.status-badge :status="$category->defaultSeverity()" size="sm" /></td>
+                            <td class="tabular py-2.5 pr-3 text-right">{{ platform_number($counts[$category->value] ?? 0) }}</td>
                             <td class="py-2.5 pr-3">
                                 @if ($category->isActive())
                                     <x-ui.badge size="sm" variant="success" dot>Yes</x-ui.badge>

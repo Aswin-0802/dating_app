@@ -136,7 +136,7 @@
             <x-slot:bulkBar>
                 <div class="flex flex-wrap items-center gap-3 border-b border-border bg-primary-subtle px-3 py-2.5 md:px-4">
                     <span class="text-sm font-medium text-primary-subtle-foreground">
-                        {{ veyra_number($this->selectedCount()) }} selected
+                        {{ platform_number($this->selectedCount()) }} selected
                     </span>
 
                     @if (! $selectAllMatching && $users->total() > count($selected))
@@ -144,7 +144,7 @@
                             type="button"
                             wire:click="selectAll"
                             class="text-xs text-primary-subtle-foreground underline underline-offset-2"
-                        >Select all {{ veyra_number($users->total()) }} matching</button>
+                        >Select all {{ platform_number($users->total()) }} matching</button>
                     @endif
 
                     <button
@@ -213,7 +213,7 @@
                     </x-ui.table.cell>
 
                     <x-ui.table.cell>
-                        <x-veyra.user-cell
+                        <x-platform.user-cell
                             :name="$user->display_name"
                             :age="$user->age"
                             :photo="$user->primaryPhoto?->thumb_url"
@@ -231,15 +231,15 @@
                     </x-ui.table.cell>
 
                     <x-ui.table.cell>
-                        <x-veyra.status-badge :status="$user->account_status" />
+                        <x-platform.status-badge :status="$user->account_status" />
                     </x-ui.table.cell>
 
                     <x-ui.table.cell>
-                        <x-veyra.status-badge :status="$user->verification_status" />
+                        <x-platform.status-badge :status="$user->verification_status" />
                     </x-ui.table.cell>
 
                     <x-ui.table.cell>
-                        <x-veyra.risk-badge :score="$user->risk_score" :band="$user->risk_band" />
+                        <x-platform.risk-badge :score="$user->risk_score" :band="$user->risk_band" />
                     </x-ui.table.cell>
 
                     <x-ui.table.cell align="right" numeric>
@@ -252,10 +252,10 @@
                         @endif
                     </x-ui.table.cell>
 
-                    <x-ui.table.cell align="right" muted>{{ veyra_date($user->created_at) }}</x-ui.table.cell>
+                    <x-ui.table.cell align="right" muted>{{ platform_date($user->created_at) }}</x-ui.table.cell>
 
                     <x-ui.table.cell align="right" muted>
-                        {{ $user->last_active_at ? veyra_duration($user->last_active_at).' ago' : '—' }}
+                        {{ $user->last_active_at ? platform_duration($user->last_active_at).' ago' : '—' }}
                     </x-ui.table.cell>
 
                     <x-ui.table.cell align="right">
@@ -310,7 +310,7 @@
             <x-ui.pagination :paginator="$users" :per-page="$perPage" :per-page-options="$this->perPageOptions()" />
         </x-slot:footer>
     </x-ui.table>
-    <x-veyra.enforcement-dialog
+    <x-platform.enforcement-dialog
         :step="$pendingStep"
         :target="$rowTarget ? (App\Models\AppUser::find($rowTarget)?->display_name ?? '') : $this->selectedCount().' selected '.str('member')->plural($this->selectedCount())"
         :reason-code="$reasonCode"

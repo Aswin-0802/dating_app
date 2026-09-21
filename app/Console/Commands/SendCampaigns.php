@@ -23,7 +23,7 @@ use Throwable;
  */
 class SendCampaigns extends Command
 {
-    protected $signature = 'veyra:send-campaigns {--id= : Send one campaign now, ignoring its schedule}';
+    protected $signature = 'platform:send-campaigns {--id= : Send one campaign now, ignoring its schedule}';
 
     protected $description = 'Send approved push campaigns that are due';
 

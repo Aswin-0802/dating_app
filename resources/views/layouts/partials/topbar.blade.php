@@ -11,7 +11,7 @@
     {{-- Global search. The palette itself is teleported, so this is only a trigger. --}}
     <button
         type="button"
-        @click="$dispatch('veyra:open-command-palette')"
+        @click="$dispatch('platform:open-command-palette')"
         class="group ml-1 hidden h-9 min-w-64 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 md:flex"
     >
         <x-ui.icon name="search" size="sm" />
@@ -23,7 +23,7 @@
 
     <button
         type="button"
-        @click="$dispatch('veyra:open-command-palette')"
+        @click="$dispatch('platform:open-command-palette')"
         class="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
     >
         <x-ui.icon name="search" size="sm" />
@@ -31,7 +31,7 @@
     </button>
 
     {{-- Theme: three states, cycled in place rather than hidden behind a menu. --}}
-    <div x-data="veyraTheme()">
+    <div x-data="platformTheme()">
         <button
             type="button"
             @click="cycle()"

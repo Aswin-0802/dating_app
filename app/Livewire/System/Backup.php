@@ -49,7 +49,7 @@ class Backup extends Component
             return;
         }
 
-        $filename = 'veyra-'.now()->format('Y-m-d-His').'.sql';
+        $filename = str(Branding::name())->slug().'-'.now()->format('Y-m-d-His').'.sql';
         $target = Storage::disk('local')->path('backups/'.$filename);
 
         Storage::disk('local')->makeDirectory('backups');

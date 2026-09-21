@@ -16,13 +16,13 @@
     <div class="grid gap-4 sm:grid-cols-2 md:gap-6">
         <x-ui.stat-card
             label="Overdue for review"
-            :value="veyra_number($dueCount)"
+            :value="platform_number($dueCount)"
             icon="warning"
             :hint="$dueCount > 0 ? 'Each needs a decision today' : 'Nothing overdue'"
         />
         <x-ui.stat-card
             label="Shadow bans in force"
-            :value="veyra_number($activeCount)"
+            :value="platform_number($activeCount)"
             icon="eye-off"
         />
     </div>
@@ -76,7 +76,7 @@
 
                 <x-ui.table.row :tint="$overdue ? 'border-l-2 border-l-destructive bg-destructive-subtle/30' : ''">
                     <x-ui.table.cell>
-                        <x-veyra.user-cell
+                        <x-platform.user-cell
                             :name="$ban->appUser?->display_name"
                             :photo="$ban->appUser?->primaryPhoto?->thumb_url"
                             :meta="$ban->appUser?->email"
@@ -91,17 +91,17 @@
                     <x-ui.table.cell muted>{{ $ban->issuedBy?->name ?? 'Automated rule' }}</x-ui.table.cell>
 
                     <x-ui.table.cell muted>
-                        {{ veyra_duration($ban->starts_at) }}
+                        {{ platform_duration($ban->starts_at) }}
                     </x-ui.table.cell>
 
                     <x-ui.table.cell>
                         @if ($overdue)
                             <x-ui.badge variant="solid-destructive" icon="warning">
-                                Overdue by {{ veyra_duration($ban->review_due_at) }}
+                                Overdue by {{ platform_duration($ban->review_due_at) }}
                             </x-ui.badge>
                         @else
                             <span class="text-sm text-muted-foreground">
-                                {{ veyra_date($ban->review_due_at) }}
+                                {{ platform_date($ban->review_due_at) }}
                             </span>
                         @endif
                     </x-ui.table.cell>

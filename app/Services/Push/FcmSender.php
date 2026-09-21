@@ -267,7 +267,7 @@ final class FcmSender
 
     private function tokenCacheKey(): string
     {
-        return 'veyra.fcm.access_token.'.md5((string) PushSettings::clientEmail());
+        return 'platform.fcm.access_token.'.md5((string) PushSettings::clientEmail());
     }
 
     /** FCM puts its own code in error.details, not in the HTTP status. */

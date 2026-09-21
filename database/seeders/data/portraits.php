@@ -6,7 +6,7 @@
 |--------------------------------------------------------------------------
 |
 | Unsplash photo IDs, grouped by who is pictured, used for seeded member
-| profiles when VEYRA_SEED_PHOTOS=stock. Unsplash License: free for
+| profiles when PLATFORM_SEED_PHOTOS=stock. Unsplash License: free for
 | commercial use, no attribution required.
 |
 | Downloaded once into storage/app/public/photos/_stock and reused on every

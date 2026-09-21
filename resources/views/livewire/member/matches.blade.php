@@ -65,7 +65,7 @@
                             @if ($person?->primaryPhoto)
                                 <img src="{{ $person->primaryPhoto->thumb_url }}" alt="" class="size-full object-cover transition group-hover:scale-105">
                             @else
-                                <span class="flex size-full items-center justify-center text-2xl font-bold text-muted-foreground">{{ veyra_initials($person?->display_name) }}</span>
+                                <span class="flex size-full items-center justify-center text-2xl font-bold text-muted-foreground">{{ platform_initials($person?->display_name) }}</span>
                             @endif
                             <span class="absolute inset-x-0 bottom-0 rounded-b-2xl bg-gradient-to-t from-black/75 to-transparent p-2.5 pt-8 text-sm font-semibold text-white">{{ $person?->display_name }}</span>
                         </a>

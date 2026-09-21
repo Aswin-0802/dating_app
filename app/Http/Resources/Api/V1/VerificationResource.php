@@ -14,7 +14,7 @@ class VerificationResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $max = (int) config('veyra.verification.max_attempts', 3);
+        $max = (int) config('platform.verification.max_attempts', 3);
 
         return [
             'id' => $this->uuid,

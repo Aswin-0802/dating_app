@@ -105,7 +105,7 @@ class CommandPalette extends Component
             if ($verifications->isNotEmpty()) {
                 $groups['Verifications'] = $verifications->map(fn (Verification $v): array => [
                     'label' => $v->appUser?->display_name ?? 'Unknown',
-                    'meta' => 'Waiting '.veyra_duration($v->submitted_at),
+                    'meta' => 'Waiting '.platform_duration($v->submitted_at),
                     'badge' => $v->status->badgeClasses(),
                     'badge_label' => $v->status->label(),
                     'url' => route('admin.verifications.review', $v),

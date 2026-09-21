@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| Veyra
+| Platform
 |--------------------------------------------------------------------------
 |
 | Defaults for the admin console and trust & safety engine.
 |
 | Anything an operator should be able to change without a deploy also exists as
 | a row in the `settings` table; the values here are the fallbacks used before
-| settings are seeded, and during tests. Read them through `veyra_setting()`
+| settings are seeded, and during tests. Read them through `platform_setting()`
 | rather than `config()` so the database always wins.
 |
 */
@@ -40,8 +40,8 @@ return [
     |
     */
     'seed' => [
-        'scale' => env('VEYRA_SEED_SCALE', 'tiny'),
-        'photos' => env('VEYRA_SEED_PHOTOS', 'stock'),
+        'scale' => env('PLATFORM_SEED_SCALE', 'tiny'),
+        'photos' => env('PLATFORM_SEED_PHOTOS', 'stock'),
         // Fixed so analytics screenshots and assertions do not drift between runs.
         'faker_seed' => 20260917,
     ],

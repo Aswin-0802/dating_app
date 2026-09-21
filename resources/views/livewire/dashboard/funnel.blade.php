@@ -9,7 +9,7 @@
                     <div class="mb-1 flex items-center justify-between gap-3 text-sm">
                         <span>{{ $stage['step'] }}</span>
                         <span class="tabular text-muted-foreground">
-                            {{ veyra_number($stage['count']) }}
+                            {{ platform_number($stage['count']) }}
                             <span class="ml-1 font-medium text-foreground">{{ $stage['rate'] }}%</span>
                         </span>
                     </div>
@@ -29,7 +29,7 @@
                         ])>
                             {{ $stage['step_rate'] }}% of the previous step
                             @if ($stage['step_rate'] < 75)
-                                — {{ veyra_number($funnel[$loop->index - 1]['count'] - $stage['count']) }} people lost here
+                                — {{ platform_number($funnel[$loop->index - 1]['count'] - $stage['count']) }} people lost here
                             @endif
                         </p>
                     @endunless
@@ -41,9 +41,9 @@
     <x-ui.card title="Cold start" description="New members matched within 48 hours of signing up.">
         <div class="flex flex-wrap items-center gap-6">
             <div>
-                <p class="tabular text-4xl font-bold">{{ veyra_percent($coldStart['rate']) }}</p>
+                <p class="tabular text-4xl font-bold">{{ platform_percent($coldStart['rate']) }}</p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    {{ veyra_number($coldStart['matched_in_48h']) }} of {{ veyra_number($coldStart['cohort']) }}
+                    {{ platform_number($coldStart['matched_in_48h']) }} of {{ platform_number($coldStart['cohort']) }}
                     recent signups
                 </p>
             </div>

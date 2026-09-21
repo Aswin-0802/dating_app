@@ -24,7 +24,7 @@
 
             <x-ui.card title="What the member says">
                 <x-slot:action>
-                    <x-veyra.status-badge :status="$appeal->status" />
+                    <x-platform.status-badge :status="$appeal->status" />
                 </x-slot:action>
 
                 <blockquote class="border-l-2 border-border pl-4 text-sm leading-relaxed">
@@ -32,9 +32,9 @@
                 </blockquote>
 
                 <p class="mt-3 text-xs text-muted-foreground">
-                    Filed {{ veyra_datetime($appeal->created_at) }}
+                    Filed {{ platform_datetime($appeal->created_at) }}
                     @if ($appeal->sla_due_at)
-                        · review due {{ veyra_datetime($appeal->sla_due_at) }}
+                        · review due {{ platform_datetime($appeal->sla_due_at) }}
                     @endif
                 </p>
             </x-ui.card>
@@ -49,8 +49,8 @@
                             'Reason given' => $ban->reason_code?->label(),
                             'Policy clause' => $appeal->moderationAction?->policy_clause,
                             'Decided by' => $appeal->originalDecider?->name ?? 'Automated rule',
-                            'Decided' => veyra_datetime($ban->starts_at),
-                            'Expires' => $ban->expires_at ? veyra_datetime($ban->expires_at) : 'No expiry',
+                            'Decided' => platform_datetime($ban->starts_at),
+                            'Expires' => $ban->expires_at ? platform_datetime($ban->expires_at) : 'No expiry',
                             'Currently in force' => $ban->isActive() ? 'Yes' : 'No — already lifted or expired',
                         ] as $label => $value)
                             <div class="flex items-start justify-between gap-4 py-2 first:pt-0 last:pb-0">
@@ -128,10 +128,10 @@
             @else
                 <x-ui.card title="Decision">
                     <div class="space-y-2">
-                        <x-veyra.status-badge :status="$appeal->status" />
+                        <x-platform.status-badge :status="$appeal->status" />
                         <p class="text-sm">{{ $appeal->decision_note }}</p>
                         <p class="text-xs text-muted-foreground">
-                            {{ $appeal->assignedTo?->name }} · {{ veyra_datetime($appeal->decided_at) }}
+                            {{ $appeal->assignedTo?->name }} · {{ platform_datetime($appeal->decided_at) }}
                         </p>
                     </div>
                 </x-ui.card>
@@ -142,7 +142,7 @@
         <div class="space-y-4 md:space-y-6">
             <x-ui.card title="Member">
                 <div class="space-y-3">
-                    <x-veyra.user-cell
+                    <x-platform.user-cell
                         :name="$member?->display_name"
                         :age="$member?->age"
                         :photo="$member?->primaryPhoto?->thumb_url"
@@ -153,15 +153,15 @@
 
                     <div class="flex flex-wrap gap-1.5">
                         @if ($member)
-                            <x-veyra.status-badge :status="$member->account_status" />
-                            <x-veyra.risk-badge :score="$member->risk_score" :band="$member->risk_band"
+                            <x-platform.status-badge :status="$member->account_status" />
+                            <x-platform.risk-badge :score="$member->risk_score" :band="$member->risk_band"
                                 :factors="$member->riskScore?->factors" />
                         @endif
                     </div>
 
                     <dl class="divide-y divide-border text-sm">
                         @foreach ([
-                            'Member since' => veyra_date($member?->created_at),
+                            'Member since' => platform_date($member?->created_at),
                             'Prior appeals' => $member?->appeals()->count(),
                             'Prior enforcement' => $member?->bans()->count(),
                         ] as $label => $value)

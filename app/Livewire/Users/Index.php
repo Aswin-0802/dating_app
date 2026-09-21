@@ -239,7 +239,7 @@ class Index extends Component
 
     public function confirmStep(): void
     {
-        $limit = (int) config('veyra.tables.bulk_inline_limit', 500);
+        $limit = (int) config('platform.tables.bulk_inline_limit', 500);
 
         $subjects = $this->rowTarget !== null
             ? AppUser::query()->whereKey($this->rowTarget)->get()

@@ -56,7 +56,7 @@ class Profile extends Component
 
         auth()->user()->forceFill(['name' => trim($this->name), 'job_title' => trim($this->jobTitle) ?: null])->save();
 
-        $this->dispatch('veyra:toast', message: 'Details saved.', type: 'success');
+        $this->dispatch('platform:toast', message: 'Details saved.', type: 'success');
     }
 
     public function changePassword(ActivityLogger $logger): void
@@ -85,6 +85,6 @@ class Profile extends Component
         $logger->log(module: 'auth', action: 'password_changed', subject: $user, description: "{$user->name} changed their password");
 
         $this->reset('currentPassword', 'password', 'password_confirmation');
-        $this->dispatch('veyra:toast', message: 'Password changed. Other sessions have been signed out.', type: 'success');
+        $this->dispatch('platform:toast', message: 'Password changed. Other sessions have been signed out.', type: 'success');
     }
 }

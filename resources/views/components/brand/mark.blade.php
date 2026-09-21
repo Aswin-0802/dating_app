@@ -47,5 +47,5 @@
     <span
         {{ $attributes->class([$box, $fill, $initialsSize, 'flex shrink-0 items-center justify-center rounded-lg font-bold tracking-tight']) }}
         aria-hidden="true"
-    >{{ veyra_initials(Branding::name()) }}</span>
+    >{{ platform_initials(Branding::name()) }}</span>
 @endif

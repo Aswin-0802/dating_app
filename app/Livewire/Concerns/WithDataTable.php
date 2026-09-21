@@ -55,8 +55,8 @@ trait WithDataTable
 
     public function mountWithDataTable(): void
     {
-        $this->perPage = (int) config('veyra.tables.per_page', 25);
-        $this->density = (string) config('veyra.tables.density', 'comfortable');
+        $this->perPage = (int) config('platform.tables.per_page', 25);
+        $this->density = (string) config('platform.tables.density', 'comfortable');
     }
 
     public function sort(string $field): void
@@ -127,6 +127,6 @@ trait WithDataTable
     /** @return array<int, int> */
     public function perPageOptions(): array
     {
-        return config('veyra.tables.per_page_options', [10, 25, 50, 100]);
+        return config('platform.tables.per_page_options', [10, 25, 50, 100]);
     }
 }

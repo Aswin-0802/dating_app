@@ -1,4 +1,4 @@
-# UAT report — Veyra dating app
+# UAT report — Platform dating app
 
 **Date:** 19 September 2026
 **Build:** `36e28ed` (main)

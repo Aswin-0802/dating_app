@@ -31,7 +31,7 @@
             <dl class="grid gap-3 text-sm sm:grid-cols-2">
                 <div>
                     <dt class="text-muted-foreground">Last sign-in</dt>
-                    <dd class="font-medium">{{ veyra_datetime($user->last_login_at) }}</dd>
+                    <dd class="font-medium">{{ platform_datetime($user->last_login_at) }}</dd>
                 </div>
                 <div>
                     <dt class="text-muted-foreground">From IP address</dt>

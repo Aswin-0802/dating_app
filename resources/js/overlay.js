@@ -1,5 +1,5 @@
 /**
- * Veyra overlay primitive.
+ * Platform overlay primitive.
  *
  * One implementation drives three presentations — centre modal, right drawer and
  * the mobile sidebar sheet. They differ only in positioning classes.
@@ -102,7 +102,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 export default function registerOverlay(Alpine) {
-    Alpine.data('veyraOverlay', (config = {}) => ({
+    Alpine.data('platformOverlay', (config = {}) => ({
         open: false,
         zIndex: BASE_Z,
 

@@ -64,7 +64,7 @@ class AppServiceProvider extends ServiceProvider
 
             foreach (['status' => 'success', 'error' => 'error'] as $key => $type) {
                 if (session()->has($key)) {
-                    $component->dispatch('veyra:toast', message: (string) session()->pull($key), type: $type);
+                    $component->dispatch('platform:toast', message: (string) session()->pull($key), type: $type);
                 }
             }
         });

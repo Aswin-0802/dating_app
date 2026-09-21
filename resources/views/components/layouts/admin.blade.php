@@ -6,8 +6,8 @@
 @php
     // Read on the server so the first painted byte already carries the right
     // theme and sidebar width. Anything resolved client-side flashes.
-    $theme = request()->cookie('veyra_theme', App\Support\Branding::themeMode());
-    $sidebar = request()->cookie('veyra_sidebar', 'expanded');
+    $theme = request()->cookie('platform_theme', App\Support\Branding::themeMode());
+    $sidebar = request()->cookie('platform_sidebar', 'expanded');
 @endphp
 
 <!DOCTYPE html>
@@ -39,11 +39,11 @@
 
 <body class="min-h-screen bg-background font-sans text-foreground antialiased">
     <div
-        class="veyra-shell flex min-h-screen"
-        x-data="veyraShell('{{ $sidebar }}')"
+        class="platform-shell flex min-h-screen"
+        x-data="platformShell('{{ $sidebar }}')"
         data-sidebar-binding
         :data-sidebar="state"
-        @veyra:toggle-sidebar.window="toggle()"
+        @platform:toggle-sidebar.window="toggle()"
     >
         @include('layouts.partials.sidebar')
 
@@ -100,7 +100,7 @@
     @if (session('status') || session('error'))
         <script>
             window.addEventListener('DOMContentLoaded', function () {
-                window.dispatchEvent(new CustomEvent('veyra:toast', {
+                window.dispatchEvent(new CustomEvent('platform:toast', {
                     detail: {
                         message: @json(session('status') ?? session('error')),
                         type: @json(session('error') ? 'error' : 'success'),

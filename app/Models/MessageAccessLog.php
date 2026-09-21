@@ -54,6 +54,6 @@ class MessageAccessLog extends Model
 
     public function reasonLabel(): string
     {
-        return config('veyra.privacy.reveal_reasons.'.$this->reason_code, $this->reason_code);
+        return config('platform.privacy.reveal_reasons.'.$this->reason_code, $this->reason_code);
     }
 }

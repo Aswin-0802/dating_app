@@ -30,7 +30,7 @@
         <!--
             Tests run against MySQL, not an in-memory SQLite.
 
-            Veyra leans on MySQL deliberately: DATE_ADD in the analytics, FIELD()
+            Platform leans on MySQL deliberately: DATE_ADD in the analytics, FIELD()
             for severity ranking, JSON_EXTRACT in the risk engine, and multi-table
             UPDATE JOINs in the seeders. Testing on SQLite would silently skip
             every one of those and let a broken query reach production green.

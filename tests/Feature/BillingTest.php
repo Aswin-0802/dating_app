@@ -119,7 +119,7 @@ class BillingTest extends TestCase
         app(Subscriptions::class)->grant($member, Plan::query()->where('slug', 'plus')->firstOrFail(), now()->addDay());
 
         $this->travel(2)->days();
-        $this->artisan('veyra:run-due-tasks')->assertSuccessful();
+        $this->artisan('platform:run-due-tasks')->assertSuccessful();
 
         $member->refresh();
         $this->assertFalse($member->is_premium);
@@ -133,7 +133,7 @@ class BillingTest extends TestCase
         app(Subscriptions::class)->grant($member, Plan::query()->where('slug', 'gold')->firstOrFail(), null);
 
         $this->travel(2)->years();
-        $this->artisan('veyra:run-due-tasks')->assertSuccessful();
+        $this->artisan('platform:run-due-tasks')->assertSuccessful();
 
         $this->assertTrue($member->fresh()->is_premium);
     }
@@ -153,7 +153,7 @@ class BillingTest extends TestCase
 
         $member->forceFill(['active_ban_id' => $ban->id, 'shadow_banned_until' => $ban->expires_at])->save();
 
-        $this->artisan('veyra:run-due-tasks')->assertSuccessful();
+        $this->artisan('platform:run-due-tasks')->assertSuccessful();
 
         $this->assertNotNull($ban->fresh()->lifted_at);
         $this->assertSame(AccountStatus::Active, $member->fresh()->account_status);

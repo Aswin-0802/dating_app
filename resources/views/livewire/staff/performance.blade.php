@@ -70,7 +70,7 @@
                                 $row->overturn_rate >= 25 => 'destructive',
                                 $row->overturn_rate >= 15 => 'warning',
                                 default => 'success',
-                            }">{{ veyra_percent($row->overturn_rate) }}</x-ui.badge>
+                            }">{{ platform_percent($row->overturn_rate) }}</x-ui.badge>
                         @endif
                     </x-ui.table.cell>
 

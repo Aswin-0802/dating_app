@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schedule;
 |
 | One cron entry drives all of this:
 |
-|   * * * * * cd /path/to/veyra && php artisan schedule:run >> /dev/null 2>&1
+|   * * * * * cd /path/to/platform && php artisan schedule:run >> /dev/null 2>&1
 |
 | On Windows, a Task Scheduler task running `php artisan schedule:run` every
 | minute does the same. Without it the product still works — suspensions clear
@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Schedule;
 */
 
 // Restrictions that have reached their end date, and plans that have run out.
-Schedule::command('veyra:run-due-tasks')
+Schedule::command('platform:run-due-tasks')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();
@@ -30,13 +30,13 @@ Schedule::command('veyra:run-due-tasks')
 // Renewal warnings. Hourly rather than daily so a plan bought at 11pm is still
 // warned about at a sensible hour, and because each reminder is recorded as
 // sent, running often costs nothing.
-Schedule::command('veyra:send-renewal-reminders')
+Schedule::command('platform:send-renewal-reminders')
     ->hourly()
     ->withoutOverlapping()
     ->runInBackground();
 
 // Approved campaigns whose send time has arrived.
-Schedule::command('veyra:send-campaigns')
+Schedule::command('platform:send-campaigns')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();

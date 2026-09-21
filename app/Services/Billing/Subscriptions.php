@@ -76,7 +76,7 @@ final class Subscriptions
                 module: 'billing',
                 action: $source === 'payment' ? 'plan_purchased' : 'plan_granted',
                 subject: $member,
-                description: "{$plan->name} given to {$member->display_name}".($endsAt ? ' until '.veyra_date($endsAt) : ' (no end date)'),
+                description: "{$plan->name} given to {$member->display_name}".($endsAt ? ' until '.platform_date($endsAt) : ' (no end date)'),
                 new: [
                     'plan' => $plan->slug,
                     'ends_at' => $endsAt?->toIso8601String(),
@@ -94,7 +94,7 @@ final class Subscriptions
         $this->notifier->email($member, 'billing.plan_started', [
             'first_name' => str($member->display_name)->before(' ')->toString(),
             'plan_name' => $plan->name,
-            'until_clause' => $endsAt === null ? '' : ' until '.veyra_date($endsAt),
+            'until_clause' => $endsAt === null ? '' : ' until '.platform_date($endsAt),
         ], 'See your plan', route('member.premium'));
 
         return $subscription;

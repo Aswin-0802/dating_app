@@ -52,7 +52,7 @@ final class VerificationSubmission
             'selfie_path' => $path,
             'gesture_code' => strtoupper($gestureCode),
             'submitted_at' => now(),
-            'sla_due_at' => now()->addHours((int) veyra_setting('verification.sla_hours', 24)),
+            'sla_due_at' => now()->addHours((int) platform_setting('verification.sla_hours', 24)),
         ]);
 
         $member->forceFill(['verification_status' => 'pending'])->save();
@@ -62,6 +62,6 @@ final class VerificationSubmission
 
     private function maxAttempts(): int
     {
-        return (int) config('veyra.verification.max_attempts', 3);
+        return (int) config('platform.verification.max_attempts', 3);
     }
 }

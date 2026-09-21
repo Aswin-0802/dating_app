@@ -232,14 +232,14 @@ final class ApplyEnforcement
             );
         }
 
-        $maxHours = (int) veyra_setting(
+        $maxHours = (int) platform_setting(
             'enforcement.shadow_ban_max_hours',
-            config('veyra.enforcement.shadow_ban_max_hours', 720),
+            config('platform.enforcement.shadow_ban_max_hours', 720),
         );
 
         if ($step === LadderStep::ShadowBan && $durationHours !== null && $durationHours > $maxHours) {
             throw new InvalidArgumentException(
-                'A shadow ban cannot exceed '.veyra_hours_label($maxHours).'.',
+                'A shadow ban cannot exceed '.platform_hours_label($maxHours).'.',
             );
         }
     }

@@ -11,7 +11,7 @@
                 <x-ui.icon name="check-circle" size="xl" class="mx-auto" />
                 <h1 class="mt-3 text-2xl font-bold tracking-tight">You are on {{ $order->description }}</h1>
                 <p class="mt-1 text-primary-foreground/85">
-                    Paid {{ $order->formattedAmount() }}@if ($me->premium_until) · runs until {{ veyra_date($me->premium_until) }} @endif
+                    Paid {{ $order->formattedAmount() }}@if ($me->premium_until) · runs until {{ platform_date($me->premium_until) }} @endif
                 </p>
             </div>
 

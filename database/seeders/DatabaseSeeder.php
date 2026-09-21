@@ -33,7 +33,7 @@ class DatabaseSeeder extends Seeder
          * it — an admin panel seeded with nothing but an empty schema cannot be
          * evaluated, and every screen would open on its empty state.
          *
-         * DemoDataSeeder refuses to run in production, and VEYRA_SEED_SCALE=small
+         * DemoDataSeeder refuses to run in production, and PLATFORM_SEED_SCALE=small
          * cuts it to a tenth for a fast local rebuild.
          */
         $this->call(DemoDataSeeder::class);

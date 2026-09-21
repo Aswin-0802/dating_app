@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\DB;
  * Split from DatabaseSeeder so reference data (permissions, roles, settings)
  * can be reseeded without regenerating 12,000 members and 38,000 images.
  *
- * Scale is set by VEYRA_SEED_SCALE. `tiny` is the default: a 50-member
+ * Scale is set by PLATFORM_SEED_SCALE. `tiny` is the default: a 50-member
  * population, which is what you want when the dataset is there to exercise the
  * UI rather than to demo it.
  *
@@ -55,7 +55,7 @@ class DemoDataSeeder extends Seeder
             return;
         }
 
-        $members = self::SCALES[config('veyra.seed.scale', 'tiny')] ?? self::SCALES['demo'];
+        $members = self::SCALES[config('platform.seed.scale', 'tiny')] ?? self::SCALES['demo'];
 
         // Everything downstream sizes itself relative to the reference dataset,
         // so the population stays the only number that has to be set.

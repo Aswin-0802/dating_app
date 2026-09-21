@@ -46,12 +46,12 @@ class Push extends Component
 
     public function mount(): void
     {
-        $this->enabled = (bool) veyra_setting('push.enabled', false);
-        $this->webEnabled = (bool) veyra_setting('push.web_enabled', false);
+        $this->enabled = (bool) platform_setting('push.enabled', false);
+        $this->webEnabled = (bool) platform_setting('push.web_enabled', false);
         $this->vapidKey = PushSettings::vapidKey();
 
         foreach (array_keys(PushSettings::WEB_FIELDS) as $field) {
-            $this->web[$field] = (string) veyra_setting("push.{$field}", '');
+            $this->web[$field] = (string) platform_setting("push.{$field}", '');
         }
     }
 

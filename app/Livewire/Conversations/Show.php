@@ -47,7 +47,7 @@ class Show extends Component
     {
         return view('livewire.conversations.show', [
             'messages' => $this->messages(),
-            'reasons' => config('veyra.privacy.reveal_reasons', []),
+            'reasons' => config('platform.privacy.reveal_reasons', []),
             'canReveal' => auth()->user()?->can('view_message_content') ?? false,
             'isRevealed' => $this->revealed !== [],
         ])->layout('components.layouts.admin', [

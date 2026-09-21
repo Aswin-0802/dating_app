@@ -20,8 +20,8 @@
         @checked($checked)
         @if ($indeterminate) x-init="$el.indeterminate = true" @endif
         {{ $attributes->class([
-            // The tick and dash glyphs come from .veyra-checkbox in components.css.
-            'veyra-checkbox',
+            // The tick and dash glyphs come from .platform-checkbox in components.css.
+            'platform-checkbox',
             'mt-px size-4 shrink-0 cursor-pointer appearance-none rounded-xs border border-input bg-card transition-colors',
             'checked:border-primary checked:bg-primary',
             'indeterminate:border-primary indeterminate:bg-primary',

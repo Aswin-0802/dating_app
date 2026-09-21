@@ -1,17 +1,17 @@
 <div class="space-y-4 md:space-y-6">
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
-        <x-ui.stat-card label="Total matches" :value="veyra_compact_number($stats['total'])" icon="heart" />
+        <x-ui.stat-card label="Total matches" :value="platform_compact_number($stats['total'])" icon="heart" />
         <x-ui.stat-card
             label="Never messaged"
-            :value="veyra_percent($stats['silent_rate'])"
+            :value="platform_percent($stats['silent_rate'])"
             icon="chat"
             hint="A match nobody speaks in is indistinguishable from no match"
         />
-        <x-ui.stat-card label="Got a first message" :value="veyra_compact_number($stats['messaged'])" icon="inbox" />
+        <x-ui.stat-card label="Got a first message" :value="platform_compact_number($stats['messaged'])" icon="inbox" />
         <x-ui.stat-card
             label="Reply rate"
-            :value="veyra_percent($stats['reply_rate'])"
+            :value="platform_percent($stats['reply_rate'])"
             icon="arrow-path"
             hint="Of matches where somebody opened"
         />
@@ -89,7 +89,7 @@
                         </x-ui.badge>
                     </x-ui.table.cell>
 
-                    <x-ui.table.cell align="right" muted>{{ veyra_date($match->matched_at) }}</x-ui.table.cell>
+                    <x-ui.table.cell align="right" muted>{{ platform_date($match->matched_at) }}</x-ui.table.cell>
 
                     <x-ui.table.cell align="right" numeric>{{ $match->messages_count }}</x-ui.table.cell>
 

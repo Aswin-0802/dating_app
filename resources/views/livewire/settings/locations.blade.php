@@ -148,7 +148,7 @@
                                         </td>
                                         <td class="py-2 pr-3 text-muted-foreground">{{ $city->state?->name ?? '—' }}</td>
                                         <td class="py-2 pr-3 text-muted-foreground">{{ $city->timezone }}</td>
-                                        <td class="tabular py-2 pr-3 text-right">{{ veyra_number($memberCounts[$city->id] ?? 0) }}</td>
+                                        <td class="tabular py-2 pr-3 text-right">{{ platform_number($memberCounts[$city->id] ?? 0) }}</td>
                                         <td class="py-2 text-right">
                                             @if ($canEdit)
                                                 <x-ui.button size="xs" variant="ghost" wire:click="editCity({{ $city->id }})">Edit</x-ui.button>

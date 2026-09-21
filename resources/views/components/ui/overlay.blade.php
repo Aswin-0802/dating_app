@@ -49,7 +49,7 @@
 @endphp
 
 <div
-    x-data="veyraOverlay({{ $config }})"
+    x-data="platformOverlay({{ $config }})"
     @if ($name) x-id="['{{ $name }}']" @endif
     x-cloak
 >

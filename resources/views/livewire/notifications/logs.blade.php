@@ -6,9 +6,9 @@
         @foreach (['delivered' => 'Delivered', 'opened' => 'Opened', 'failed' => 'Failed', 'queued' => 'Queued'] as $key => $label)
             <x-ui.stat-card
                 :label="$label"
-                :value="veyra_compact_number($breakdown[$key] ?? 0)"
+                :value="platform_compact_number($breakdown[$key] ?? 0)"
                 :icon="match ($key) { 'delivered' => 'check-circle', 'opened' => 'eye', 'failed' => 'x-circle', default => 'clock' }"
-                :hint="veyra_percent(($breakdown[$key] ?? 0) / $total * 100, 1).' of all sends'"
+                :hint="platform_percent(($breakdown[$key] ?? 0) / $total * 100, 1).' of all sends'"
                 :invert-delta="$key === 'failed'"
             />
         @endforeach
@@ -55,7 +55,7 @@
         <tbody wire:loading.class="opacity-50">
             @forelse ($logs as $log)
                 <x-ui.table.row>
-                    <x-ui.table.cell muted>{{ veyra_datetime($log->created_at) }}</x-ui.table.cell>
+                    <x-ui.table.cell muted>{{ platform_datetime($log->created_at) }}</x-ui.table.cell>
 
                     <x-ui.table.cell>
                         @if ($log->appUser)

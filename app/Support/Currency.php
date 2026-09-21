@@ -26,7 +26,7 @@ final class Currency
 
     public static function code(): string
     {
-        $code = strtoupper((string) veyra_setting('billing.currency', self::DEFAULT));
+        $code = strtoupper((string) platform_setting('billing.currency', self::DEFAULT));
 
         return array_key_exists($code, self::SUPPORTED) ? $code : self::DEFAULT;
     }

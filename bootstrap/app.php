@@ -58,8 +58,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [RespectMaintenanceMode::class]);
 
         $middleware->encryptCookies(except: [
-            'veyra_theme',
-            'veyra_sidebar',
+            'platform_theme',
+            'platform_sidebar',
         ]);
 
         $middleware->alias([
@@ -68,7 +68,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
 
-            // veyra
+            // platform
             'staff.active' => EnsureStaffIsActive::class,
             'appuser.active' => EnsureAppUserIsNotBanned::class,
             'member.active' => EnsureMemberCanUseApp::class,

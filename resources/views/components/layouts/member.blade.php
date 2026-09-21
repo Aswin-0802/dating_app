@@ -7,7 +7,7 @@
     use App\Support\Branding;
     use Illuminate\Support\Facades\DB;
 
-    $theme = request()->cookie('veyra_theme', Branding::themeMode());
+    $theme = request()->cookie('platform_theme', Branding::themeMode());
 
     /** @var \App\Models\AppUser $me */
     $me = auth('member')->user();
@@ -73,7 +73,7 @@
                     </a>
                 @endunless
 
-                <div x-data="veyraTheme()">
+                <div x-data="platformTheme()">
                     <button type="button" @click="cycle()" class="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" ::title="`Theme: ${preference}`">
                         <span x-show="preference === 'light'" x-cloak><x-ui.icon name="sun" size="sm" /></span>
                         <span x-show="preference === 'dark'" x-cloak><x-ui.icon name="moon" size="sm" /></span>
@@ -151,7 +151,7 @@
     @if (session('status'))
         <script>
             window.addEventListener('DOMContentLoaded', function () {
-                window.dispatchEvent(new CustomEvent('veyra:toast', { detail: { message: @json(session('status')), type: 'success' } }));
+                window.dispatchEvent(new CustomEvent('platform:toast', { detail: { message: @json(session('status')), type: 'success' } }));
             });
         </script>
     @endif

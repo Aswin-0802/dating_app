@@ -27,6 +27,6 @@ trait InteractsWithMember
 
     protected function toast(string $message, string $type = 'success'): void
     {
-        $this->dispatch('veyra:toast', message: $message, type: $type);
+        $this->dispatch('platform:toast', message: $message, type: $type);
     }
 }

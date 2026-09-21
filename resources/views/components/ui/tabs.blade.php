@@ -55,7 +55,7 @@
                     'tabular rounded-full px-1.5 py-px text-[11px] font-medium',
                     'bg-primary-subtle text-primary-subtle-foreground' => $isActive,
                     'bg-muted text-muted-foreground' => ! $isActive,
-                ])>{{ veyra_compact_number($tab['count']) }}</span>
+                ])>{{ platform_compact_number($tab['count']) }}</span>
             @endif
         </a>
     @endforeach

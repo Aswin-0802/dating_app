@@ -7,7 +7,7 @@
             <p class="mt-0.5 text-muted-foreground">
                 A permanently banned member signing up again almost always does so from the
                 same phone. Clusters that include a banned account are the ones worth acting
-                on. {{ veyra_number($bannedDeviceCount) }} devices are currently blocked.
+                on. {{ platform_number($bannedDeviceCount) }} devices are currently blocked.
             </p>
         </div>
     </div>
@@ -63,7 +63,7 @@
                     </x-ui.table.cell>
 
                     <x-ui.table.cell align="right" muted>
-                        {{ $cluster->last_seen_at ? veyra_duration($cluster->last_seen_at).' ago' : '—' }}
+                        {{ $cluster->last_seen_at ? platform_duration($cluster->last_seen_at).' ago' : '—' }}
                     </x-ui.table.cell>
                 </x-ui.table.row>
             @empty

@@ -30,9 +30,9 @@ class PhotoSeeder extends Seeder
     public function run(): void
     {
         $faker = fake();
-        $faker->seed(config('veyra.seed.faker_seed', 20260917) + 1);
+        $faker->seed(config('platform.seed.faker_seed', 20260917) + 1);
 
-        $mode = config('veyra.seed.photos', 'stock');
+        $mode = config('platform.seed.photos', 'stock');
         $genders = DB::table('app_users')->pluck('gender', 'id')->all();
         $userIds = array_keys($genders);
 

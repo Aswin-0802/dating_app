@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Schema;
  *  - the enforcement mirror (shadow_banned_until, suspended_until, banned_at)
  *    duplicates `bans`, so the API's hot path can answer "may this account act?"
  *    without a join. BanObserver writes both inside one transaction, and
- *    `veyra:reconcile-enforcement` re-checks them.
+ *    `platform:reconcile-enforcement` re-checks them.
  *
  *  - the funnel milestones ARE the funnel chart. Deriving them from swipes,
  *    matches and messages at read time would make the dashboard unusable.

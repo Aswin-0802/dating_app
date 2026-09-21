@@ -7,7 +7,7 @@
             <p class="mt-0.5 text-muted-foreground">
                 Blocking takes one tap and files no report, so a member who makes people
                 uncomfortable can accumulate a dozen blocks without ever reaching a queue.
-                {{ veyra_number($totalBlocks) }} blocks recorded in total.
+                {{ platform_number($totalBlocks) }} blocks recorded in total.
             </p>
         </div>
     </div>
@@ -43,7 +43,7 @@
             @forelse ($members as $member)
                 <x-ui.table.row :tint="$member->risk_band->rowClasses()">
                     <x-ui.table.cell>
-                        <x-veyra.user-cell
+                        <x-platform.user-cell
                             :name="$member->display_name"
                             :age="$member->age"
                             :photo="$member->primaryPhoto?->thumb_url"
@@ -52,10 +52,10 @@
                         />
                     </x-ui.table.cell>
 
-                    <x-ui.table.cell><x-veyra.status-badge :status="$member->account_status" /></x-ui.table.cell>
+                    <x-ui.table.cell><x-platform.status-badge :status="$member->account_status" /></x-ui.table.cell>
 
                     <x-ui.table.cell>
-                        <x-veyra.risk-badge :score="$member->risk_score" :band="$member->risk_band" />
+                        <x-platform.risk-badge :score="$member->risk_score" :band="$member->risk_band" />
                     </x-ui.table.cell>
 
                     <x-ui.table.cell align="right" numeric>
@@ -66,7 +66,7 @@
                         ])>{{ $member->blocks_received_count }}</span>
                     </x-ui.table.cell>
 
-                    <x-ui.table.cell align="right" muted>{{ veyra_date($member->created_at) }}</x-ui.table.cell>
+                    <x-ui.table.cell align="right" muted>{{ platform_date($member->created_at) }}</x-ui.table.cell>
 
                     <x-ui.table.cell align="right">
                         <x-ui.button size="xs" variant="outline" :href="route('admin.users.show', $member)">View</x-ui.button>

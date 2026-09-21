@@ -21,7 +21,7 @@
                     >
                         {{ $label }}
                         @if ($count !== null)
-                            <span class="tabular ml-1 text-xs {{ $key === 'ending' && $count > 0 ? 'font-semibold text-warning-subtle-foreground' : 'text-muted-foreground' }}">{{ veyra_number($count) }}</span>
+                            <span class="tabular ml-1 text-xs {{ $key === 'ending' && $count > 0 ? 'font-semibold text-warning-subtle-foreground' : 'text-muted-foreground' }}">{{ platform_number($count) }}</span>
                         @endif
                     </button>
                 @endforeach
@@ -83,12 +83,12 @@
                                     @endif
                                 </td>
                                 <td class="py-2.5 pr-3 font-medium">{{ $subscription->plan_name }}</td>
-                                <td class="whitespace-nowrap py-2.5 pr-3 text-muted-foreground">{{ veyra_date($subscription->starts_at) }}</td>
+                                <td class="whitespace-nowrap py-2.5 pr-3 text-muted-foreground">{{ platform_date($subscription->starts_at) }}</td>
                                 <td class="whitespace-nowrap py-2.5 pr-3">
                                     @if ($subscription->ends_at === null)
                                         <span class="text-muted-foreground">No end date</span>
                                     @else
-                                        {{ veyra_date($subscription->ends_at) }}
+                                        {{ platform_date($subscription->ends_at) }}
                                         @if ($subscription->status === 'active' && $subscription->ends_at->isBefore(now()->addDays(7)))
                                             <span class="block text-xs font-medium text-warning-subtle-foreground">
                                                 {{ $subscription->daysLeft() <= 0 ? 'today' : 'in '.$subscription->daysLeft().' days' }}

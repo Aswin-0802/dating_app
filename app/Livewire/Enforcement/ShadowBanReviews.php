@@ -118,7 +118,7 @@ class ShadowBanReviews extends Component
         $this->extendingBanId = $banId;
         $this->extendNote = '';
 
-        $hours = (int) veyra_setting('enforcement.shadow_ban_review_hours', 168);
+        $hours = (int) platform_setting('enforcement.shadow_ban_review_hours', 168);
         $this->newReviewDate = now()->addHours($hours)->format('Y-m-d\TH:i');
     }
 

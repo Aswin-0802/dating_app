@@ -25,7 +25,7 @@ class SystemLogSeeder extends Seeder
     public function run(): void
     {
         $faker = fake();
-        $faker->seed(config('veyra.seed.faker_seed', 20260917) + 5);
+        $faker->seed(config('platform.seed.faker_seed', 20260917) + 5);
 
         $emails = $this->seedEmailLogs($faker);
         $sms = $this->seedSmsLogs($faker);
@@ -50,14 +50,14 @@ class SystemLogSeeder extends Seeder
             ->get(['id', 'email', 'display_name']);
 
         $kinds = [
-            ['Welcome to Veyra', 'welcome'],
+            ['Welcome to Platform', 'welcome'],
             ['Verify your email address', 'email.verify'],
             ['Reset your password', 'password.reset'],
             ['Your verification was approved', 'verification.approved'],
             ['We could not verify your photo', 'verification.rejected'],
             ['Action has been taken on your account', 'enforcement.notice'],
             ['We received your appeal', 'appeal.received'],
-            ['Your receipt from Veyra', 'billing.receipt'],
+            ['Your receipt from Platform', 'billing.receipt'],
         ];
 
         $rows = [];
@@ -119,7 +119,7 @@ class SystemLogSeeder extends Seeder
 
         foreach ($members as $member) {
             $code = $faker->numerify('######');
-            $body = "Your Veyra verification code is {$code}. It expires in 10 minutes.";
+            $body = "Your Platform verification code is {$code}. It expires in 10 minutes.";
             $status = $faker->boolean(4) ? 'failed' : 'delivered';
             $sentAt = Carbon::now()->subDays($faker->numberBetween(0, 90));
 
@@ -191,7 +191,7 @@ class SystemLogSeeder extends Seeder
                     'app_user_id' => $subscriber->id,
                     'gateway' => $faker->randomElement(['stripe', 'paypal']),
                     'gateway_reference' => 'ch_'.$faker->bothify('??##########'),
-                    'product' => 'Veyra '.ucfirst($tier),
+                    'product' => 'Platform '.ucfirst($tier),
                     'amount' => $prices[$tier] ?? 12.99,
                     'currency' => Currency::code(),
                     'status' => $status,

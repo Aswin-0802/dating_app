@@ -5,7 +5,7 @@
     $company = Branding::get('business.name', $name);
     $email = Branding::get('business.email', Branding::get('brand.support_email'));
     $address = Branding::get('business.address');
-    $minAge = (int) veyra_setting('general.min_age', 18);
+    $minAge = (int) platform_setting('general.min_age', 18);
     $isTerms = $page === 'terms';
 @endphp
 

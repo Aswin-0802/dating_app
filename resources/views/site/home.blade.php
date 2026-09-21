@@ -3,9 +3,9 @@
 
     $name = Branding::name();
     $currency = App\Support\Currency::symbol();
-    $freeLikes = (int) veyra_setting('matching.daily_like_limit_free', 100);
-    $minAge = (int) veyra_setting('general.min_age', 18);
-    $verificationHours = (int) veyra_setting('verification.sla_hours', 24);
+    $freeLikes = (int) platform_setting('matching.daily_like_limit_free', 100);
+    $minAge = (int) platform_setting('general.min_age', 18);
+    $verificationHours = (int) platform_setting('verification.sla_hours', 24);
 @endphp
 
 <x-layouts.site>

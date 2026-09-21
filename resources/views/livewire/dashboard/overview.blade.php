@@ -23,22 +23,22 @@
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
         <x-ui.stat-card
             label="Active members"
-            :value="veyra_compact_number($overview['active_members'])"
+            :value="platform_compact_number($overview['active_members'])"
             icon="users"
             :href="route('admin.users.index')"
-            :hint="veyra_compact_number($overview['mau']).' active in the last 30 days'"
+            :hint="platform_compact_number($overview['mau']).' active in the last 30 days'"
         />
 
         <x-ui.stat-card
             label="Match → conversation"
-            :value="veyra_percent($overview['match_to_message'])"
+            :value="platform_percent($overview['match_to_message'])"
             icon="chat"
             hint="Matches where somebody sent a message"
         />
 
         <x-ui.stat-card
             label="Reports per 1,000 matches"
-            :value="$overview['matches'] >= 100 ? veyra_number($overview['report_rate_per_1k_matches'], 1) : '—'"
+            :value="$overview['matches'] >= 100 ? platform_number($overview['report_rate_per_1k_matches'], 1) : '—'"
             icon="flag"
             invert-delta
             :hint="$overview['matches'] >= 100 ? 'Lower is better' : 'Shown once there are 100 matches'"
@@ -46,20 +46,20 @@
 
         <x-ui.stat-card
             label="Verification coverage"
-            :value="veyra_percent($overview['verification_coverage'])"
+            :value="platform_percent($overview['verification_coverage'])"
             icon="shield-check"
             :href="route('admin.verifications.index')"
-            :hint="veyra_compact_number($overview['verified_members']).' verified members'"
+            :hint="platform_compact_number($overview['verified_members']).' verified members'"
         />
     </div>
 
     {{-- ---- queue load -------------------------------------------------- --}}
     <div class="grid gap-4 sm:grid-cols-3 md:gap-6">
-        <x-ui.stat-card label="Open cases" :value="veyra_number($overview['open_cases'])" icon="flag"
+        <x-ui.stat-card label="Open cases" :value="platform_number($overview['open_cases'])" icon="flag"
             :href="route('admin.cases.index')" />
-        <x-ui.stat-card label="Awaiting verification" :value="veyra_number($overview['open_verifications'])"
+        <x-ui.stat-card label="Awaiting verification" :value="platform_number($overview['open_verifications'])"
             icon="shield-check" :href="route('admin.verifications.index')" />
-        <x-ui.stat-card label="Enforcement in force" :value="veyra_number($overview['active_bans'])" icon="ban"
+        <x-ui.stat-card label="Enforcement in force" :value="platform_number($overview['active_bans'])" icon="ban"
             :href="route('admin.enforcement.bans')" />
     </div>
 
@@ -76,7 +76,7 @@
                         <div class="mb-1 flex items-center justify-between gap-3 text-sm">
                             <span class="min-w-0 truncate">{{ $stage['step'] }}</span>
                             <span class="tabular shrink-0 text-muted-foreground">
-                                {{ veyra_compact_number($stage['count']) }}
+                                {{ platform_compact_number($stage['count']) }}
                                 <span class="ml-1 font-medium text-foreground">{{ $stage['rate'] }}%</span>
                             </span>
                         </div>
@@ -199,7 +199,7 @@
                     <div class="flex items-end justify-between gap-2">
                         <span class="text-sm text-muted-foreground">Likes to the top 10% of profiles</span>
                         <span class="tabular text-2xl font-bold">
-                            {{ veyra_percent($concentration['top_decile_share']) }}
+                            {{ platform_percent($concentration['top_decile_share']) }}
                         </span>
                     </div>
 
@@ -216,7 +216,7 @@
                 <dl class="divide-y divide-border text-sm">
                     <div class="flex items-center justify-between py-2">
                         <dt class="text-muted-foreground">Top quartile share</dt>
-                        <dd class="tabular font-medium">{{ veyra_percent($concentration['top_quartile_share']) }}</dd>
+                        <dd class="tabular font-medium">{{ platform_percent($concentration['top_quartile_share']) }}</dd>
                     </div>
                     <div class="flex items-center justify-between py-2">
                         <dt class="text-muted-foreground">Median likes received</dt>
@@ -232,10 +232,10 @@
             description="New members matched within 48 hours."
         >
             <div class="flex flex-col items-center justify-center py-2">
-                <p class="tabular text-4xl font-bold">{{ veyra_percent($coldStart['rate']) }}</p>
+                <p class="tabular text-4xl font-bold">{{ platform_percent($coldStart['rate']) }}</p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    {{ veyra_number($coldStart['matched_in_48h']) }} of
-                    {{ veyra_number($coldStart['cohort']) }} recent signups
+                    {{ platform_number($coldStart['matched_in_48h']) }} of
+                    {{ platform_number($coldStart['cohort']) }} recent signups
                 </p>
             </div>
 
@@ -255,7 +255,7 @@
                         <div class="mb-1.5 flex items-center justify-between text-sm">
                             <span class="font-medium">{{ $label }}</span>
                             <span class="text-xs text-muted-foreground">
-                                {{ veyra_compact_number($retention[$key]['cohort']) }} members
+                                {{ platform_compact_number($retention[$key]['cohort']) }} members
                             </span>
                         </div>
 
@@ -264,7 +264,7 @@
                                 <div class="rounded-lg border border-border px-2 py-1.5 text-center">
                                     <p class="text-[10px] uppercase tracking-wide text-muted-foreground">{{ $dayLabel }}</p>
                                     <p class="tabular text-sm font-semibold">
-                                        {{ veyra_percent($retention[$key][$day], 0) }}
+                                        {{ platform_percent($retention[$key][$day], 0) }}
                                     </p>
                                 </div>
                             @endforeach

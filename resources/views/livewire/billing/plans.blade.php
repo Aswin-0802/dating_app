@@ -59,7 +59,7 @@
                                         @endforelse
                                     </div>
                                 </td>
-                                <td class="tabular py-3 pr-3 text-right">{{ veyra_number($memberCounts[$plan->slug] ?? 0) }}</td>
+                                <td class="tabular py-3 pr-3 text-right">{{ platform_number($memberCounts[$plan->slug] ?? 0) }}</td>
                                 <td class="py-3 pr-3">
                                     @if ($plan->is_active)
                                         <x-ui.badge size="sm" variant="success" dot>On sale</x-ui.badge>

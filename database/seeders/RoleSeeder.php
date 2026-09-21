@@ -10,7 +10,7 @@ use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * The seven Veyra roles.
+ * The seven Platform roles.
  *
  * Two separations are deliberate and load-bearing:
  *

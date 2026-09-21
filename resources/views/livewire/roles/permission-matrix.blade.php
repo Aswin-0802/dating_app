@@ -48,7 +48,7 @@
                                 wire:model="selected"
                                 value="{{ $permission->name }}"
                                 @disabled(! $canEdit)
-                                class="veyra-checkbox mt-px size-4 shrink-0 appearance-none rounded-xs border border-input bg-card transition-colors checked:border-primary checked:bg-primary disabled:cursor-not-allowed"
+                                class="platform-checkbox mt-px size-4 shrink-0 appearance-none rounded-xs border border-input bg-card transition-colors checked:border-primary checked:bg-primary disabled:cursor-not-allowed"
                             >
 
                             <span class="min-w-0">

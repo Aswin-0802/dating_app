@@ -1,9 +1,9 @@
 <?php
 
 use App\Providers\AppServiceProvider;
-use App\Providers\VeyraServiceProvider;
+use App\Providers\PlatformServiceProvider;
 
 return [
     AppServiceProvider::class,
-    VeyraServiceProvider::class,
+    PlatformServiceProvider::class,
 ];

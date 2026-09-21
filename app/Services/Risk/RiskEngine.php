@@ -217,8 +217,8 @@ final class RiskEngine
      */
     public function recommendedAction(int $score): ?string
     {
-        $limitAt = (int) veyra_setting('risk.auto_limit_at', config('veyra.risk.auto_limit_at', 75));
-        $queueAt = (int) veyra_setting('risk.auto_queue_at', config('veyra.risk.auto_queue_at', 50));
+        $limitAt = (int) platform_setting('risk.auto_limit_at', config('platform.risk.auto_limit_at', 75));
+        $queueAt = (int) platform_setting('risk.auto_queue_at', config('platform.risk.auto_queue_at', 50));
 
         return match (true) {
             $score >= $limitAt => 'feature_limit',

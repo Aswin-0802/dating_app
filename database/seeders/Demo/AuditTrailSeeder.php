@@ -30,7 +30,7 @@ class AuditTrailSeeder extends Seeder
     public function run(): void
     {
         $faker = fake();
-        $faker->seed(config('veyra.seed.faker_seed', 20260917) + 7);
+        $faker->seed(config('platform.seed.faker_seed', 20260917) + 7);
 
         $staff = DB::table('users')
             ->join('model_has_roles as mhr', function ($join): void {
@@ -273,7 +273,7 @@ class AuditTrailSeeder extends Seeder
             ->limit(12)
             ->get();
 
-        $reasons = array_keys(config('veyra.privacy.reveal_reasons'));
+        $reasons = array_keys(config('platform.privacy.reveal_reasons'));
         $accessRows = [];
 
         foreach ($conversations as $conversation) {

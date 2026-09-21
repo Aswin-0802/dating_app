@@ -140,6 +140,6 @@ class Register extends Component
 
     private function minAge(): int
     {
-        return max(18, (int) veyra_setting('general.min_age', 18));
+        return max(18, (int) platform_setting('general.min_age', 18));
     }
 }

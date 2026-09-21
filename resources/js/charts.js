@@ -1,9 +1,9 @@
 /**
  * ApexCharts bridge.
  *
- * ApexCharts wants concrete colour strings, but Veyra's colours live in CSS
+ * ApexCharts wants concrete colour strings, but the platform's colours live in CSS
  * variables that change when the theme flips. This reads the computed values off
- * :root at render time and re-reads them on `veyra:theme-changed`, so charts
+ * :root at render time and re-reads them on `platform:theme-changed`, so charts
  * recolour without a page reload.
  */
 
@@ -28,7 +28,7 @@ export function palette() {
 }
 
 /**
- * Shared chrome for every Veyra chart: no toolbar, no drop shadows, tokenised
+ * Shared chrome for every Platform chart: no toolbar, no drop shadows, tokenised
  * grid and axis colours, tabular tooltips. Individual charts supply only series,
  * type and whatever genuinely differs.
  */
@@ -97,13 +97,13 @@ function deepMerge(target, source) {
 }
 
 export default function registerCharts(Alpine) {
-    Alpine.data('veyraChart', (options = {}) => ({
+    Alpine.data('platformChart', (options = {}) => ({
         chart: null,
 
         init() {
             this.render(options);
 
-            window.addEventListener('veyra:theme-changed', () => this.retheme());
+            window.addEventListener('platform:theme-changed', () => this.retheme());
 
             // Livewire may replace the series without replacing the element.
             this.$wire?.on?.('chart-updated', ({ id, series, labels }) => {

@@ -26,7 +26,7 @@
 
             <x-ui.stat-card
                 :label="$label"
-                :value="veyra_compact_number($value)"
+                :value="platform_compact_number($value)"
                 :icon="$isBad ? 'warning' : (str_contains($lower, 'deliver') || str_contains($lower, 'succe') ? 'check-circle' : 'inbox')"
                 :invert-delta="$isBad"
             />
@@ -87,7 +87,7 @@
         <tbody wire:loading.class="opacity-50">
             @forelse ($rows as $row)
                 <x-ui.table.row>
-                    <x-ui.table.cell muted>{{ veyra_datetime($row->created_at) }}</x-ui.table.cell>
+                    <x-ui.table.cell muted>{{ platform_datetime($row->created_at) }}</x-ui.table.cell>
 
                     @if ($kind === 'email')
                         <x-ui.table.cell>

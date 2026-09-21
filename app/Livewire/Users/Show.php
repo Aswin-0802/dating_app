@@ -272,7 +272,7 @@ class Show extends Component
         $this->appUser->refresh();
 
         session()->flash('status', $plan->name.' given to '.$this->appUser->display_name
-            .($endsAt ? ' until '.veyra_date($endsAt) : ' with no end date').'.');
+            .($endsAt ? ' until '.platform_date($endsAt) : ' with no end date').'.');
     }
 
     public function removePlan(Subscriptions $subscriptions): void

@@ -96,7 +96,7 @@ trait WithBulkActions
      */
     protected function shouldQueueBulkAction(): bool
     {
-        return $this->selectedCount() > (int) config('veyra.tables.bulk_inline_limit', 500);
+        return $this->selectedCount() > (int) config('platform.tables.bulk_inline_limit', 500);
     }
 
     /** @return array<int, string> */

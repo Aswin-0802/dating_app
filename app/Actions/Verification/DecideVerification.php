@@ -110,7 +110,7 @@ final class DecideVerification
                 'reviewed_by' => $actor->id,
                 'reviewed_at' => now(),
                 'internal_note' => $note,
-                'sla_due_at' => now()->addHours((int) config('veyra.sla.restricted_verification_hours', 4)),
+                'sla_due_at' => now()->addHours((int) config('platform.sla.restricted_verification_hours', 4)),
             ])->save();
 
             $this->record($verification, $actor, LadderStep::Escalate, ReasonCode::MinorSafetyConcern, $note);

@@ -6,7 +6,7 @@
 {{--
     Anchored menu. Kept intentionally small: Alpine handles open state and
     outside-click, CSS handles placement. No positioning library — every menu in
-    Veyra anchors to a corner, and a 2kB dependency for that is not worth it.
+    Platform anchors to a corner, and a 2kB dependency for that is not worth it.
 --}}
 
 @php

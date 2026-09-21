@@ -5,7 +5,7 @@ import registerTheme from './theme';
 import registerCharts from './charts';
 import registerShell, { registerGlobalShortcuts } from './shell';
 
-// Livewire ships and boots Alpine itself, so Veyra registers into that instance
+// Livewire ships and boots Alpine itself, so Platform registers into that instance
 // on `alpine:init` rather than importing and starting a second copy.
 document.addEventListener('alpine:init', () => {
     registerOverlay(window.Alpine);
@@ -37,6 +37,6 @@ document.addEventListener('alpine:init', () => {
 registerGlobalShortcuts();
 
 // Server-side flashes and Livewire actions both surface through one toast channel.
-window.addEventListener('veyra:toast', (event) => {
+window.addEventListener('platform:toast', (event) => {
     window.Alpine?.store('toasts')?.push(event.detail.message, event.detail.type ?? 'info');
 });

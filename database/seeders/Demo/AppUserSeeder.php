@@ -85,7 +85,7 @@ class AppUserSeeder extends Seeder
     public function run(): void
     {
         $faker = fake();
-        $faker->seed(config('veyra.seed.faker_seed', 20260917));
+        $faker->seed(config('platform.seed.faker_seed', 20260917));
 
         $cities = City::query()->with('country')->get();
         $focusCities = $cities->where('is_focus', true)->values();

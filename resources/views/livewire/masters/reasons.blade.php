@@ -22,7 +22,7 @@
                                             <p class="line-clamp-2">{{ $reason->statement() }}</p>
                                         </td>
                                         <td class="tabular whitespace-nowrap px-3 py-2.5 text-right align-top text-xs text-muted-foreground" title="Decisions using this reason">
-                                            {{ veyra_number($counts[$reason->value] ?? 0) }} used
+                                            {{ platform_number($counts[$reason->value] ?? 0) }} used
                                         </td>
                                         <td class="whitespace-nowrap px-3 py-2.5 text-right align-top">
                                             @unless ($reason->isActive())

@@ -31,12 +31,12 @@ final class PushSettings
 
     public static function enabled(): bool
     {
-        return (bool) veyra_setting('push.enabled', false) && self::hasServiceAccount();
+        return (bool) platform_setting('push.enabled', false) && self::hasServiceAccount();
     }
 
     public static function webEnabled(): bool
     {
-        return self::enabled() && (bool) veyra_setting('push.web_enabled', false) && self::webConfigured();
+        return self::enabled() && (bool) platform_setting('push.web_enabled', false) && self::webConfigured();
     }
 
     public static function hasServiceAccount(): bool
@@ -52,7 +52,7 @@ final class PushSettings
     public static function serviceAccount(): ?array
     {
         try {
-            $stored = (string) veyra_setting('push.service_account', '');
+            $stored = (string) platform_setting('push.service_account', '');
         } catch (Throwable) {
             return null;
         }
@@ -98,7 +98,7 @@ final class PushSettings
         $config = [];
 
         foreach (self::WEB_FIELDS as $setting => $sdkKey) {
-            $config[$sdkKey] = (string) veyra_setting("push.{$setting}", '');
+            $config[$sdkKey] = (string) platform_setting("push.{$setting}", '');
         }
 
         return $config;
@@ -106,7 +106,7 @@ final class PushSettings
 
     public static function vapidKey(): string
     {
-        return (string) veyra_setting('push.web_vapid_key', '');
+        return (string) platform_setting('push.web_vapid_key', '');
     }
 
     public static function webConfigured(): bool

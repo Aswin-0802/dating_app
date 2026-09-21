@@ -442,7 +442,7 @@ class UatAdminTest extends UatTestCase
         $setting = Setting::query()->where('key', 'matching.daily_like_limit_free')->firstOrFail();
         Livewire::actingAs($this->staff('admin@demo.test'))->test(SettingsIndex::class, ['group' => 'matching'])
             ->set("values.{$setting->id}", 42)->call('save');
-        $this->assertSame(42, veyra_setting('matching.daily_like_limit_free'));
+        $this->assertSame(42, platform_setting('matching.daily_like_limit_free'));
     }
 
     public function test_h02_negative_limits_are_rejected(): void

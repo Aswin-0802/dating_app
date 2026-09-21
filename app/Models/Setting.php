@@ -33,7 +33,7 @@ class Setting extends Model
     public static function flush(): void
     {
         static::forgetMemo();
-        Cache::forget('veyra.settings');
+        Cache::forget('platform.settings');
     }
 
     /** Called on every boot: the memo must never outlive one request. */
@@ -65,7 +65,7 @@ class Setting extends Model
     public static function allValues(): array
     {
         return static::$memo ??= Cache::rememberForever(
-            'veyra.settings',
+            'platform.settings',
             fn (): array => static::query()
                 ->get()
                 ->mapWithKeys(fn (self $setting): array => [$setting->key => $setting->typed_value])

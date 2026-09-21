@@ -22,17 +22,17 @@ final class Branding
 
     public static function name(): string
     {
-        return (string) (veyra_setting('brand.name') ?: config('veyra.brand.name', 'Veyra'));
+        return (string) (platform_setting('brand.name') ?: config('platform.brand.name', 'Platform'));
     }
 
     public static function tagline(): string
     {
-        return (string) (veyra_setting('brand.tagline') ?: config('veyra.brand.tagline', ''));
+        return (string) (platform_setting('brand.tagline') ?: config('platform.brand.tagline', ''));
     }
 
     public static function get(string $key, mixed $default = null): mixed
     {
-        $value = veyra_setting($key);
+        $value = platform_setting($key);
 
         return filled($value) ? $value : $default;
     }
@@ -44,24 +44,24 @@ final class Branding
 
         // The admin falls back to the website logo and vice versa, so a buyer
         // who uploads one logo sees it everywhere rather than only half the time.
-        $path = veyra_setting($key) ?: veyra_setting($variant === 'admin' ? 'brand.logo' : 'brand.admin_logo');
+        $path = platform_setting($key) ?: platform_setting($variant === 'admin' ? 'brand.logo' : 'brand.admin_logo');
 
         return self::url($path);
     }
 
     public static function faviconUrl(): ?string
     {
-        return self::url(veyra_setting('brand.favicon'));
+        return self::url(platform_setting('brand.favicon'));
     }
 
     public static function loginImageUrl(): ?string
     {
-        return self::url(veyra_setting('brand.login_image'));
+        return self::url(platform_setting('brand.login_image'));
     }
 
     public static function primaryColor(): string
     {
-        $color = (string) veyra_setting('brand.primary_color', self::DEFAULT_COLOR);
+        $color = (string) platform_setting('brand.primary_color', self::DEFAULT_COLOR);
 
         return self::isHex($color) ? self::normaliseHex($color) : self::DEFAULT_COLOR;
     }
@@ -69,7 +69,7 @@ final class Branding
     /** light | dark | system — the default before a person picks their own. */
     public static function themeMode(): string
     {
-        $mode = (string) veyra_setting('brand.theme_mode', 'system');
+        $mode = (string) platform_setting('brand.theme_mode', 'system');
 
         return in_array($mode, ['light', 'dark', 'system'], true) ? $mode : 'system';
     }

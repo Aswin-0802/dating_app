@@ -20,7 +20,7 @@ class RespectMaintenanceMode
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! veyra_setting('general.maintenance_mode', false)) {
+        if (! platform_setting('general.maintenance_mode', false)) {
             return $next($request);
         }
 

@@ -83,7 +83,7 @@
                                         </p>
 
                                         <p class="text-xs text-muted-foreground">
-                                            {{ veyra_duration($notification->created_at) }} ago
+                                            {{ platform_duration($notification->created_at) }} ago
                                         </p>
 
                                         @if (isset($data['action_url']))

@@ -19,7 +19,7 @@ class HomeController extends Controller
     {
         // A buyer running app-only can switch the marketing site off; the
         // root then goes straight to member sign-in.
-        if (! veyra_setting('website.enabled', true)) {
+        if (! platform_setting('website.enabled', true)) {
             return redirect()->route('member.login');
         }
 
@@ -51,9 +51,9 @@ class HomeController extends Controller
                 ->count();
 
             return [
-                'Members' => veyra_compact_number($members),
-                'Photo-verified' => veyra_percent($verified / $members * 100, 0),
-                'Matches made' => veyra_compact_number(MatchRecord::query()->count()),
+                'Members' => platform_compact_number($members),
+                'Photo-verified' => platform_percent($verified / $members * 100, 0),
+                'Matches made' => platform_compact_number(MatchRecord::query()->count()),
             ];
         });
     }

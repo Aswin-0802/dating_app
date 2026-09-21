@@ -75,7 +75,7 @@
                     <x-ui.table.cell muted>
                         <span class="text-sm">{{ $campaign->audience_label ?? 'All members' }}</span>
                         <span class="tabular block text-xs">
-                            {{ veyra_compact_number($campaign->estimated_recipients) }} recipients
+                            {{ platform_compact_number($campaign->estimated_recipients) }} recipients
                         </span>
                     </x-ui.table.cell>
 
@@ -85,16 +85,16 @@
                         </span>
                         @if ($campaign->scheduled_for && $campaign->status === 'scheduled')
                             <span class="mt-0.5 block text-xs text-muted-foreground">
-                                {{ veyra_datetime($campaign->scheduled_for) }}
+                                {{ platform_datetime($campaign->scheduled_for) }}
                             </span>
                         @endif
                     </x-ui.table.cell>
 
-                    <x-ui.table.cell align="right" numeric>{{ veyra_compact_number($campaign->sent_count) }}</x-ui.table.cell>
+                    <x-ui.table.cell align="right" numeric>{{ platform_compact_number($campaign->sent_count) }}</x-ui.table.cell>
 
                     <x-ui.table.cell align="right" numeric muted>
                         @if ($campaign->deliveryRate() !== null)
-                            {{ veyra_percent($campaign->deliveryRate(), 0) }}
+                            {{ platform_percent($campaign->deliveryRate(), 0) }}
                         @else
                             —
                         @endif
@@ -105,7 +105,7 @@
                             {{-- Against delivered, not sent: measuring against
                                  sent credits a campaign for notifications that
                                  never arrived. --}}
-                            <span class="font-medium">{{ veyra_percent($campaign->openRate(), 0) }}</span>
+                            <span class="font-medium">{{ platform_percent($campaign->openRate(), 0) }}</span>
                         @else
                             <span class="text-muted-foreground">—</span>
                         @endif
@@ -166,7 +166,7 @@
                 label="Audience"
                 wire:model.live="formAudience"
                 :selected="$formAudience"
-                :options="collect(App\Livewire\Notifications\Campaigns::AUDIENCES)->map(fn ($label, $key) => $label.' ('.veyra_number($this->audienceSize($key)).')')->all()"
+                :options="collect(App\Livewire\Notifications\Campaigns::AUDIENCES)->map(fn ($label, $key) => $label.' ('.platform_number($this->audienceSize($key)).')')->all()"
                 :error="$errors->first('formAudience')"
             />
 

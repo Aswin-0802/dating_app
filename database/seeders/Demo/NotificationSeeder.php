@@ -30,14 +30,14 @@ class NotificationSeeder extends Seeder
         ['Profile completion', 'Finish your profile', 'Profiles with photos get far more attention.', 'Profile under 60% complete'],
         ['Winback 30d', 'It has been a while', 'New people have joined since you were last here.', 'Inactive 30+ days'],
         ['Likes waiting', 'People are waiting', 'You have likes you have not seen.', 'Members with unseen likes'],
-        ['New city launch', 'Veyra is now in your city', 'Hundreds of people just joined nearby.', 'Focus cities'],
+        ['New city launch', 'Platform is now in your city', 'Hundreds of people just joined nearby.', 'Focus cities'],
         ['Safety reminder', 'Meeting someone new?', 'A few things worth knowing before a first date.', 'All active members'],
     ];
 
     public function run(): void
     {
         $faker = fake();
-        $faker->seed(config('veyra.seed.faker_seed', 20260917) + 4);
+        $faker->seed(config('platform.seed.faker_seed', 20260917) + 4);
 
         $staff = DB::table('users')->pluck('id')->all();
         $templateIds = NotificationTemplate::query()->pluck('id')->all();

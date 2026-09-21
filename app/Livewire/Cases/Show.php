@@ -48,7 +48,7 @@ class Show extends Component
         ]);
 
         $this->claim();
-        $this->notifyUser = (bool) veyra_setting('enforcement.notify_user_default', true);
+        $this->notifyUser = (bool) platform_setting('enforcement.notify_user_default', true);
     }
 
     public function render(): View
@@ -80,7 +80,7 @@ class Show extends Component
             return;
         }
 
-        if (! veyra_setting('moderation.auto_claim_on_open', true)) {
+        if (! platform_setting('moderation.auto_claim_on_open', true)) {
             return;
         }
 
@@ -119,7 +119,7 @@ class Show extends Component
         }
 
         if ($ladderStep?->requiresReviewDate()) {
-            $hours = (int) veyra_setting('enforcement.shadow_ban_review_hours', 168);
+            $hours = (int) platform_setting('enforcement.shadow_ban_review_hours', 168);
             $this->reviewDueAt = now()->addHours($hours)->format('Y-m-d\TH:i');
         }
     }
@@ -153,7 +153,7 @@ class Show extends Component
             throw ValidationException::withMessages(['reasonCode' => 'Choose a reason code.']);
         }
 
-        if (veyra_setting('moderation.require_note_on_ban', true)
+        if (platform_setting('moderation.require_note_on_ban', true)
             && $step->isDestructive()
             && blank($this->note)) {
             throw ValidationException::withMessages([
@@ -241,7 +241,7 @@ class Show extends Component
             return ['anchor' => null, 'context' => collect()];
         }
 
-        $window = (int) veyra_setting('privacy.message_context_window', 10);
+        $window = (int) platform_setting('privacy.message_context_window', 10);
 
         $context = Message::query()
             ->where('conversation_id', $anchor->conversation_id)

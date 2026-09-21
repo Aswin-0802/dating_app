@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
  *
  * Anything trust & safety should be able to change without a deploy — SLA
  * windows, risk factor weights, API rate limits — lives here, with
- * config/veyra.php providing the fallback.
+ * config/platform.php providing the fallback.
  */
 return new class extends Migration
 {

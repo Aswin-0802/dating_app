@@ -33,7 +33,7 @@
 
     <div class="relative w-full overflow-x-auto">
         <table
-            class="veyra-table w-full caption-bottom border-collapse text-sm"
+            class="platform-table w-full caption-bottom border-collapse text-sm"
             data-density="{{ $density }}"
         >
             {{ $slot }}

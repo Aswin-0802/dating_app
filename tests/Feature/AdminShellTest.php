@@ -131,7 +131,7 @@ class AdminShellTest extends TestCase
         // The dark class must be on the server-rendered html element; resolving
         // it client-side is what causes the flash on hard refresh.
         $this->actingAs($this->staff(Role::MODERATOR))
-            ->withUnencryptedCookie('veyra_theme', 'dark')
+            ->withUnencryptedCookie('platform_theme', 'dark')
             ->get('/admin')
             ->assertOk()
             ->assertSee('<html lang="en" class="dark"', false);
@@ -140,9 +140,9 @@ class AdminShellTest extends TestCase
     public function test_sidebar_collapse_state_is_applied_server_side(): void
     {
         $this->actingAs($this->staff(Role::MODERATOR))
-            ->withUnencryptedCookie('veyra_sidebar', 'collapsed')
+            ->withUnencryptedCookie('platform_sidebar', 'collapsed')
             ->get('/admin')
             ->assertOk()
-            ->assertSee("veyraShell('collapsed')", false);
+            ->assertSee("platformShell('collapsed')", false);
     }
 }

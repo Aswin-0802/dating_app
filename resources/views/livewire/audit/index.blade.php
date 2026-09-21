@@ -55,7 +55,7 @@
         <tbody wire:loading.class="opacity-50">
             @forelse ($logs as $log)
                 <x-ui.table.row :tint="$log->is_sensitive ? 'border-l-2 border-l-warning' : ''">
-                    <x-ui.table.cell muted>{{ veyra_datetime($log->created_at) }}</x-ui.table.cell>
+                    <x-ui.table.cell muted>{{ platform_datetime($log->created_at) }}</x-ui.table.cell>
 
                     <x-ui.table.cell>
                         <div class="flex min-w-0 items-center gap-2">

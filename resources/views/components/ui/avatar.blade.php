@@ -30,7 +30,7 @@
         'destructive' => 'ring-2 ring-destructive ring-offset-2 ring-offset-background',
     ];
 
-    $initials = veyra_initials($name);
+    $initials = platform_initials($name);
 @endphp
 
 <span {{ $attributes->class([

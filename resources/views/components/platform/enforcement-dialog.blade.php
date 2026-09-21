@@ -59,7 +59,7 @@
             @if ($step === LadderStep::FeatureLimit)
                 <div class="space-y-2">
                     <p class="text-sm font-medium">Features to limit <span class="text-destructive">*</span></p>
-                    @foreach (config('veyra.enforcement.feature_limit_options') as $key => $label)
+                    @foreach (config('platform.enforcement.feature_limit_options') as $key => $label)
                         <x-ui.checkbox :label="$label" wire:model="limitedFeatures" value="{{ $key }}" />
                     @endforeach
                     @error('limitedFeatures') <p class="text-xs text-destructive">{{ $message }}</p> @enderror

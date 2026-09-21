@@ -28,9 +28,9 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-1.5">
-                    <x-veyra.status-badge :status="$appUser->account_status" />
-                    <x-veyra.status-badge :status="$appUser->verification_status" />
-                    <x-veyra.risk-badge
+                    <x-platform.status-badge :status="$appUser->account_status" />
+                    <x-platform.status-badge :status="$appUser->verification_status" />
+                    <x-platform.risk-badge
                         :score="$appUser->risk_score"
                         :band="$appUser->risk_band"
                         :factors="$appUser->riskScore?->factors"
@@ -39,7 +39,7 @@
                         <x-ui.badge variant="accent" icon="sparkles">
                             {{ App\Support\Masters::plan($appUser->premium_tier)?->name ?? ucfirst($appUser->premium_tier ?? 'Premium') }}
                             @if ($appUser->premium_until)
-                                · until {{ veyra_date($appUser->premium_until) }}
+                                · until {{ platform_date($appUser->premium_until) }}
                             @else
                                 · no end date
                             @endif
@@ -51,8 +51,8 @@
                     @php
                         $facts = [
                             'Location' => $appUser->city ? $appUser->city->name.', '.($appUser->city->country?->iso2 ?? '') : '—',
-                            'Joined' => veyra_date($appUser->created_at),
-                            'Last active' => $appUser->last_active_at ? veyra_duration($appUser->last_active_at).' ago' : '—',
+                            'Joined' => platform_date($appUser->created_at),
+                            'Last active' => $appUser->last_active_at ? platform_duration($appUser->last_active_at).' ago' : '—',
                             'Profile' => $appUser->profile_completion.'% complete',
                             'Signed up on' => ucfirst($appUser->signup_source),
                             'Gender' => $appUser->gender->label(),
@@ -121,7 +121,7 @@
                 <p class="text-sm font-medium text-destructive-subtle-foreground">
                     {{ $appUser->activeBan->type->label() }} in force
                     @if ($appUser->activeBan->expires_at)
-                        · expires {{ veyra_datetime($appUser->activeBan->expires_at) }}
+                        · expires {{ platform_datetime($appUser->activeBan->expires_at) }}
                     @else
                         · no expiry
                     @endif
@@ -129,7 +129,7 @@
 
                 @if ($appUser->activeBan->review_due_at)
                     <p class="text-xs text-destructive-subtle-foreground/80">
-                        Review due {{ veyra_datetime($appUser->activeBan->review_due_at) }}
+                        Review due {{ platform_datetime($appUser->activeBan->review_due_at) }}
                     </p>
                 @endif
             </div>
@@ -306,9 +306,9 @@
                                                 <span class="text-muted-foreground">Deleted member</span>
                                             @endif
                                         </td>
-                                        <td class="px-4 py-2.5 text-muted-foreground">{{ veyra_date($match->matched_at) }}</td>
+                                        <td class="px-4 py-2.5 text-muted-foreground">{{ platform_date($match->matched_at) }}</td>
                                         <td class="px-4 py-2.5"><x-ui.badge size="sm" :variant="$match->status === 'active' ? 'success' : 'muted'">{{ ucfirst($match->status) }}</x-ui.badge></td>
-                                        <td class="tabular px-4 py-2.5 text-right">{{ veyra_number($match->messages_count) }}</td>
+                                        <td class="tabular px-4 py-2.5 text-right">{{ platform_number($match->messages_count) }}</td>
                                         <td class="px-4 py-2.5 text-right">
                                             @if ($match->conversation && auth()->user()->can('conversations'))
                                                 <x-ui.button size="xs" variant="ghost" :href="route('admin.conversations.show', $match->conversation)">Conversation</x-ui.button>
@@ -341,9 +341,9 @@
                             <tbody class="divide-y divide-border">
                                 @foreach ($tabData['reports'] as $report)
                                     <tr wire:key="r-{{ $report->id }}">
-                                        <td class="px-4 py-2.5 text-muted-foreground">{{ veyra_datetime($report->created_at) }}</td>
+                                        <td class="px-4 py-2.5 text-muted-foreground">{{ platform_datetime($report->created_at) }}</td>
                                         <td class="px-4 py-2.5">{{ $report->category->label() }}</td>
-                                        <td class="px-4 py-2.5"><x-veyra.status-badge :status="$report->severity" /></td>
+                                        <td class="px-4 py-2.5"><x-platform.status-badge :status="$report->severity" /></td>
                                         <td class="px-4 py-2.5">{{ $report->reporter?->display_name ?? 'Automated' }}</td>
                                         <td class="px-4 py-2.5">
                                             @if ($report->reportCase)
@@ -366,12 +366,12 @@
                     <ol class="divide-y divide-border">
                         @foreach ($tabData['actions'] as $action)
                             <li class="flex flex-wrap items-start gap-x-4 gap-y-1 px-4 py-3 text-sm" wire:key="a-{{ $action->id }}">
-                                <span class="w-36 shrink-0 text-muted-foreground">{{ veyra_datetime($action->created_at) }}</span>
+                                <span class="w-36 shrink-0 text-muted-foreground">{{ platform_datetime($action->created_at) }}</span>
                                 <span class="min-w-0 flex-1">
                                     <span class="font-medium">{{ $action->ladder_step->label() }}</span>
                                     <span class="text-muted-foreground">· {{ $action->reason_code?->label() }}</span>
                                     @if ($action->duration_hours)
-                                        <span class="text-muted-foreground">· {{ veyra_hours_label($action->duration_hours) }}</span>
+                                        <span class="text-muted-foreground">· {{ platform_hours_label($action->duration_hours) }}</span>
                                     @endif
                                     @if ($action->internal_note)
                                         <span class="mt-0.5 block text-xs text-muted-foreground">{{ $action->internal_note }}</span>
@@ -388,7 +388,7 @@
             <x-ui.card
                 title="Plan"
                 :description="$appUser->is_premium
-                    ? 'On '.(App\Support\Masters::plan($appUser->premium_tier)?->name ?? $appUser->premium_tier).($appUser->premium_until ? ' until '.veyra_date($appUser->premium_until) : ', with no end date')
+                    ? 'On '.(App\Support\Masters::plan($appUser->premium_tier)?->name ?? $appUser->premium_tier).($appUser->premium_until ? ' until '.platform_date($appUser->premium_until) : ', with no end date')
                     : 'On the free tier.'"
             >
                 @can('edit_users')
@@ -433,9 +433,9 @@
                                 @foreach ($tabData['subscriptions'] as $subscription)
                                     <tr wire:key="sub-{{ $subscription->id }}">
                                         <td class="py-2.5 pr-3 font-medium">{{ $subscription->plan_name }}</td>
-                                        <td class="py-2.5 pr-3 text-muted-foreground">{{ veyra_date($subscription->starts_at) }}</td>
+                                        <td class="py-2.5 pr-3 text-muted-foreground">{{ platform_date($subscription->starts_at) }}</td>
                                         <td class="py-2.5 pr-3 text-muted-foreground">
-                                            {{ $subscription->ends_at ? veyra_date($subscription->ends_at) : 'No end date' }}
+                                            {{ $subscription->ends_at ? platform_date($subscription->ends_at) : 'No end date' }}
                                         </td>
                                         <td class="py-2.5 pr-3 text-muted-foreground">
                                             {{ $subscription->source === 'payment' ? 'Paid online' : 'Given by staff' }}
@@ -478,7 +478,7 @@
                                     <x-ui.icon name="device" size="md" class="shrink-0 text-muted-foreground" />
                                     <div class="min-w-0 flex-1">
                                         <p class="font-medium">{{ ucfirst($device->platform) }} {{ $device->os_version }}</p>
-                                        <p class="text-xs text-muted-foreground">App {{ $device->app_version }} · last seen {{ $device->last_seen_at ? veyra_duration($device->last_seen_at).' ago' : 'never' }}</p>
+                                        <p class="text-xs text-muted-foreground">App {{ $device->app_version }} · last seen {{ $device->last_seen_at ? platform_duration($device->last_seen_at).' ago' : 'never' }}</p>
                                     </div>
                                     @if ($device->shared_with > 0)
                                         <x-ui.badge variant="warning" size="sm">Shared with {{ $device->shared_with }} {{ str('account')->plural($device->shared_with) }}</x-ui.badge>
@@ -496,7 +496,7 @@
                         <ul class="divide-y divide-border">
                             @foreach ($tabData['logins'] as $login)
                                 <li class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm" wire:key="l-{{ $login->id }}">
-                                    <span class="text-muted-foreground">{{ veyra_datetime($login->created_at) }}</span>
+                                    <span class="text-muted-foreground">{{ platform_datetime($login->created_at) }}</span>
                                     <span class="font-mono text-xs">{{ $login->ip_address }}</span>
                                     <x-ui.badge size="sm" :variant="$login->succeeded ? 'success' : 'destructive'">{{ $login->succeeded ? 'Signed in' : 'Failed' }}</x-ui.badge>
                                 </li>
@@ -514,7 +514,7 @@
                     <ol class="divide-y divide-border">
                         @foreach ($tabData['events'] as $event)
                             <li class="flex flex-wrap items-start gap-x-4 gap-y-1 px-4 py-3 text-sm" wire:key="e-{{ $event->id }}">
-                                <span class="w-36 shrink-0 text-muted-foreground">{{ veyra_datetime($event->created_at) }}</span>
+                                <span class="w-36 shrink-0 text-muted-foreground">{{ platform_datetime($event->created_at) }}</span>
                                 <span class="min-w-0 flex-1">
                                     {{ $event->description }}
                                     @if ($event->is_sensitive)
@@ -585,7 +585,7 @@
         </form>
     </x-ui.dialog>
 
-    <x-veyra.enforcement-dialog
+    <x-platform.enforcement-dialog
         :step="$pendingStep"
         :target="$appUser->display_name.' · '.$appUser->email"
         :reason-code="$reasonCode"

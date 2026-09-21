@@ -26,24 +26,24 @@ final class MailSettings
     public static function apply(): void
     {
         try {
-            $mailer = veyra_setting('mail.mailer');
+            $mailer = platform_setting('mail.mailer');
 
             if (! in_array($mailer, array_keys(self::MAILERS), true)) {
                 return;
             }
 
             Config::set('mail.default', $mailer);
-            Config::set('mail.mailers.smtp.host', veyra_setting('mail.host'));
-            Config::set('mail.mailers.smtp.port', (int) veyra_setting('mail.port', 587));
-            Config::set('mail.mailers.smtp.username', veyra_setting('mail.username') ?: null);
-            Config::set('mail.mailers.smtp.password', self::decrypt((string) veyra_setting('mail.password', '')) ?: null);
-            Config::set('mail.mailers.smtp.scheme', veyra_setting('mail.encryption') === 'ssl' ? 'smtps' : null);
+            Config::set('mail.mailers.smtp.host', platform_setting('mail.host'));
+            Config::set('mail.mailers.smtp.port', (int) platform_setting('mail.port', 587));
+            Config::set('mail.mailers.smtp.username', platform_setting('mail.username') ?: null);
+            Config::set('mail.mailers.smtp.password', self::decrypt((string) platform_setting('mail.password', '')) ?: null);
+            Config::set('mail.mailers.smtp.scheme', platform_setting('mail.encryption') === 'ssl' ? 'smtps' : null);
 
-            if ($from = veyra_setting('mail.from_address')) {
+            if ($from = platform_setting('mail.from_address')) {
                 Config::set('mail.from.address', $from);
             }
 
-            Config::set('mail.from.name', veyra_setting('mail.from_name') ?: Branding::name());
+            Config::set('mail.from.name', platform_setting('mail.from_name') ?: Branding::name());
         } catch (Throwable) {
             // Settings table not migrated yet: keep the .env configuration.
         }

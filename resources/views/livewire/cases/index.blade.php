@@ -7,22 +7,22 @@
 <div class="space-y-4 md:space-y-6">
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
-        <x-ui.stat-card label="Open cases" :value="veyra_number($stats['open'])" icon="flag" />
+        <x-ui.stat-card label="Open cases" :value="platform_number($stats['open'])" icon="flag" />
         <x-ui.stat-card
             label="Breaching SLA"
-            :value="veyra_number($stats['breaching'])"
+            :value="platform_number($stats['breaching'])"
             icon="warning"
             :hint="$stats['breaching'] > 0 ? 'Act on these first' : 'Nothing overdue'"
         />
         <x-ui.stat-card
             label="Unclaimed"
-            :value="veyra_number($stats['unclaimed'])"
+            :value="platform_number($stats['unclaimed'])"
             icon="inbox"
             hint="Nobody has picked these up"
         />
         <x-ui.stat-card
             label="Critical severity"
-            :value="veyra_number($stats['critical'])"
+            :value="platform_number($stats['critical'])"
             icon="fire"
             hint="One-hour review window"
         />
@@ -103,7 +103,7 @@
                     </x-ui.table.cell>
 
                     <x-ui.table.cell>
-                        <x-veyra.user-cell
+                        <x-platform.user-cell
                             :name="$case->subject?->display_name"
                             :age="$case->subject?->age"
                             :photo="$case->subject?->primaryPhoto?->thumb_url"
@@ -112,8 +112,8 @@
                         />
                     </x-ui.table.cell>
 
-                    <x-ui.table.cell><x-veyra.status-badge :status="$case->severity" /></x-ui.table.cell>
-                    <x-ui.table.cell><x-veyra.status-badge :status="$case->status" /></x-ui.table.cell>
+                    <x-ui.table.cell><x-platform.status-badge :status="$case->severity" /></x-ui.table.cell>
+                    <x-ui.table.cell><x-platform.status-badge :status="$case->status" /></x-ui.table.cell>
 
                     <x-ui.table.cell align="right" numeric>
                         <span @class(['font-medium', 'text-destructive-subtle-foreground' => $case->reports_count >= 3])>
@@ -124,15 +124,15 @@
                     <x-ui.table.cell align="right" numeric muted>{{ $case->distinct_reporters_count }}</x-ui.table.cell>
 
                     <x-ui.table.cell>
-                        <x-veyra.risk-badge :score="$case->risk_score_at_open" :show-score="true" />
+                        <x-platform.risk-badge :score="$case->risk_score_at_open" :show-score="true" />
                     </x-ui.table.cell>
 
                     <x-ui.table.cell>
                         @if ($case->status->isOpen())
-                            <x-veyra.sla-pill :since="$case->created_at" :due-at="$case->sla_due_at" />
+                            <x-platform.sla-pill :since="$case->created_at" :due-at="$case->sla_due_at" />
                         @else
                             <span class="text-xs text-muted-foreground">
-                                {{ $case->resolved_at ? 'Resolved '.veyra_date($case->resolved_at) : '—' }}
+                                {{ $case->resolved_at ? 'Resolved '.platform_date($case->resolved_at) : '—' }}
                             </span>
                         @endif
                     </x-ui.table.cell>

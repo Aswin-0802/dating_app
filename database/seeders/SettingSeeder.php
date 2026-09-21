@@ -8,7 +8,7 @@ use App\Models\Setting;
 use Illuminate\Database\Seeder;
 
 /**
- * Operator-editable settings, mirroring config/veyra.php.
+ * Operator-editable settings, mirroring config/platform.php.
  *
  * Idempotent on `key`: re-running adds newly introduced settings without
  * clobbering values an operator has already tuned.
@@ -37,7 +37,7 @@ class SettingSeeder extends Seeder
             ['key' => 'brand.login_image', 'value' => '', 'type' => 'image', 'group' => 'branding', 'label' => 'Sign-in page image'],
             ['key' => 'brand.support_email', 'value' => 'support@demo.test', 'type' => 'text', 'group' => 'branding', 'label' => 'Support email', 'is_public' => true],
 
-            ['key' => 'business.name', 'value' => 'Veyra Ltd', 'type' => 'text', 'group' => 'branding', 'label' => 'Company name', 'is_public' => true],
+            ['key' => 'business.name', 'value' => 'Platform Ltd', 'type' => 'text', 'group' => 'branding', 'label' => 'Company name', 'is_public' => true],
             ['key' => 'business.email', 'value' => 'hello@demo.test', 'type' => 'text', 'group' => 'branding', 'label' => 'Company email', 'is_public' => true],
             ['key' => 'business.phone', 'value' => '', 'type' => 'text', 'group' => 'branding', 'label' => 'Company phone', 'is_public' => true],
             ['key' => 'business.address', 'value' => '', 'type' => 'textarea', 'group' => 'branding', 'label' => 'Company address', 'is_public' => true],

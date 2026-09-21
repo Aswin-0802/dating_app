@@ -30,7 +30,7 @@ class BehaviourSeeder extends Seeder
     public function run(): void
     {
         $faker = fake();
-        $faker->seed(config('veyra.seed.faker_seed', 20260917) + 2);
+        $faker->seed(config('platform.seed.faker_seed', 20260917) + 2);
 
         $candidates = DB::table('app_users')
             ->select('id', 'city_id', 'gender', 'first_swipe_at', 'created_at', 'account_status')

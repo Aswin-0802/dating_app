@@ -6,7 +6,7 @@
  * 264px to 72px after hydration.
  */
 
-const COOKIE = 'veyra_sidebar';
+const COOKIE = 'platform_sidebar';
 const ONE_YEAR = 60 * 60 * 24 * 365;
 const DESKTOP = 1024; // lg
 
@@ -15,7 +15,7 @@ function writeState(value) {
 }
 
 export default function registerShell(Alpine) {
-    Alpine.data('veyraShell', (initial = 'expanded') => ({
+    Alpine.data('platformShell', (initial = 'expanded') => ({
         state: initial, // 'expanded' | 'collapsed'
         mobileOpen: false,
 
@@ -97,7 +97,7 @@ export function registerGlobalShortcuts() {
 
         if (mod && event.key.toLowerCase() === 'k') {
             event.preventDefault();
-            window.dispatchEvent(new CustomEvent('veyra:open-command-palette'));
+            window.dispatchEvent(new CustomEvent('platform:open-command-palette'));
             return;
         }
 
@@ -107,7 +107,7 @@ export function registerGlobalShortcuts() {
 
         if (mod && event.key.toLowerCase() === 'b') {
             event.preventDefault();
-            window.dispatchEvent(new CustomEvent('veyra:toggle-sidebar'));
+            window.dispatchEvent(new CustomEvent('platform:toggle-sidebar'));
         }
     });
 }

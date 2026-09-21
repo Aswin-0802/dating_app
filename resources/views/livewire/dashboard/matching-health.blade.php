@@ -8,10 +8,10 @@
 
 <div class="space-y-4 md:space-y-6">
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
-        <x-ui.stat-card label="Matches" :value="veyra_compact_number($overview['matches'])" icon="heart" />
-        <x-ui.stat-card label="Match → message" :value="veyra_percent($overview['match_to_message'])" icon="chat" />
-        <x-ui.stat-card label="Message → reply" :value="veyra_percent($overview['message_to_reply'])" icon="arrow-path" />
-        <x-ui.stat-card label="Matched in 48h" :value="veyra_percent($coldStart['rate'])" icon="fire" />
+        <x-ui.stat-card label="Matches" :value="platform_compact_number($overview['matches'])" icon="heart" />
+        <x-ui.stat-card label="Match → message" :value="platform_percent($overview['match_to_message'])" icon="chat" />
+        <x-ui.stat-card label="Message → reply" :value="platform_percent($overview['message_to_reply'])" icon="arrow-path" />
+        <x-ui.stat-card label="Matched in 48h" :value="platform_percent($coldStart['rate'])" icon="fire" />
     </div>
 
     <x-ui.card
@@ -27,7 +27,7 @@
                     </span>
 
                     <span class="tabular w-14 shrink-0 text-xs text-muted-foreground">
-                        {{ veyra_compact_number($city->members) }}
+                        {{ platform_compact_number($city->members) }}
                     </span>
 
                     <div class="relative h-5 min-w-0 flex-1 overflow-hidden rounded-full bg-chart-1">
@@ -64,7 +64,7 @@
             ] as [$label, $value, $fair])
                 <div>
                     <p class="text-sm text-muted-foreground">{{ $label }}</p>
-                    <p class="tabular mt-1 text-3xl font-bold">{{ veyra_percent($value) }}</p>
+                    <p class="tabular mt-1 text-3xl font-bold">{{ platform_percent($value) }}</p>
                     <p class="mt-0.5 text-xs text-muted-foreground">{{ round($value / $fair, 1) }}× a fair share</p>
                     <div class="mt-2 h-2 overflow-hidden rounded-full bg-muted">
                         <div class="h-full rounded-full bg-risk-high" style="width: {{ min(100, $value) }}%"></div>
@@ -76,7 +76,7 @@
                 <p class="text-sm text-muted-foreground">Median likes received</p>
                 <p class="tabular mt-1 text-3xl font-bold">{{ $concentration['median_likes'] }}</p>
                 <p class="mt-0.5 text-xs text-muted-foreground">
-                    Across {{ veyra_compact_number($concentration['population'] ?? 0) }} profiles
+                    Across {{ platform_compact_number($concentration['population'] ?? 0) }} profiles
                 </p>
             </div>
         </div>

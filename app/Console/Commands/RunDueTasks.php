@@ -19,7 +19,7 @@ use Throwable;
  */
 class RunDueTasks extends Command
 {
-    protected $signature = 'veyra:run-due-tasks {--only= : enforcement|subscriptions}';
+    protected $signature = 'platform:run-due-tasks {--only= : enforcement|subscriptions}';
 
     protected $description = 'Lift expired restrictions and end lapsed subscriptions';
 

@@ -9,20 +9,20 @@
     <div class="grid gap-4 sm:grid-cols-3 md:gap-6">
         <x-ui.stat-card
             label="Open in this queue"
-            :value="veyra_number($verifications->total())"
+            :value="platform_number($verifications->total())"
             icon="shield-check"
         />
 
         <x-ui.stat-card
             label="Oldest waiting"
-            :value="$oldest ? veyra_duration($oldest->submitted_at) : '—'"
+            :value="$oldest ? platform_duration($oldest->submitted_at) : '—'"
             icon="clock"
-            :hint="$oldest ? 'Submitted '.veyra_datetime($oldest->submitted_at) : 'Queue is clear'"
+            :hint="$oldest ? 'Submitted '.platform_datetime($oldest->submitted_at) : 'Queue is clear'"
         />
 
         <x-ui.stat-card
             label="Breaching SLA"
-            :value="veyra_number($breaching)"
+            :value="platform_number($breaching)"
             icon="warning"
             :hint="$breaching > 0 ? 'Review these first' : 'Nothing overdue'"
         />
@@ -32,7 +32,7 @@
         <div class="flex flex-wrap items-center gap-3 rounded-xl border border-destructive/30 bg-destructive-subtle px-4 py-3">
             <x-ui.icon name="warning" size="sm" class="shrink-0 text-destructive-subtle-foreground" />
             <p class="min-w-0 flex-1 text-sm text-destructive-subtle-foreground">
-                <span class="font-medium">{{ veyra_number($breaching) }}</span>
+                <span class="font-medium">{{ platform_number($breaching) }}</span>
                 {{ str('submission')->plural($breaching) }} past the review deadline.
             </p>
             <x-ui.button size="xs" variant="outline" wire:click="setView('breaching')">
@@ -127,7 +127,7 @@
 
                 <x-ui.table.row :tint="$breachingRow ? 'border-l-2 border-l-destructive' : ''">
                     <x-ui.table.cell>
-                        <x-veyra.user-cell
+                        <x-platform.user-cell
                             :name="$verification->appUser?->display_name"
                             :age="$verification->appUser?->age"
                             :photo="$verification->appUser?->primaryPhoto?->thumb_url"
@@ -137,7 +137,7 @@
                     </x-ui.table.cell>
 
                     <x-ui.table.cell>
-                        <x-veyra.status-badge :status="$verification->status" />
+                        <x-platform.status-badge :status="$verification->status" />
                     </x-ui.table.cell>
 
                     <x-ui.table.cell numeric>
@@ -147,7 +147,7 @@
                             'text-success-subtle-foreground' => $score >= 0.8,
                             'text-warning-subtle-foreground' => $score >= 0.55 && $score < 0.8,
                             'text-destructive-subtle-foreground' => $score < 0.55,
-                        ])>{{ veyra_percent($score * 100, 0) }}</span>
+                        ])>{{ platform_percent($score * 100, 0) }}</span>
                     </x-ui.table.cell>
 
                     <x-ui.table.cell>
@@ -181,7 +181,7 @@
                     </x-ui.table.cell>
 
                     <x-ui.table.cell>
-                        <x-veyra.sla-pill :since="$verification->submitted_at" :due-at="$verification->sla_due_at" />
+                        <x-platform.sla-pill :since="$verification->submitted_at" :due-at="$verification->sla_due_at" />
                     </x-ui.table.cell>
 
                     <x-ui.table.cell muted>

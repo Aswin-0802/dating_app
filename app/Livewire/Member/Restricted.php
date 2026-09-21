@@ -60,7 +60,7 @@ class Restricted extends Component
             'original_decider_id' => $ban->moderationAction?->actor_id ?? $ban->issued_by,
             'status' => 'new',
             'user_statement' => trim($this->statement),
-            'sla_due_at' => now()->addHours((int) config('veyra.sla.appeal_hours', 72)),
+            'sla_due_at' => now()->addHours((int) config('platform.sla.appeal_hours', 72)),
         ]);
 
         $this->statement = '';

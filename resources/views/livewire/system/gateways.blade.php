@@ -157,7 +157,7 @@
 
                     @if ($gateway->updatedBy)
                         <p class="mt-3 text-xs text-muted-foreground">
-                            Last changed by {{ $gateway->updatedBy->name }}, {{ veyra_date($gateway->updated_at) }}
+                            Last changed by {{ $gateway->updatedBy->name }}, {{ platform_date($gateway->updated_at) }}
                         </p>
                     @endif
                 @endif

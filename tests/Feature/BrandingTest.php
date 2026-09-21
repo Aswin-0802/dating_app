@@ -49,7 +49,7 @@ class BrandingTest extends TestCase
             ->call('save');
 
         $this->assertSame('21', (string) $setting->fresh()->value);
-        $this->assertSame(21, veyra_setting('general.min_age'));
+        $this->assertSame(21, platform_setting('general.min_age'));
     }
 
     public function test_the_product_name_and_colour_apply_across_the_admin(): void
@@ -64,7 +64,7 @@ class BrandingTest extends TestCase
             ->assertHasNoErrors()
             ->assertRedirect(route('admin.settings.branding'));
 
-        $this->assertSame('Amora', veyra_setting('brand.name'));
+        $this->assertSame('Amora', platform_setting('brand.name'));
 
         $this->actingAs($admin)
             ->get('/admin')
@@ -93,7 +93,7 @@ class BrandingTest extends TestCase
             ->call('save')
             ->assertHasNoErrors();
 
-        $path = (string) veyra_setting('brand.admin_logo');
+        $path = (string) platform_setting('brand.admin_logo');
 
         $this->assertStringStartsWith('branding/', $path);
         Storage::disk('public')->assertExists($path);
@@ -112,7 +112,7 @@ class BrandingTest extends TestCase
             ->call('save')
             ->assertHasErrors('uploads.logo');
 
-        $this->assertSame('', (string) veyra_setting('brand.logo'));
+        $this->assertSame('', (string) platform_setting('brand.logo'));
     }
 
     public function test_an_invalid_colour_is_refused(): void
@@ -132,6 +132,6 @@ class BrandingTest extends TestCase
             ->call('save')
             ->assertForbidden();
 
-        $this->assertSame('Dating App', veyra_setting('brand.name'));
+        $this->assertSame('Dating App', platform_setting('brand.name'));
     }
 }

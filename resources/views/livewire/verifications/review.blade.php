@@ -43,7 +43,7 @@
                         >
                             <x-ui.avatar :src="$account->primaryPhoto?->thumb_url" :name="$account->display_name" size="xs" />
                             <span class="text-xs font-medium">{{ $account->display_name }}</span>
-                            <x-veyra.status-badge :status="$account->account_status" size="sm" :show-icon="false" />
+                            <x-platform.status-badge :status="$account->account_status" size="sm" :show-icon="false" />
                         </a>
                     @endforeach
                 </div>
@@ -254,7 +254,7 @@
         <div class="space-y-4 md:space-y-6">
             <x-ui.card title="Member">
                 <div class="space-y-3">
-                    <x-veyra.user-cell
+                    <x-platform.user-cell
                         :name="$member?->display_name"
                         :age="$member?->age"
                         :photo="$member?->primaryPhoto?->thumb_url"
@@ -265,8 +265,8 @@
 
                     <div class="flex flex-wrap gap-1.5">
                         @if ($member)
-                            <x-veyra.status-badge :status="$member->account_status" />
-                            <x-veyra.risk-badge
+                            <x-platform.status-badge :status="$member->account_status" />
+                            <x-platform.risk-badge
                                 :score="$member->risk_score"
                                 :band="$member->risk_band"
                                 :factors="$member->riskScore?->factors"
@@ -276,13 +276,13 @@
 
                     <dl class="divide-y divide-border text-sm">
                         @foreach ([
-                            'Attempt' => $verification->attempt_no.' of '.config('veyra.verification.max_attempts'),
-                            'Submitted' => veyra_datetime($verification->submitted_at),
-                            'Waiting' => veyra_duration($verification->submitted_at),
+                            'Attempt' => $verification->attempt_no.' of '.config('platform.verification.max_attempts'),
+                            'Submitted' => platform_datetime($verification->submitted_at),
+                            'Waiting' => platform_duration($verification->submitted_at),
                             'Gesture code' => $verification->gesture_code,
                             'Stated age' => $member?->age,
                             'Estimated age' => $verification->estimated_age_min.'–'.$verification->estimated_age_max,
-                            'Joined' => veyra_date($member?->created_at),
+                            'Joined' => platform_date($member?->created_at),
                         ] as $label => $value)
                             <div class="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
                                 <dt class="text-muted-foreground">{{ $label }}</dt>

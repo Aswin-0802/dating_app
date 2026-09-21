@@ -13,12 +13,12 @@
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
-        <x-ui.stat-card label="Reveals, last 30 days" :value="veyra_number($last30Days)" icon="eye" />
+        <x-ui.stat-card label="Reveals, last 30 days" :value="platform_number($last30Days)" icon="eye" />
 
         @foreach (array_slice($byReason, 0, 3, true) as $reason => $count)
             <x-ui.stat-card
-                :label="config('veyra.privacy.reveal_reasons.'.$reason, $reason)"
-                :value="veyra_number($count)"
+                :label="config('platform.privacy.reveal_reasons.'.$reason, $reason)"
+                :value="platform_number($count)"
                 icon="document"
             />
         @endforeach
@@ -54,7 +54,7 @@
                 @php $match = $log->conversation?->match; @endphp
 
                 <x-ui.table.row>
-                    <x-ui.table.cell muted>{{ veyra_datetime($log->created_at) }}</x-ui.table.cell>
+                    <x-ui.table.cell muted>{{ platform_datetime($log->created_at) }}</x-ui.table.cell>
 
                     <x-ui.table.cell>
                         <div class="flex min-w-0 items-center gap-2">

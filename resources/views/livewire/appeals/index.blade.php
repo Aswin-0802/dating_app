@@ -3,12 +3,12 @@
 <div class="space-y-4 md:space-y-6">
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
-        <x-ui.stat-card label="Open appeals" :value="veyra_number($stats['open'])" icon="scale" />
-        <x-ui.stat-card label="Breaching SLA" :value="veyra_number($stats['breaching'])" icon="warning" />
-        <x-ui.stat-card label="Decided" :value="veyra_number($stats['decided'])" icon="check-circle" />
+        <x-ui.stat-card label="Open appeals" :value="platform_number($stats['open'])" icon="scale" />
+        <x-ui.stat-card label="Breaching SLA" :value="platform_number($stats['breaching'])" icon="warning" />
+        <x-ui.stat-card label="Decided" :value="platform_number($stats['decided'])" icon="check-circle" />
         <x-ui.stat-card
             label="Overturn rate"
-            :value="veyra_percent($stats['overturn_rate'])"
+            :value="platform_percent($stats['overturn_rate'])"
             icon="arrow-path"
             invert-delta
             hint="High means first-instance decisions are wrong"
@@ -72,7 +72,7 @@
 
                 <x-ui.table.row :tint="$appeal->status->isOpen() && $appeal->sla_due_at?->isPast() ? 'border-l-2 border-l-destructive' : ''">
                     <x-ui.table.cell>
-                        <x-veyra.user-cell
+                        <x-platform.user-cell
                             :name="$appeal->appUser?->display_name"
                             :photo="$appeal->appUser?->primaryPhoto?->thumb_url"
                             :href="$appeal->appUser ? route('admin.users.show', $appeal->appUser) : null"
@@ -81,13 +81,13 @@
 
                     <x-ui.table.cell>
                         @if ($appeal->ban)
-                            <x-veyra.status-badge :status="$appeal->ban->type" />
+                            <x-platform.status-badge :status="$appeal->ban->type" />
                         @else
                             <span class="text-sm text-muted-foreground">—</span>
                         @endif
                     </x-ui.table.cell>
 
-                    <x-ui.table.cell><x-veyra.status-badge :status="$appeal->status" /></x-ui.table.cell>
+                    <x-ui.table.cell><x-platform.status-badge :status="$appeal->status" /></x-ui.table.cell>
 
                     <x-ui.table.cell muted>
                         {{ $appeal->originalDecider?->name ?? 'Automated rule' }}
@@ -100,10 +100,10 @@
 
                     <x-ui.table.cell>
                         @if ($appeal->status->isOpen())
-                            <x-veyra.sla-pill :since="$appeal->created_at" :due-at="$appeal->sla_due_at" />
+                            <x-platform.sla-pill :since="$appeal->created_at" :due-at="$appeal->sla_due_at" />
                         @else
                             <span class="text-xs text-muted-foreground">
-                                {{ $appeal->decided_at ? veyra_date($appeal->decided_at) : '—' }}
+                                {{ $appeal->decided_at ? platform_date($appeal->decided_at) : '—' }}
                             </span>
                         @endif
                     </x-ui.table.cell>

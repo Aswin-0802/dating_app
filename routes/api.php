@@ -41,14 +41,14 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     */
     Route::get('config', function () {
         return response()->json([
-            'min_supported_version' => veyra_setting('api.min_supported_version', '2.4.0'),
-            'maintenance_mode' => (bool) veyra_setting('general.maintenance_mode', false),
-            'min_age' => (int) veyra_setting('general.min_age', 18),
-            'max_photos' => (int) veyra_setting('matching.max_photos', 9),
-            'max_distance_km' => (int) veyra_setting('matching.max_distance_km', 160),
-            'daily_like_limit' => (int) veyra_setting('matching.daily_like_limit_free', 100),
-            'appeal_window_days' => (int) veyra_setting('enforcement.appeal_window_days', 30),
-            'support_email' => veyra_setting('brand.support_email'),
+            'min_supported_version' => platform_setting('api.min_supported_version', '2.4.0'),
+            'maintenance_mode' => (bool) platform_setting('general.maintenance_mode', false),
+            'min_age' => (int) platform_setting('general.min_age', 18),
+            'max_photos' => (int) platform_setting('matching.max_photos', 9),
+            'max_distance_km' => (int) platform_setting('matching.max_distance_km', 160),
+            'daily_like_limit' => (int) platform_setting('matching.daily_like_limit_free', 100),
+            'appeal_window_days' => (int) platform_setting('enforcement.appeal_window_days', 30),
+            'support_email' => platform_setting('brand.support_email'),
         ]);
     })->name('config');
 

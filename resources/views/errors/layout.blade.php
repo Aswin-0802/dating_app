@@ -14,7 +14,7 @@
     <title>@yield('title') · {{ Branding::name() }}</title>
     <script>
         (function () {
-            var m = document.cookie.match(/(?:^|; )veyra_theme=([^;]*)/);
+            var m = document.cookie.match(/(?:^|; )platform_theme=([^;]*)/);
             var t = m ? decodeURIComponent(m[1]) : 'system';
             document.documentElement.classList.toggle('dark', t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches));
         })();

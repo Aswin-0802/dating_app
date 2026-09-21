@@ -3,11 +3,11 @@
 <div class="space-y-4 md:space-y-6">
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
-        <x-ui.stat-card label="In force" :value="veyra_number($counts['active'])" icon="ban" />
-        <x-ui.stat-card label="Shadow bans" :value="veyra_number($counts['shadow'])" icon="eye-off"
+        <x-ui.stat-card label="In force" :value="platform_number($counts['active'])" icon="ban" />
+        <x-ui.stat-card label="Shadow bans" :value="platform_number($counts['shadow'])" icon="eye-off"
             :href="route('admin.enforcement.shadow-reviews')" hint="Each carries a review date" />
-        <x-ui.stat-card label="Suspensions" :value="veyra_number($counts['suspended'])" icon="pause-circle" />
-        <x-ui.stat-card label="Permanent bans" :value="veyra_number($counts['permanent'])" icon="x-circle" />
+        <x-ui.stat-card label="Suspensions" :value="platform_number($counts['suspended'])" icon="pause-circle" />
+        <x-ui.stat-card label="Permanent bans" :value="platform_number($counts['permanent'])" icon="x-circle" />
     </div>
 
     <x-ui.table :density="$density">
@@ -51,7 +51,7 @@
             @forelse ($bans as $ban)
                 <x-ui.table.row :tint="$ban->lifted_at ? 'opacity-60' : ''">
                     <x-ui.table.cell>
-                        <x-veyra.user-cell
+                        <x-platform.user-cell
                             :name="$ban->appUser?->display_name"
                             :photo="$ban->appUser?->primaryPhoto?->thumb_url"
                             :meta="$ban->appUser?->city?->name"
@@ -59,7 +59,7 @@
                         />
                     </x-ui.table.cell>
 
-                    <x-ui.table.cell><x-veyra.status-badge :status="$ban->type" /></x-ui.table.cell>
+                    <x-ui.table.cell><x-platform.status-badge :status="$ban->type" /></x-ui.table.cell>
 
                     <x-ui.table.cell>
                         <span class="text-sm">{{ $ban->reason_code?->label() ?? '—' }}</span>
@@ -67,15 +67,15 @@
 
                     <x-ui.table.cell muted>{{ $ban->issuedBy?->name ?? 'Automated rule' }}</x-ui.table.cell>
 
-                    <x-ui.table.cell muted>{{ veyra_date($ban->starts_at) }}</x-ui.table.cell>
+                    <x-ui.table.cell muted>{{ platform_date($ban->starts_at) }}</x-ui.table.cell>
 
                     <x-ui.table.cell>
                         @if ($ban->lifted_at)
                             <span class="text-xs text-muted-foreground">
-                                Lifted {{ veyra_date($ban->lifted_at) }}
+                                Lifted {{ platform_date($ban->lifted_at) }}
                             </span>
                         @elseif ($ban->expires_at)
-                            <span class="text-sm">{{ veyra_date($ban->expires_at) }}</span>
+                            <span class="text-sm">{{ platform_date($ban->expires_at) }}</span>
                         @else
                             <x-ui.badge variant="destructive" size="sm">No expiry</x-ui.badge>
                         @endif

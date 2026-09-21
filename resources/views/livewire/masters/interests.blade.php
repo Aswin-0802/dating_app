@@ -38,7 +38,7 @@
                                         @endunless
                                     </span>
                                     <span class="flex shrink-0 items-center gap-1">
-                                        <span class="tabular mr-2 text-xs text-muted-foreground" title="Members with this interest">{{ veyra_number($memberCounts[$interest->id] ?? 0) }}</span>
+                                        <span class="tabular mr-2 text-xs text-muted-foreground" title="Members with this interest">{{ platform_number($memberCounts[$interest->id] ?? 0) }}</span>
                                         @if ($canEdit)
                                             <x-ui.button size="xs" variant="ghost" icon="arrow-up" wire:click="move({{ $interest->id }}, -1)" :disabled="$loop->first" aria-label="Move {{ $interest->name }} up" />
                                             <x-ui.button size="xs" variant="ghost" icon="arrow-down" wire:click="move({{ $interest->id }}, 1)" :disabled="$loop->last" aria-label="Move {{ $interest->name }} down" />

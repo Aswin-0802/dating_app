@@ -7,7 +7,7 @@
  * handles changes made after load.
  */
 
-const COOKIE = 'veyra_theme';
+const COOKIE = 'platform_theme';
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
 export function readPreference() {
@@ -36,12 +36,12 @@ function apply(preference) {
     // Charts and anything else holding rendered colour need to recolour without a
     // page reload, so broadcast rather than expecting listeners to poll.
     window.dispatchEvent(
-        new CustomEvent('veyra:theme-changed', { detail: { resolved: resolve(preference) } }),
+        new CustomEvent('platform:theme-changed', { detail: { resolved: resolve(preference) } }),
     );
 }
 
 export default function registerTheme(Alpine) {
-    Alpine.data('veyraTheme', () => ({
+    Alpine.data('platformTheme', () => ({
         preference: readPreference(),
 
         init() {

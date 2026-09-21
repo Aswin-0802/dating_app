@@ -29,7 +29,7 @@
             >
         @empty
             <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/80 to-accent text-6xl font-bold text-white/90">
-                {{ veyra_initials($person->display_name) }}
+                {{ platform_initials($person->display_name) }}
             </div>
         @endforelse
 

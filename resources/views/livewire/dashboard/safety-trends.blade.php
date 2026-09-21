@@ -12,8 +12,8 @@
             invert-delta
             hint="Trend this — a rise is the earliest quality alarm"
         />
-        <x-ui.stat-card label="Open cases" :value="veyra_number($overview['open_cases'])" icon="inbox" />
-        <x-ui.stat-card label="Enforcement in force" :value="veyra_number($overview['active_bans'])" icon="ban" />
+        <x-ui.stat-card label="Open cases" :value="platform_number($overview['open_cases'])" icon="inbox" />
+        <x-ui.stat-card label="Enforcement in force" :value="platform_number($overview['active_bans'])" icon="ban" />
     </div>
 
     <x-ui.card

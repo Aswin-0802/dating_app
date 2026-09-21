@@ -12,7 +12,7 @@ use Spatie\Permission\PermissionRegistrar;
  * The permission catalogue.
  *
  * Idempotent: re-running after adding a permission repairs the table without
- * touching existing grants. `php artisan veyra:sync-permissions` wraps this.
+ * touching existing grants. `php artisan platform:sync-permissions` wraps this.
  */
 class PermissionSeeder extends Seeder
 {

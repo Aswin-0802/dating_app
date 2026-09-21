@@ -51,10 +51,10 @@ class PushNotificationTest extends TestCase
 
         return json_encode([
             'type' => 'service_account',
-            'project_id' => 'veyra-test',
+            'project_id' => 'platform-test',
             'private_key_id' => 'abc123',
             'private_key' => $privateKey,
-            'client_email' => 'push@veyra-test.iam.gserviceaccount.com',
+            'client_email' => 'push@platform-test.iam.gserviceaccount.com',
             'token_uri' => 'https://oauth2.googleapis.com/token',
         ], JSON_THROW_ON_ERROR);
     }
@@ -102,7 +102,7 @@ class PushNotificationTest extends TestCase
         Setting::flush();
     }
 
-    private function fakeFirebase(array $sendResponse = ['name' => 'projects/veyra-test/messages/1'], int $status = 200): void
+    private function fakeFirebase(array $sendResponse = ['name' => 'projects/platform-test/messages/1'], int $status = 200): void
     {
         Http::fake([
             'oauth2.googleapis.com/*' => Http::response(['access_token' => 'ya29.test', 'expires_in' => 3600]),
@@ -142,7 +142,7 @@ class PushNotificationTest extends TestCase
             ->assertHasNoErrors();
 
         Setting::flush();
-        $this->assertSame('veyra-test', PushSettings::projectId());
+        $this->assertSame('platform-test', PushSettings::projectId());
         $this->assertTrue(PushSettings::enabled());
 
         // The private key is never handed back to the browser. A slice of the
@@ -151,7 +151,7 @@ class PushNotificationTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.notifications.push'))
             ->assertOk()
-            ->assertSee('veyra-test')
+            ->assertSee('platform-test')
             ->assertDontSee($secret);
 
         // Nor is it readable from the settings table without the app key.
@@ -244,7 +244,7 @@ class PushNotificationTest extends TestCase
             }
 
             return $message['notification']['title'] === 'Hello'
-                && str_contains($request->url(), 'veyra-test');
+                && str_contains($request->url(), 'platform-test');
         });
     }
 
@@ -291,8 +291,8 @@ class PushNotificationTest extends TestCase
 
         app(Subscriptions::class)->grant($member, Plan::query()->where('slug', 'plus')->firstOrFail(), now()->addDays(3));
 
-        $this->artisan('veyra:send-renewal-reminders')->assertSuccessful();
-        $this->artisan('veyra:send-renewal-reminders')->assertSuccessful();
+        $this->artisan('platform:send-renewal-reminders')->assertSuccessful();
+        $this->artisan('platform:send-renewal-reminders')->assertSuccessful();
 
         // Exactly one warning, however often the task runs. (The other email
         // is the "your plan is active" note sent when the plan was granted.)
@@ -306,7 +306,7 @@ class PushNotificationTest extends TestCase
 
         app(Subscriptions::class)->grant($member, Plan::query()->where('slug', 'plus')->firstOrFail(), now()->addMonth());
 
-        $this->artisan('veyra:send-renewal-reminders')->assertSuccessful();
+        $this->artisan('platform:send-renewal-reminders')->assertSuccessful();
 
         $this->assertSame(0, $this->emailsSent($member, 'billing.renewal_email'));
     }
@@ -328,7 +328,7 @@ class PushNotificationTest extends TestCase
         PushToken::register($member, str_repeat('f', 40), 'android');
         app(Subscriptions::class)->grant($member, Plan::query()->where('slug', 'gold')->firstOrFail(), now()->addDays(7));
 
-        $this->artisan('veyra:send-renewal-reminders')->assertSuccessful();
+        $this->artisan('platform:send-renewal-reminders')->assertSuccessful();
 
         $this->assertDatabaseHas('push_logs', [
             'app_user_id' => $member->id,
@@ -345,7 +345,7 @@ class PushNotificationTest extends TestCase
         app(Subscriptions::class)->grant($member, Plan::query()->where('slug', 'plus')->firstOrFail(), now()->addHours(2));
 
         $this->travel(3)->hours();
-        $this->artisan('veyra:run-due-tasks')->assertSuccessful();
+        $this->artisan('platform:run-due-tasks')->assertSuccessful();
 
         $this->assertFalse($member->fresh()->is_premium);
         Notification::assertSentTo($member, TemplatedMail::class);
@@ -361,7 +361,7 @@ class PushNotificationTest extends TestCase
         $member = AppUser::factory()->create();
         app(Subscriptions::class)->grant($member, Plan::query()->where('slug', 'plus')->firstOrFail(), now()->addDays(2));
 
-        $this->artisan('veyra:send-renewal-reminders')->assertSuccessful();
+        $this->artisan('platform:send-renewal-reminders')->assertSuccessful();
 
         $this->assertSame(0, $this->emailsSent($member, 'billing.renewal_email'));
     }

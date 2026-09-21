@@ -21,7 +21,7 @@ use Throwable;
  */
 class SendRenewalReminders extends Command
 {
-    protected $signature = 'veyra:send-renewal-reminders {--dry-run : List who would be told, and send nothing}';
+    protected $signature = 'platform:send-renewal-reminders {--dry-run : List who would be told, and send nothing}';
 
     protected $description = 'Tell members whose plan is about to end';
 
@@ -78,7 +78,7 @@ class SendRenewalReminders extends Command
             'first_name' => str($member->display_name)->before(' ')->toString(),
             'plan_name' => $subscription->plan_name,
             'days_left' => $daysLeft,
-            'end_date' => veyra_date($subscription->ends_at),
+            'end_date' => platform_date($subscription->ends_at),
         ];
 
         $sent = 0;
@@ -130,7 +130,7 @@ class SendRenewalReminders extends Command
     /** @return array<int, int> */
     private function days(string $setting, string $default): array
     {
-        return collect(explode(',', (string) veyra_setting($setting, $default)))
+        return collect(explode(',', (string) platform_setting($setting, $default)))
             ->map(fn (string $day): int => (int) trim($day))
             ->filter(fn (int $day): bool => $day >= 0 && $day <= 60)
             ->unique()

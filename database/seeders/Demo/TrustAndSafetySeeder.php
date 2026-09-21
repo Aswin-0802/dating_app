@@ -34,7 +34,7 @@ class TrustAndSafetySeeder extends Seeder
     public function run(): void
     {
         $faker = fake();
-        $faker->seed(config('veyra.seed.faker_seed', 20260917) + 3);
+        $faker->seed(config('platform.seed.faker_seed', 20260917) + 3);
 
         $staff = DB::table('users')->pluck('id')->all();
         $moderators = array_slice($staff, 3);
@@ -76,7 +76,7 @@ class TrustAndSafetySeeder extends Seeder
             ->pluck('c', 'app_user_id')
             ->all();
 
-        $slaHours = (int) config('veyra.sla.verification_hours', 24);
+        $slaHours = (int) config('platform.sla.verification_hours', 24);
         $rows = [];
 
         $total = 0;
@@ -123,7 +123,7 @@ class TrustAndSafetySeeder extends Seeder
 
                 $isOpen = in_array($status, ['pending', 'in_review', 'escalated'], true);
                 $windowHours = $minorSuspected
-                    ? (int) config('veyra.sla.restricted_verification_hours', 4)
+                    ? (int) config('platform.sla.restricted_verification_hours', 4)
                     : $slaHours;
 
                 /*
@@ -215,7 +215,7 @@ class TrustAndSafetySeeder extends Seeder
      */
     private function generateOpenSelfies(): void
     {
-        if (config('veyra.seed.photos') === 'none') {
+        if (config('platform.seed.photos') === 'none') {
             return;
         }
 
@@ -690,7 +690,7 @@ class TrustAndSafetySeeder extends Seeder
                     'type' => $banType,
                     'limited_features' => $banType === 'feature_limit'
                         ? json_encode($faker->randomElements(
-                            array_keys(config('veyra.enforcement.feature_limit_options')),
+                            array_keys(config('platform.enforcement.feature_limit_options')),
                             $faker->numberBetween(1, 3),
                         ))
                         : null,
@@ -885,7 +885,7 @@ class TrustAndSafetySeeder extends Seeder
                 ]),
                 'decision_note' => $decided ? $faker->sentence(12) : null,
                 'decided_at' => $decided ? $filedAt->copy()->addDays($faker->numberBetween(1, 10)) : null,
-                'sla_due_at' => $filedAt->copy()->addHours((int) config('veyra.sla.appeal_hours', 72)),
+                'sla_due_at' => $filedAt->copy()->addHours((int) config('platform.sla.appeal_hours', 72)),
                 'created_at' => $filedAt,
                 'updated_at' => $filedAt,
             ];

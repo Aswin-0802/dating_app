@@ -3,7 +3,7 @@
 @php
     use App\Support\Branding;
 
-    $theme = request()->cookie('veyra_theme', Branding::themeMode());
+    $theme = request()->cookie('platform_theme', Branding::themeMode());
 @endphp
 
 <!DOCTYPE html>
@@ -66,7 +66,7 @@
     @if (session('status'))
         <script>
             window.addEventListener('DOMContentLoaded', function () {
-                window.dispatchEvent(new CustomEvent('veyra:toast', { detail: { message: @json(session('status')), type: 'info' } }));
+                window.dispatchEvent(new CustomEvent('platform:toast', { detail: { message: @json(session('status')), type: 'info' } }));
             });
         </script>
     @endif

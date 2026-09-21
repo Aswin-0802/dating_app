@@ -74,7 +74,7 @@ php artisan serve
 
 The usual causes: MySQL is not running, the two databases do not exist, or
 `DB_USERNAME` / `DB_PASSWORD` in `.env` do not match your MySQL account.
-Seeding downloads member photos once — set `VEYRA_SEED_PHOTOS=generated` to
+Seeding downloads member photos once — set `PLATFORM_SEED_PHOTOS=generated` to
 draw them locally instead, or `none` to skip them.
 
 </details>
@@ -123,7 +123,7 @@ known password.
 
 ### Seeding
 
-`VEYRA_SEED_SCALE` controls the demo population:
+`PLATFORM_SEED_SCALE` controls the demo population:
 
 | Value | Members | Rows | Roughly |
 |---|---|---|---|
@@ -154,7 +154,7 @@ past SLA) instead of leaving it to chance. The proportions are therefore less
 realistic at 50 members than at 12,000. `small` and up are unaffected: the
 minimums are far below what those populations produce naturally.
 
-`VEYRA_SEED_PHOTOS` controls member photos. The default, `stock`, gives each
+`PLATFORM_SEED_PHOTOS` controls member photos. The default, `stock`, gives each
 seeded member a real portrait from Unsplash (free licence), downloaded once
 into `storage/app/public/photos/_stock` and reused; it falls back to
 `generated` when offline. `generated` draws placeholders locally with GD, and
@@ -285,7 +285,7 @@ plans, renewal warnings and campaign sending:
 On Windows, a Task Scheduler task running `php artisan schedule:run` every
 minute does the same. Without it the product still works — suspensions clear
 themselves on the member's next request — but nothing else ends on time.
-`php artisan veyra:run-due-tasks` can always be run by hand.
+`php artisan platform:run-due-tasks` can always be run by hand.
 
 ### The website and member app
 

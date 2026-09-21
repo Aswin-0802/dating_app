@@ -2,7 +2,7 @@
     <template x-teleport="body">
         <div
             x-data="{ show: @entangle('open') }"
-            @veyra:open-command-palette.window="show = true; $nextTick(() => $refs.field?.focus())"
+            @platform:open-command-palette.window="show = true; $nextTick(() => $refs.field?.focus())"
             @keydown.escape.window="show = false"
         >
             <div x-show="show" x-cloak class="fixed inset-0 z-[90]">

@@ -34,7 +34,7 @@ final class MetricRollup
      */
     public function overview(): array
     {
-        return Cache::remember('veyra.metrics.overview', self::TTL, function (): array {
+        return Cache::remember('platform.metrics.overview', self::TTL, function (): array {
             $members = DB::table('app_users')->whereNull('deleted_at');
 
             $active = (clone $members)->where('account_status', AccountStatus::Active->value)->count();
@@ -84,7 +84,7 @@ final class MetricRollup
      */
     public function funnel(): array
     {
-        return Cache::remember('veyra.metrics.funnel', self::TTL, function (): array {
+        return Cache::remember('platform.metrics.funnel', self::TTL, function (): array {
             $row = DB::table('app_users')->whereNull('deleted_at')->selectRaw('
                 COUNT(*) as signed_up,
                 SUM(profile_completed_at IS NOT NULL) as profile_complete,
@@ -144,7 +144,7 @@ final class MetricRollup
      */
     public function cityBalance(int $limit = 15): Collection
     {
-        return Cache::remember("veyra.metrics.city-balance.{$limit}", self::TTL, function () use ($limit): Collection {
+        return Cache::remember("platform.metrics.city-balance.{$limit}", self::TTL, function () use ($limit): Collection {
             return collect(DB::select(sprintf('
                 SELECT c.name AS city,
                        co.iso2 AS country,
@@ -195,7 +195,7 @@ final class MetricRollup
      */
     public function attentionConcentration(): array
     {
-        return Cache::remember('veyra.metrics.concentration', self::TTL, function (): array {
+        return Cache::remember('platform.metrics.concentration', self::TTL, function (): array {
             $counts = DB::table('swipes')
                 ->whereIn('action', ['like', 'superlike'])
                 ->selectRaw('target_app_user_id, COUNT(*) as c')
@@ -237,7 +237,7 @@ final class MetricRollup
      */
     public function retentionByVerification(): array
     {
-        return Cache::remember('veyra.metrics.retention', self::TTL, function (): array {
+        return Cache::remember('platform.metrics.retention', self::TTL, function (): array {
             $out = [];
 
             foreach (['verified', 'unverified'] as $segment) {
@@ -285,7 +285,7 @@ final class MetricRollup
      */
     public function safetyTrend(int $days = 60): array
     {
-        return Cache::remember("veyra.metrics.safety.{$days}", self::TTL, function () use ($days): array {
+        return Cache::remember("platform.metrics.safety.{$days}", self::TTL, function () use ($days): array {
             $since = now()->subDays($days)->startOfDay();
 
             $series = fn (string $table, string $column) => DB::table($table)
@@ -318,7 +318,7 @@ final class MetricRollup
      */
     public function signupTrend(int $days = 90): array
     {
-        return Cache::remember("veyra.metrics.signups.{$days}", self::TTL, function () use ($days): array {
+        return Cache::remember("platform.metrics.signups.{$days}", self::TTL, function () use ($days): array {
             $since = now()->subDays($days)->startOfDay();
 
             $rows = DB::table('app_users')
@@ -349,7 +349,7 @@ final class MetricRollup
      */
     public function coldStart(): array
     {
-        return Cache::remember('veyra.metrics.cold-start', self::TTL, function (): array {
+        return Cache::remember('platform.metrics.cold-start', self::TTL, function (): array {
             $recent = DB::table('app_users')
                 ->whereNull('deleted_at')
                 ->where('created_at', '>=', now()->subDays(60));
@@ -374,7 +374,7 @@ final class MetricRollup
         foreach ([
             'overview', 'funnel', 'concentration', 'retention', 'cold-start',
         ] as $key) {
-            Cache::forget("veyra.metrics.{$key}");
+            Cache::forget("platform.metrics.{$key}");
         }
     }
 }

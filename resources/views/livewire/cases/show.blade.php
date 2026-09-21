@@ -14,7 +14,7 @@
             <x-ui.avatar :name="$reportCase->claimedBy?->name" size="sm" class="shrink-0" />
             <p class="min-w-0 flex-1 text-sm text-warning-subtle-foreground">
                 <span class="font-medium">{{ $reportCase->claimedBy?->name }}</span>
-                is reviewing this case, claimed {{ veyra_duration($reportCase->claimed_at) }} ago.
+                is reviewing this case, claimed {{ platform_duration($reportCase->claimed_at) }} ago.
             </p>
         </div>
     @endif
@@ -28,7 +28,7 @@
                 :description="$reportCase->distinct_reporters_count.' distinct '.str('reporter')->plural($reportCase->distinct_reporters_count).'. Acting once resolves all of them.'"
             >
                 <x-slot:action>
-                    <x-veyra.status-badge :status="$reportCase->severity" />
+                    <x-platform.status-badge :status="$reportCase->severity" />
                 </x-slot:action>
 
                 <div class="divide-y divide-border">
@@ -36,7 +36,7 @@
                         <div class="flex flex-wrap items-start gap-3 py-3 first:pt-0 last:pb-0">
                             <div class="min-w-0 flex-1 space-y-1">
                                 <div class="flex flex-wrap items-center gap-1.5">
-                                    <x-veyra.status-badge :status="$report->category" size="sm" />
+                                    <x-platform.status-badge :status="$report->category" size="sm" />
 
                                     @if ($report->source !== 'user')
                                         <x-ui.badge variant="outline" size="sm">
@@ -45,7 +45,7 @@
                                     @endif
 
                                     <span class="text-xs text-muted-foreground">
-                                        {{ veyra_duration($report->created_at) }} ago
+                                        {{ platform_duration($report->created_at) }} ago
                                     </span>
                                 </div>
 
@@ -80,7 +80,7 @@
             @if ($evidence['anchor'])
                 <x-ui.card
                     title="Reported message in context"
-                    :description="'The anchored message with '.veyra_setting('privacy.message_context_window', 10).' messages either side.'"
+                    :description="'The anchored message with '.platform_setting('privacy.message_context_window', 10).' messages either side.'"
                 >
                     <x-slot:action>
                         @unless ($canSeeContent)
@@ -129,7 +129,7 @@
                                             <x-ui.badge variant="warning" size="sm">Link</x-ui.badge>
                                         @endif
                                         <span class="text-[10px] text-muted-foreground">
-                                            {{ veyra_datetime($message->created_at) }}
+                                            {{ platform_datetime($message->created_at) }}
                                         </span>
                                     </div>
                                 </div>
@@ -223,7 +223,7 @@
                             @if ($step === LadderStep::FeatureLimit)
                                 <div class="space-y-2">
                                     <p class="text-sm font-medium">Features to limit</p>
-                                    @foreach (config('veyra.enforcement.feature_limit_options') as $key => $label)
+                                    @foreach (config('platform.enforcement.feature_limit_options') as $key => $label)
                                         <x-ui.checkbox
                                             :label="$label"
                                             wire:model="limitedFeatures"
@@ -265,13 +265,13 @@
                     @endif
                 @else
                     <div class="flex flex-wrap items-center gap-3">
-                        <x-veyra.status-badge :status="$reportCase->status" />
+                        <x-platform.status-badge :status="$reportCase->status" />
                         <p class="text-sm text-muted-foreground">
                             {{ $reportCase->outcome ?? 'Resolved' }}
                             @if ($reportCase->resolvedBy)
                                 by {{ $reportCase->resolvedBy->name }}
                             @endif
-                            {{ $reportCase->resolved_at ? '· '.veyra_datetime($reportCase->resolved_at) : '' }}
+                            {{ $reportCase->resolved_at ? '· '.platform_datetime($reportCase->resolved_at) : '' }}
                         </p>
                     </div>
                 @endif
@@ -286,11 +286,11 @@
                                 <span class="mt-1 size-2 shrink-0 rounded-full bg-border"></span>
                                 <div class="min-w-0 flex-1 space-y-0.5">
                                     <div class="flex flex-wrap items-center gap-1.5">
-                                        <x-veyra.status-badge :status="$action->ladder_step" size="sm" />
+                                        <x-platform.status-badge :status="$action->ladder_step" size="sm" />
                                         <span class="text-sm">{{ $action->reason_code->label() }}</span>
                                     </div>
                                     <p class="text-xs text-muted-foreground">
-                                        {{ $action->actorLabel() }} · {{ veyra_datetime($action->created_at) }}
+                                        {{ $action->actorLabel() }} · {{ platform_datetime($action->created_at) }}
                                         @if ($action->policy_clause)
                                             · clause {{ $action->policy_clause }}
                                         @endif
@@ -310,7 +310,7 @@
         <div class="space-y-4 md:space-y-6">
             <x-ui.card title="Subject">
                 <div class="space-y-3">
-                    <x-veyra.user-cell
+                    <x-platform.user-cell
                         :name="$subject?->display_name"
                         :age="$subject?->age"
                         :photo="$subject?->primaryPhoto?->thumb_url"
@@ -321,9 +321,9 @@
 
                     <div class="flex flex-wrap gap-1.5">
                         @if ($subject)
-                            <x-veyra.status-badge :status="$subject->account_status" />
-                            <x-veyra.status-badge :status="$subject->verification_status" />
-                            <x-veyra.risk-badge
+                            <x-platform.status-badge :status="$subject->account_status" />
+                            <x-platform.status-badge :status="$subject->verification_status" />
+                            <x-platform.risk-badge
                                 :score="$subject->risk_score"
                                 :band="$subject->risk_band"
                                 :factors="$subject->riskScore?->factors"
@@ -333,11 +333,11 @@
 
                     <dl class="divide-y divide-border text-sm">
                         @foreach ([
-                            'Member since' => veyra_date($subject?->created_at),
-                            'Last active' => $subject?->last_active_at ? veyra_duration($subject->last_active_at).' ago' : '—',
+                            'Member since' => platform_date($subject?->created_at),
+                            'Last active' => $subject?->last_active_at ? platform_duration($subject->last_active_at).' ago' : '—',
                             'Reports (all time)' => $subject?->reportsAgainst()->count(),
                             'Prior actions' => $priorActions->count(),
-                            'Case opened' => veyra_datetime($reportCase->created_at),
+                            'Case opened' => platform_datetime($reportCase->created_at),
                         ] as $label => $value)
                             <div class="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
                                 <dt class="text-muted-foreground">{{ $label }}</dt>
@@ -359,9 +359,9 @@
                         @foreach ($priorActions as $prior)
                             <li class="space-y-0.5">
                                 <div class="flex flex-wrap items-center gap-1.5">
-                                    <x-veyra.status-badge :status="$prior->ladder_step" size="sm" />
+                                    <x-platform.status-badge :status="$prior->ladder_step" size="sm" />
                                     <span class="text-xs text-muted-foreground">
-                                        {{ veyra_date($prior->created_at) }}
+                                        {{ platform_date($prior->created_at) }}
                                     </span>
                                 </div>
                                 <p class="text-xs text-muted-foreground">{{ $prior->reason_code->label() }}</p>
@@ -378,7 +378,7 @@
                     </p>
                     <p class="mt-1 text-xs text-destructive-subtle-foreground/85">
                         @if ($subject->activeBan->expires_at)
-                            Expires {{ veyra_datetime($subject->activeBan->expires_at) }}
+                            Expires {{ platform_datetime($subject->activeBan->expires_at) }}
                         @else
                             No expiry
                         @endif

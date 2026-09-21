@@ -99,9 +99,9 @@ final class MessageRevealService
      */
     public function hasActiveReveal(Conversation $conversation, User $actor): bool
     {
-        $minutes = (int) veyra_setting(
+        $minutes = (int) platform_setting(
             'privacy.message_reveal_minutes',
-            config('veyra.privacy.message_reveal_minutes', 15),
+            config('platform.privacy.message_reveal_minutes', 15),
         );
 
         return MessageAccessLog::query()
@@ -128,9 +128,9 @@ final class MessageRevealService
         // Anchored reveals return a window, not the whole history: reading ten
         // messages either side of a report is proportionate, reading two years
         // of somebody's private conversation is not.
-        $window = (int) veyra_setting(
+        $window = (int) platform_setting(
             'privacy.message_context_window',
-            config('veyra.privacy.message_context_window', 10),
+            config('platform.privacy.message_context_window', 10),
         );
 
         $all = $query->get();
@@ -143,13 +143,13 @@ final class MessageRevealService
 
     private function guardReason(string $reasonCode, string $justification): void
     {
-        $reasons = config('veyra.privacy.reveal_reasons', []);
+        $reasons = config('platform.privacy.reveal_reasons', []);
 
         if (! array_key_exists($reasonCode, $reasons)) {
             throw new InvalidArgumentException('Choose a valid reason for reading this conversation.');
         }
 
-        if (! veyra_setting('privacy.require_justification', true)) {
+        if (! platform_setting('privacy.require_justification', true)) {
             return;
         }
 
@@ -164,6 +164,6 @@ final class MessageRevealService
 
     private function reasonLabel(string $reasonCode): string
     {
-        return config("veyra.privacy.reveal_reasons.{$reasonCode}", $reasonCode);
+        return config("platform.privacy.reveal_reasons.{$reasonCode}", $reasonCode);
     }
 }

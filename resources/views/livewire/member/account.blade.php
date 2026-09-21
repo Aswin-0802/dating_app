@@ -184,7 +184,7 @@
                                     <span class="block truncate font-medium">{{ $device->label ?? ucfirst($device->platform) }}</span>
                                     <span class="block text-xs text-muted-foreground">
                                         {{ $device->platform === 'web' ? 'Browser' : ucfirst($device->platform) }}
-                                        @if ($device->last_used_at) · last used {{ veyra_duration($device->last_used_at) }} ago @endif
+                                        @if ($device->last_used_at) · last used {{ platform_duration($device->last_used_at) }} ago @endif
                                     </span>
                                 </span>
                                 <x-ui.button size="xs" variant="ghost" class="text-destructive" wire:click="forgetDevice({{ $device->id }})">

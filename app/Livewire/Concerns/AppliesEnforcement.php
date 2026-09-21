@@ -54,7 +54,7 @@ trait AppliesEnforcement
         }
 
         if ($ladderStep->requiresReviewDate()) {
-            $hours = (int) veyra_setting('enforcement.shadow_ban_review_hours', 168);
+            $hours = (int) platform_setting('enforcement.shadow_ban_review_hours', 168);
             $this->reviewDueAt = now()->addHours($hours)->format('Y-m-d\TH:i');
         }
     }
@@ -81,7 +81,7 @@ trait AppliesEnforcement
 
         $this->authorize(self::permissionForStep($step));
 
-        $maxShadowHours = (int) veyra_setting('enforcement.shadow_ban_max_hours', 2160);
+        $maxShadowHours = (int) platform_setting('enforcement.shadow_ban_max_hours', 2160);
 
         $this->validate([
             'reasonCode' => ['required', 'string'],
@@ -100,7 +100,7 @@ trait AppliesEnforcement
         $reason = ReasonCode::tryFrom($this->reasonCode)
             ?? throw ValidationException::withMessages(['reasonCode' => 'Choose a reason.']);
 
-        if (veyra_setting('moderation.require_note_on_ban', true) && $step->isDestructive() && blank($this->note)) {
+        if (platform_setting('moderation.require_note_on_ban', true) && $step->isDestructive() && blank($this->note)) {
             throw ValidationException::withMessages(['note' => 'An internal note is required for this action.']);
         }
 

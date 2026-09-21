@@ -36,7 +36,7 @@
             @foreach (['android' => 'Android devices', 'ios' => 'iPhones', 'web' => 'Browsers'] as $platform => $label)
                 <div class="rounded-lg border border-border px-4 py-3">
                     <p class="text-xs text-muted-foreground">{{ $label }}</p>
-                    <p class="tabular mt-0.5 text-xl font-semibold">{{ veyra_number($tokenCounts[$platform] ?? 0) }}</p>
+                    <p class="tabular mt-0.5 text-xl font-semibold">{{ platform_number($tokenCounts[$platform] ?? 0) }}</p>
                 </div>
             @endforeach
         </div>

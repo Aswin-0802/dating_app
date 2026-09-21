@@ -14,7 +14,7 @@
     ApexCharts wrapper.
 
     Colours come from the CSS variables at render time and are re-read on
-    `veyra:theme-changed`, so charts recolour with the rest of the interface
+    `platform:theme-changed`, so charts recolour with the rest of the interface
     instead of keeping their own light-mode palette in dark mode.
 --}}
 
@@ -38,7 +38,7 @@
 @endphp
 
 <div
-    x-data="veyraChart({{ Js::from($config) }})"
+    x-data="platformChart({{ Js::from($config) }})"
     {{ $attributes->class('w-full') }}
     wire:ignore
 >

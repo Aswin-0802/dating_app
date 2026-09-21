@@ -124,7 +124,7 @@ final class SwipeRecorder
 
     private function dailyLimit(): int
     {
-        return (int) veyra_setting('matching.daily_like_limit_free', 100);
+        return (int) platform_setting('matching.daily_like_limit_free', 100);
     }
 
     private function likesUsedToday(AppUser $member): int

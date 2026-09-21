@@ -347,7 +347,7 @@ class UatMemberTest extends UatTestCase
         for ($i = 0; $i < 4; $i++) {
             Livewire::test(Verification::class)->set('selfie', UploadedFile::fake()->image('s.jpg'))->call('submit');
         }
-        $this->assertLessThanOrEqual((int) config('veyra.verification.max_attempts', 3), \App\Models\Verification::query()->where('app_user_id', $m->id)->count());
+        $this->assertLessThanOrEqual((int) config('platform.verification.max_attempts', 3), \App\Models\Verification::query()->where('app_user_id', $m->id)->count());
     }
 
     // ================================================================ A. account
