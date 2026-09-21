@@ -190,6 +190,8 @@ Route::middleware(['auth:web', 'auth.session', 'staff.active'])->group(function 
         Route::get('payments', System\Gateways::class)
             ->defaults('kind', 'payment')->name('payments');
 
+        Route::get('push', System\Push::class)->name('push');
+
         Route::get('sms', System\Gateways::class)
             ->defaults('kind', 'sms')->name('sms');
 

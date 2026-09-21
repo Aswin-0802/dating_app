@@ -7,7 +7,9 @@ namespace App\Livewire\Member;
 use App\Enums\AccountStatus;
 use App\Livewire\Member\Concerns\InteractsWithMember;
 use App\Models\AppUser;
+use App\Models\PushToken;
 use App\Services\Members\SafetyActions;
+use App\Support\PushSettings;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -50,6 +52,10 @@ class Account extends Component
         return view('livewire.member.account', [
             'me' => $me,
             'blocked' => $blocked,
+            'pushEnabled' => PushSettings::webEnabled(),
+            'pushConfig' => PushSettings::webConfig(),
+            'vapidKey' => PushSettings::vapidKey(),
+            'devices' => PushToken::query()->where('app_user_id', $me->id)->latest('last_used_at')->get(),
         ])->layout('components.layouts.member', ['title' => 'Account']);
     }
 
@@ -116,5 +122,21 @@ class Account extends Component
         if (! Hash::check($password, $this->member()->password)) {
             throw ValidationException::withMessages([$field => 'That password is not right.']);
         }
+    }
+
+    /**
+     * Stop notifications going to one device.
+     *
+     * Deleting the token is the whole of it — the browser keeps its permission,
+     * but nothing on our side knows where to send any more.
+     */
+    public function forgetDevice(int $id): void
+    {
+        PushToken::query()
+            ->where('app_user_id', $this->member()->id)
+            ->whereKey($id)
+            ->delete();
+
+        $this->toast('Notifications turned off for that device.');
     }
 }

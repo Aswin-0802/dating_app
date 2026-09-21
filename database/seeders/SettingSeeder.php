@@ -107,6 +107,15 @@ class SettingSeeder extends Seeder
             // ---- privacy ----
             ['key' => 'privacy.message_reveal_minutes', 'value' => '15', 'type' => 'number', 'group' => 'privacy', 'label' => 'Message reveal lasts (minutes)'],
             ['key' => 'privacy.message_context_window', 'value' => '10', 'type' => 'number', 'group' => 'privacy', 'label' => 'Messages of context either side of an anchor'],
+            /*
+             * ---- billing ----
+             *
+             * When members are warned that a plan is about to end. Days before
+             * the end date, comma separated; empty switches that channel off.
+             */
+            ['key' => 'billing.reminder_push_days', 'value' => '7,3,1', 'type' => 'text', 'group' => 'general', 'label' => 'Push renewal reminders (days before)', 'description' => 'Comma separated, e.g. 7,3,1. Leave empty for none.'],
+            ['key' => 'billing.reminder_email_days', 'value' => '3', 'type' => 'text', 'group' => 'general', 'label' => 'Email renewal reminders (days before)', 'description' => 'Comma separated. An email also goes out on the day a plan ends.'],
+
             ['key' => 'privacy.require_justification', 'value' => '1', 'type' => 'boolean', 'group' => 'privacy', 'label' => 'Require written justification to reveal messages'],
         ];
     }

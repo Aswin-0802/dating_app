@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SafetyController;
@@ -118,6 +119,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->middleware(['ability:report', 'throttle:report'])->name('reports.store');
         Route::get('blocks', [SafetyController::class, 'blocks'])->name('blocks');
         Route::post('blocks', [SafetyController::class, 'block'])->name('blocks.store');
+
+        /*
+         * Push registration. No ability is required: a member who can sign in
+         * can always be reached, and gating it behind a token ability would
+         * silence exactly the accounts under review that we most need to
+         * notify about a decision.
+         */
+        Route::post('devices/push-token', [DeviceController::class, 'storePushToken'])->name('devices.push-token.store');
+        Route::delete('devices/push-token', [DeviceController::class, 'deletePushToken'])->name('devices.push-token.destroy');
         Route::delete('blocks/{uuid}', [SafetyController::class, 'unblock'])->name('blocks.destroy');
 
         // ---- verification ----

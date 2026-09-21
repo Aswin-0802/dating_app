@@ -9,6 +9,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
+use App\Services\Notifications\MemberNotifier;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,10 @@ use Illuminate\Support\Facades\DB;
  */
 final class Subscriptions
 {
-    public function __construct(private readonly ActivityLogger $logger) {}
+    public function __construct(
+        private readonly ActivityLogger $logger,
+        private readonly MemberNotifier $notifier,
+    ) {}
 
     /**
      * Put a member on a plan until `$endsAt` (null for open-ended).
@@ -84,6 +88,14 @@ final class Subscriptions
 
             return $subscription;
         });
+
+        $this->notifier->email($member, 'billing.plan_started', [
+            'first_name' => str($member->display_name)->before(' ')->toString(),
+            'plan_name' => $plan->name,
+            'until_clause' => $endsAt === null ? '' : ' until '.veyra_date($endsAt),
+        ], 'See your plan', route('member.premium'));
+
+        return $subscription;
     }
 
     /** Take a member off their plan now. */
@@ -145,6 +157,13 @@ final class Subscriptions
                             subject: $member,
                             description: "{$subscription->plan_name} ended for {$member->display_name}",
                         );
+
+                        // The "it ends today" email the operator asked for:
+                        // sent when it actually ends, not on a guess.
+                        $this->notifier->email($member, 'billing.expired', [
+                            'first_name' => str($member->display_name)->before(' ')->toString(),
+                            'plan_name' => $subscription->plan_name,
+                        ], 'See plans', route('member.premium'));
 
                         $ended++;
                     }

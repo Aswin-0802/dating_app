@@ -26,3 +26,11 @@ Schedule::command('veyra:run-due-tasks')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Renewal warnings. Hourly rather than daily so a plan bought at 11pm is still
+// warned about at a sensible hour, and because each reminder is recorded as
+// sent, running often costs nothing.
+Schedule::command('veyra:send-renewal-reminders')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground();

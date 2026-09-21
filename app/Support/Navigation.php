@@ -200,6 +200,7 @@ final class Navigation
                         'children' => [
                             ['label' => 'Mail / SMTP', 'route' => 'admin.system.mail', 'permission' => 'settings'],
                             ['label' => 'Payment gateways', 'route' => 'admin.system.payments', 'permission' => 'settings'],
+                            ['label' => 'Push notifications', 'route' => 'admin.system.push', 'permission' => 'settings'],
                             ['label' => 'SMS gateways', 'route' => 'admin.system.sms', 'permission' => 'settings'],
                             ['label' => 'Delivery logs', 'route' => 'admin.system.logs', 'permission' => 'settings'],
                             ['label' => 'Database backup', 'route' => 'admin.system.backup', 'permission' => 'run_maintenance_jobs'],

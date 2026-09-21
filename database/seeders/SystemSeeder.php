@@ -33,6 +33,31 @@ class SystemSeeder extends Seeder
         ];
     }
 
+    /**
+     * Firebase credentials for push, empty until an operator fills them in.
+     *
+     * Kept out of .env so push can be switched on from the console. The
+     * service account JSON is stored encrypted; the web values are public by
+     * design — the browser SDK needs them in page source.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function pushSettings(): array
+    {
+        return [
+            ['key' => 'push.enabled', 'value' => '0', 'type' => 'boolean', 'label' => 'Push notifications', 'description' => 'Send notifications to phones and browsers through Firebase.'],
+            ['key' => 'push.service_account', 'value' => '', 'type' => 'textarea', 'label' => 'Service account JSON', 'description' => 'Firebase console → Project settings → Service accounts → Generate new private key. Stored encrypted and never shown again.'],
+            ['key' => 'push.project_id', 'value' => '', 'type' => 'text', 'label' => 'Firebase project'],
+            ['key' => 'push.web_enabled', 'value' => '0', 'type' => 'boolean', 'label' => 'Browser notifications', 'description' => 'Let members turn on notifications in the web app.'],
+            ['key' => 'push.web_api_key', 'value' => '', 'type' => 'text', 'label' => 'Web apiKey'],
+            ['key' => 'push.web_auth_domain', 'value' => '', 'type' => 'text', 'label' => 'Web authDomain'],
+            ['key' => 'push.web_project_id', 'value' => '', 'type' => 'text', 'label' => 'Web projectId'],
+            ['key' => 'push.web_sender_id', 'value' => '', 'type' => 'text', 'label' => 'Web messagingSenderId'],
+            ['key' => 'push.web_app_id', 'value' => '', 'type' => 'text', 'label' => 'Web appId'],
+            ['key' => 'push.web_vapid_key', 'value' => '', 'type' => 'text', 'label' => 'Web push certificate (VAPID key pair)'],
+        ];
+    }
+
     /** @return array<int, array{0: string, 1: string, 2: string}> */
     private const PAYMENT_GATEWAYS = [
         ['stripe', 'Stripe', 'USD,INR,EUR,GBP'],
@@ -51,6 +76,21 @@ class SystemSeeder extends Seeder
 
     public function run(): void
     {
+        foreach (self::pushSettings() as $index => $setting) {
+            Setting::query()->updateOrCreate(
+                ['key' => $setting['key']],
+                [
+                    'value' => Setting::query()->where('key', $setting['key'])->value('value') ?? $setting['value'],
+                    'type' => $setting['type'],
+                    'group' => 'push',
+                    'label' => $setting['label'],
+                    'description' => $setting['description'] ?? null,
+                    'is_public' => false,
+                    'sort_order' => $index,
+                ],
+            );
+        }
+
         foreach (self::mailSettings() as $index => $setting) {
             Setting::query()->updateOrCreate(
                 ['key' => $setting['key']],

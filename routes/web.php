@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Member\PushTokenController;
 use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Site\MemberSessionController;
 use App\Livewire\Member;
@@ -66,8 +67,19 @@ Route::middleware(['auth:member', 'member.active'])
         Route::get('verification', Member\Verification::class)->name('verification');
         Route::get('premium', Member\Premium::class)->name('premium');
         Route::get('account', Member\Account::class)->name('account');
+
+        // Browser push: the token the Firebase SDK hands back, and giving it up.
+        Route::post('push/token', [PushTokenController::class, 'store'])->name('push.token.store');
+        Route::delete('push/token', [PushTokenController::class, 'destroy'])->name('push.token.destroy');
         Route::get('restricted', Member\Restricted::class)->name('restricted');
     });
+
+/*
+ * The Firebase service worker must live at the root of the site, or it cannot
+ * control the pages above it. Generated from the console's settings.
+ */
+Route::get('firebase-messaging-sw.js', [PushTokenController::class, 'serviceWorker'])
+    ->name('push.service-worker');
 
 // ---- staff sign-in -----------------------------------------------------------
 

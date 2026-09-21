@@ -19,6 +19,60 @@ use Illuminate\Database\Seeder;
  */
 class NotificationTemplateSeeder extends Seeder
 {
+    /**
+     * Renewal warnings and the notice that a plan has ended.
+     *
+     * Transactional: a member is told before money stops working, so the
+     * wording can be edited but the template cannot be deleted.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function billingTemplates(): array
+    {
+        return [
+            [
+                'key' => 'billing.renewal_push',
+                'name' => 'Plan ending soon (push)',
+                'category' => 'billing',
+                'channel' => 'push',
+                'subject' => '{{ plan_name }} ends in {{ days_left }} days',
+                'body' => 'Renew before {{ end_date }} to keep {{ plan_name }}.',
+                'placeholders' => ['first_name', 'plan_name', 'days_left', 'end_date'],
+                'is_transactional' => true,
+            ],
+            [
+                'key' => 'billing.renewal_email',
+                'name' => 'Plan ending soon (email)',
+                'category' => 'billing',
+                'channel' => 'email',
+                'subject' => 'Your {{ plan_name }} ends in {{ days_left }} days',
+                'body' => "Hi {{ first_name }},\n\nYour {{ plan_name }} plan ends on {{ end_date }}.\n\nRenew before then to keep unlimited likes and everything else your plan includes. Nothing else about your account changes, and your matches and messages stay exactly as they are.",
+                'placeholders' => ['first_name', 'plan_name', 'days_left', 'end_date'],
+                'is_transactional' => true,
+            ],
+            [
+                'key' => 'billing.expired',
+                'name' => 'Plan ended',
+                'category' => 'billing',
+                'channel' => 'email',
+                'subject' => 'Your {{ plan_name }} has ended',
+                'body' => "Hi {{ first_name }},\n\nYour {{ plan_name }} plan ended today, so your account is back on the free tier.\n\nYour profile, matches and messages are all still here. You can start a plan again whenever you like.",
+                'placeholders' => ['first_name', 'plan_name'],
+                'is_transactional' => true,
+            ],
+            [
+                'key' => 'billing.plan_started',
+                'name' => 'Plan started',
+                'category' => 'billing',
+                'channel' => 'email',
+                'subject' => 'Your {{ plan_name }} is active',
+                'body' => "Hi {{ first_name }},\n\n{{ plan_name }} is now active on your account{{ until_clause }}.\n\nEverything it unlocks is available straight away.",
+                'placeholders' => ['first_name', 'plan_name', 'until_clause'],
+                'is_transactional' => true,
+            ],
+        ];
+    }
+
     /** @return array<int, array<string, mixed>> */
     private static function engagementTemplates(): array
     {
@@ -117,7 +171,7 @@ class NotificationTemplateSeeder extends Seeder
     {
         $sort = 0;
 
-        foreach ([...self::engagementTemplates(), ...self::transactionalTemplates()] as $template) {
+        foreach ([...self::engagementTemplates(), ...self::transactionalTemplates(), ...self::billingTemplates()] as $template) {
             $isTransactional = in_array(
                 $template['category'],
                 ['verification', 'appeals', 'enforcement'],
@@ -129,12 +183,12 @@ class NotificationTemplateSeeder extends Seeder
                 [
                     'name' => $template['name'],
                     'audience' => 'member',
-                    'channel' => 'push',
+                    'channel' => $template['channel'] ?? 'push',
                     'category' => $template['category'],
                     'subject' => $template['subject'],
                     'body' => $template['body'],
                     'placeholders' => $template['placeholders'],
-                    'is_transactional' => $isTransactional,
+                    'is_transactional' => $template['is_transactional'] ?? $isTransactional,
                     'is_active' => true,
                 ],
             );
