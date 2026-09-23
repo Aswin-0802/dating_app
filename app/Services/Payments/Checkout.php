@@ -229,23 +229,38 @@ final class Checkout
             ->where('gateway_ref', $event->gatewayRef)
             ->first();
 
-        // Recorded before acting: if fulfilment then fails, the retry is not
-        // mistaken for a duplicate and skipped.
         $seen = GatewayEvent::query()->firstOrCreate(
             ['gateway' => $gatewaySlug, 'event_id' => $event->id],
             ['event_type' => $event->type, 'order_id' => $order?->id, 'payload' => $event->payload],
         );
 
-        if (! $seen->wasRecentlyCreated) {
+        /*
+         * Recorded before acting, but only a processed row is a duplicate.
+         *
+         * The row alone used to be enough, and it was written outside the
+         * transaction that fulfilment rolls back — so a single failure stranded
+         * a paid order permanently: every retry found the row and skipped.
+         *
+         * Two retries arriving together will both pass this point. That is
+         * safe, because fulfil() re-reads the order under lockForUpdate and
+         * does nothing if it is already paid.
+         */
+        if ($seen->isProcessed()) {
             return false;
         }
 
         if ($order === null) {
+            $seen->markProcessed();
+
             return true;
         }
 
         if ($event->paid) {
+            // Anything thrown here leaves processed_at null on purpose: the
+            // gateway will retry, and that retry must do the work.
             $this->fulfil($order, $event->paymentRef, $event->payload);
+
+            $seen->markProcessed();
 
             return true;
         }
@@ -259,6 +274,8 @@ final class Checkout
 
             $this->writePaymentLog($order, 'failed');
         }
+
+        $seen->markProcessed();
 
         return true;
     }

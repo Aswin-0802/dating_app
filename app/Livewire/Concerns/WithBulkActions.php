@@ -91,12 +91,18 @@ trait WithBulkActions
     }
 
     /**
-     * Bulk work above this threshold is queued rather than run inline, so a
-     * moderator selecting 12,000 rows does not hold a web request open.
+     * The most rows a bulk action may touch in one web request.
+     *
+     * This used to promise queueing — "bulk work above this threshold is
+     * queued rather than run inline" — and nothing ever called it. The screens
+     * solve the same problem by refusing: Users\Index compares against this
+     * and tells the moderator to narrow their filters. Refusing is the honest
+     * behaviour, because a queued mass suspension would report success before
+     * anybody had actually been suspended.
      */
-    protected function shouldQueueBulkAction(): bool
+    protected function bulkInlineLimit(): int
     {
-        return $this->selectedCount() > (int) config('platform.tables.bulk_inline_limit', 500);
+        return (int) config('platform.tables.bulk_inline_limit', 500);
     }
 
     /** @return array<int, string> */

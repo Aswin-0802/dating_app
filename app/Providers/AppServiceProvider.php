@@ -3,13 +3,18 @@
 namespace App\Providers;
 
 use App\Http\Middleware\EnsureMemberCanUseApp;
+use App\Http\Middleware\EnsureStaffIsActive;
+use App\Listeners\RecordEmailOutcome;
 use App\Models\AppUser;
 use App\Models\Setting;
 use App\Support\Branding;
 use App\Support\MailSettings;
 use App\Support\Masters;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Notifications\Events\NotificationFailed;
+use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Component;
 use Livewire\Livewire;
@@ -40,13 +45,24 @@ class AppServiceProvider extends ServiceProvider
          * middleware registered as persistent. Without this, a member suspended
          * while a tab was open could keep swiping and messaging from it until
          * they reloaded the page.
+         *
+         * The same applies to staff, which was the gap: every admin screen is
+         * Livewire, so a suspended moderator kept working through the open tab
+         * until a full page load — which the console never forces. Individual
+         * enforcement actions were safe (they authorize() on their own), but
+         * everything around them was not.
          */
         Livewire::addPersistentMiddleware([
             EnsureMemberCanUseApp::class,
+            EnsureStaffIsActive::class,
         ]);
 
         // Outgoing mail follows System -> Mail, not only the test message.
         MailSettings::apply();
+
+        // The delivery log describes what happened, not what was attempted.
+        Event::listen(NotificationSent::class, [RecordEmailOutcome::class, 'sent']);
+        Event::listen(NotificationFailed::class, [RecordEmailOutcome::class, 'failed']);
 
         /*
          * Feedback for Livewire actions.

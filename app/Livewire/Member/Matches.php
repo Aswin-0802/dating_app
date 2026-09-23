@@ -8,6 +8,7 @@ use App\Enums\AccountStatus;
 use App\Livewire\Member\Concerns\InteractsWithMember;
 use App\Models\AppUser;
 use App\Models\MatchRecord;
+use App\Services\Members\MatchActions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -37,13 +38,12 @@ class Matches extends Component
         ])->layout('components.layouts.member', ['title' => 'Matches', 'wide' => true]);
     }
 
-    public function unmatch(string $matchUuid): void
+    public function unmatch(string $matchUuid, MatchActions $matches): void
     {
         $me = $this->member();
         $match = MatchRecord::query()->where('uuid', $matchUuid)->involving($me)->firstOrFail();
 
-        $match->forceFill(['status' => 'unmatched', 'unmatched_by' => $me->id])->save();
-        $match->conversation?->forceFill(['status' => 'closed'])->save();
+        $matches->end($me, $match);
 
         $this->toast('Unmatched.');
     }

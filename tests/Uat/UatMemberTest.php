@@ -22,6 +22,7 @@ use App\Models\Photo;
 use App\Models\Report;
 use App\Models\Setting;
 use App\Models\Swipe;
+use App\Services\Media\MemberPhotoStore;
 use App\Support\Branding;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
@@ -318,9 +319,21 @@ class UatMemberTest extends UatTestCase
 
         Livewire::test(Profile::class)->set('uploads', [UploadedFile::fake()->create('cv.pdf', 20, 'application/pdf')])->assertHasErrors('uploads.0');
 
+        // The limit is whatever Settings -> Matching says, not a number baked
+        // into the code. This used to assert 6 while /api/v1/config advertised
+        // 9, which is exactly the contradiction a client would hit.
+        $limit = MemberPhotoStore::maxPhotos();
+
         Photo::query()->where('app_user_id', $m->id)->delete();
-        Livewire::test(Profile::class)->set('uploads', array_map(fn ($i) => UploadedFile::fake()->image("p{$i}.jpg"), range(1, 7)))->assertHasErrors();
-        $this->assertLessThanOrEqual(6, Photo::query()->where('app_user_id', $m->id)->count(), 'EXPECTED at most 6 photos.');
+        Livewire::test(Profile::class)
+            ->set('uploads', array_map(fn ($i) => UploadedFile::fake()->image("p{$i}.jpg"), range(1, $limit + 1)))
+            ->assertHasErrors();
+
+        $this->assertLessThanOrEqual(
+            $limit,
+            Photo::query()->where('app_user_id', $m->id)->count(),
+            "EXPECTED at most {$limit} photos, the configured limit.",
+        );
     }
 
     public function test_f04_cannot_delete_somebody_elses_photo(): void

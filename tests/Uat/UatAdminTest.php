@@ -243,10 +243,25 @@ class UatAdminTest extends UatTestCase
      */
     private function openCase(bool $unclaimed = false): ReportCase
     {
-        return ReportCase::query()
+        /*
+         * Ordered, and arranged rather than hoped for.
+         *
+         * These tests share one seeded database and run in sequence, so the
+         * pool of unclaimed cases shrinks as earlier tests claim from it, and
+         * an unordered firstOrFail() returns whichever row MySQL felt like.
+         * That combination made this fail perhaps one run in three, for
+         * reasons that had nothing to do with the code under test.
+         */
+        $case = ReportCase::query()
             ->whereIn('status', ['new', 'claimed', 'in_review'])
-            ->when($unclaimed, fn ($q) => $q->whereNull('claimed_by'))
+            ->orderBy('id')
             ->firstOrFail();
+
+        if ($unclaimed) {
+            $case->forceFill(['claimed_by' => null, 'claimed_at' => null, 'status' => 'new'])->save();
+        }
+
+        return $case->fresh();
     }
 
     public function test_d01_claim_assigns_the_case(): void
@@ -284,7 +299,25 @@ class UatAdminTest extends UatTestCase
 
     public function test_d04_lifting_a_ban_restores_the_account(): void
     {
-        $ban = Ban::query()->active()->whereIn('type', ['suspension', 'feature_limit', 'permanent_ban'])->firstOrFail();
+        /*
+         * A member with exactly one active restriction.
+         *
+         * Lifting one of several leaves the others in force, so the account
+         * correctly stays restricted and the assertion below fails for the
+         * right reason at the wrong time. Which ban an unordered query
+         * returned changed from run to run, so this failed intermittently.
+         */
+        $ban = Ban::query()
+            ->active()
+            ->whereIn('type', ['suspension', 'feature_limit', 'permanent_ban'])
+            ->orderBy('id')
+            ->get()
+            ->first(fn (Ban $candidate): bool => Ban::query()
+                ->active()
+                ->where('app_user_id', $candidate->app_user_id)
+                ->count() === 1);
+
+        $this->assertNotNull($ban, 'EXPECTED a member with exactly one active restriction.');
         Livewire::actingAs($this->staff('senior1@demo.test'))->test(Bans::class)->call('lift', $ban->id);
         $this->assertNotNull($ban->fresh()->lifted_at);
         $this->assertSame(AccountStatus::Active, $ban->appUser->fresh()->account_status, 'EXPECTED account active after lift.');

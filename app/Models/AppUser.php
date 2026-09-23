@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -263,11 +264,25 @@ class AppUser extends Authenticatable
 
         $term = trim($term);
 
-        return $query->where(function (Builder $inner) use ($term): void {
+        /*
+         * Searching by email or phone is a read of that field: type an address,
+         * learn from the result whether that person is a member here. So it is
+         * gated by the same permission that hides the column.
+         *
+         * The check lives in the scope rather than in its callers because
+         * thirteen admin screens share it, and a caller that forgot would leak
+         * silently — there is nothing on screen to notice.
+         */
+        $withPii = Auth::guard('web')->user()?->can('view_user_pii') ?? false;
+
+        return $query->where(function (Builder $inner) use ($term, $withPii): void {
             $inner->where('display_name', 'like', "%{$term}%")
-                ->orWhere('email', 'like', "%{$term}%")
-                ->orWhere('phone', 'like', "%{$term}%")
                 ->orWhere('uuid', $term);
+
+            if ($withPii) {
+                $inner->orWhere('email', 'like', "%{$term}%")
+                    ->orWhere('phone', 'like', "%{$term}%");
+            }
         });
     }
 

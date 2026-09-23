@@ -89,13 +89,21 @@ final class Subscriptions
             return $subscription;
         });
 
-        // Sent after the transaction commits: a member should never be told
-        // about a plan that a later rollback took away.
-        $this->notifier->email($member, 'billing.plan_started', [
+        /*
+         * After the transaction commits — including one we are nested inside.
+         *
+         * Sitting after our own DB::transaction() was not enough: checkout
+         * calls grant() from within Checkout::fulfil()'s transaction, so on
+         * that path "after the transaction" was still inside one, and a member
+         * was told about a plan a later rollback would have taken away.
+         * DB::afterCommit waits for the outermost commit, and runs immediately
+         * when there is no transaction at all.
+         */
+        DB::afterCommit(fn () => $this->notifier->email($member, 'billing.plan_started', [
             'first_name' => str($member->display_name)->before(' ')->toString(),
             'plan_name' => $plan->name,
             'until_clause' => $endsAt === null ? '' : ' until '.platform_date($endsAt),
-        ], 'See your plan', route('member.premium'));
+        ], 'See your plan', route('member.premium')));
 
         return $subscription;
     }

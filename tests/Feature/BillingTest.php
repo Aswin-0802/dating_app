@@ -9,16 +9,19 @@ use App\Enums\BanType;
 use App\Livewire\Users\Show;
 use App\Models\AppUser;
 use App\Models\Ban;
+use App\Models\EmailLog;
 use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Billing\Subscriptions;
 use Database\Seeders\MasterSeeder;
+use Database\Seeders\NotificationTemplateSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\SettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -31,6 +34,72 @@ class BillingTest extends TestCase
         parent::setUp();
 
         $this->seed([PermissionSeeder::class, RoleSeeder::class, SettingSeeder::class, MasterSeeder::class]);
+    }
+
+    /**
+     * "Did they get the renewal warning?" has to be answerable from the
+     * console, so the delivery log has to describe delivery and not intent.
+     *
+     * Now that mail is queued, writing `sent` at the moment of dispatch would
+     * be a lie: all that has happened is that a job was accepted. The row is
+     * written as `queued` and settled by RecordEmailOutcome when the send
+     * actually happens.
+     */
+    public function test_the_email_log_records_delivery_rather_than_intent(): void
+    {
+        $this->seed(NotificationTemplateSeeder::class);
+
+        // A queue that never runs, which is what a real one looks like in the
+        // seconds after dispatch — and what a production install with no
+        // worker looks like permanently.
+        Queue::fake();
+
+        $member = AppUser::factory()->create();
+        $this->grantPlus($member);
+
+        $log = $this->planStartedLogFor($member);
+
+        $this->assertNotNull($log, 'EXPECTED the plan-started email to be logged.');
+        $this->assertSame(
+            'queued',
+            $log->status,
+            'EXPECTED a mail that has only been handed to the queue to read as queued, not sent.',
+        );
+        $this->assertNull($log->sent_at);
+    }
+
+    public function test_the_email_log_is_settled_once_the_mail_is_actually_sent(): void
+    {
+        $this->seed(NotificationTemplateSeeder::class);
+
+        $member = AppUser::factory()->create();
+        $this->grantPlus($member);
+
+        // No fake queue here, so the send really happens and
+        // RecordEmailOutcome settles the row.
+        $log = $this->planStartedLogFor($member);
+
+        $this->assertNotNull($log);
+        $this->assertSame('sent', $log->status);
+        $this->assertNotNull($log->sent_at);
+    }
+
+    private function grantPlus(AppUser $member): void
+    {
+        app(Subscriptions::class)->grant(
+            $member,
+            Plan::query()->where('slug', 'plus')->firstOrFail(),
+            now()->addMonth(),
+        );
+    }
+
+    private function planStartedLogFor(AppUser $member): ?EmailLog
+    {
+        return EmailLog::query()
+            ->where('recipient_id', $member->id)
+            ->where('template_key', 'billing.plan_started')
+            ->latest('id')
+            ->first();
     }
 
     private function staff(string $role): User

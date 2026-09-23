@@ -262,6 +262,16 @@ final class ApplyEnforcement
             'app_user_id' => $subject->id,
             'moderation_action_id' => $action->id,
             'type' => $type,
+            /*
+             * Only recorded when the account was not already restricted, so
+             * stacking a second ban cannot overwrite the real pre-ban status
+             * with "suspended". The oldest unlifted record therefore holds the
+             * state to go back to.
+             */
+            'previous_account_status' => in_array($subject->account_status, [
+                AccountStatus::Pending,
+                AccountStatus::Deactivated,
+            ], true) ? $subject->account_status->value : null,
             'limited_features' => $type === BanType::FeatureLimit ? $limitedFeatures : null,
             'reason_code' => $reason,
             'internal_note' => $note,
@@ -297,6 +307,24 @@ final class ApplyEnforcement
         $subject->forceFill($attributes)->save();
     }
 
+    /**
+     * What an account goes back to once nothing restricts it any more.
+     *
+     * Not simply `active`: a member who had not finished their profile, or who
+     * had deactivated their own account, must not be promoted into the deck by
+     * a suspension ending. Lifting a restriction returns somebody to where they
+     * were — it is not a decision to publish them.
+     */
+    private function statusAfterRestrictions(AppUser $subject): AccountStatus
+    {
+        $previous = $subject->bans()
+            ->whereNotNull('previous_account_status')
+            ->orderBy('id')
+            ->value('previous_account_status');
+
+        return AccountStatus::tryFrom((string) $previous) ?? AccountStatus::Active;
+    }
+
     /** Recompute the mirror from whatever bans remain in force. */
     private function recomputeMirror(?AppUser $subject): void
     {
@@ -309,7 +337,7 @@ final class ApplyEnforcement
         if ($active->isEmpty()) {
             $subject->forceFill([
                 'active_ban_id' => null,
-                'account_status' => AccountStatus::Active,
+                'account_status' => $this->statusAfterRestrictions($subject),
                 'shadow_banned_until' => null,
                 'suspended_until' => null,
                 'banned_at' => null,

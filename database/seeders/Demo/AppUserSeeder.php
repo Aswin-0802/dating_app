@@ -480,7 +480,6 @@ class AppUserSeeder extends Seeder
             'max_distance_km' => $faker->randomElement([10, 25, 50, 80, 100, 160]),
             'global_mode' => $faker->boolean(8),
             'show_verified_only' => $faker->boolean(14),
-            'deal_breakers' => null,
             'created_at' => now(),
             'updated_at' => now(),
         ];

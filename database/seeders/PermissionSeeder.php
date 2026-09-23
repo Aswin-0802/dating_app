@@ -27,18 +27,14 @@ class PermissionSeeder extends Seeder
             'Dashboard' => [
                 ['dashboard', 'View dashboard'],
                 ['analytics', 'View analytics'],
-                ['export_analytics', 'Export analytics'],
             ],
 
             'Users' => [
                 ['users', 'View users'],
                 ['view_user_pii', 'View personal data (email, phone)', true],
                 ['edit_users', 'Edit user profiles'],
-                ['delete_users', 'Delete users'],
                 ['export_users', 'Export user data', true],
-                ['impersonate_users', 'Impersonate a user', true],
                 ['view_user_photos', 'View user photos'],
-                ['moderate_photos', 'Approve or remove photos'],
             ],
 
             'Verification' => [
@@ -51,21 +47,17 @@ class PermissionSeeder extends Seeder
 
             'Matches' => [
                 ['matches', 'View matches'],
-                ['unmatch_users', 'Force unmatch'],
             ],
 
             'Conversations' => [
                 ['conversations', 'View conversation metadata'],
                 ['view_message_content', 'Reveal message content', true],
-                ['remove_messages', 'Remove messages'],
-                ['close_conversations', 'Freeze or close conversations'],
                 ['message_access_log', 'Review message access log', true],
             ],
 
             'Cases' => [
                 ['cases', 'View cases'],
                 ['claim_cases', 'Claim cases'],
-                ['merge_cases', 'Merge or split cases'],
                 ['close_cases', 'Close cases'],
                 ['reassign_cases', 'Reassign cases'],
             ],
@@ -131,7 +123,6 @@ class PermissionSeeder extends Seeder
 
             'Audit' => [
                 ['activity_log', 'View activity log'],
-                ['login_log', 'View login log'],
                 ['export_audit_logs', 'Export audit logs', true],
             ],
 
@@ -142,13 +133,40 @@ class PermissionSeeder extends Seeder
                 ['edit_risk_settings', 'Edit risk factor weights'],
                 ['edit_matching_settings', 'Edit matching settings'],
                 ['edit_api_settings', 'Edit API limits'],
-                ['automation_rules', 'View automation rules'],
-                ['edit_automation_rules', 'Edit automation rules'],
                 ['run_maintenance_jobs', 'Run maintenance jobs'],
-                ['manage_api_tokens', 'Manage API tokens', true],
             ],
         ];
     }
+
+    /**
+     * Permissions that were granted, displayed in the role matrix, and checked
+     * by nothing.
+     *
+     * Each named a capability the console does not have. That is worse than a
+     * missing feature: an admin who *denied* "Remove messages" to a moderator
+     * reasonably believed they had restricted something real, and the matrix
+     * told them so. They are deleted here rather than merely dropped from the
+     * catalogue, so an instance that already has the rows is repaired too.
+     *
+     * If any of these capabilities get built, the permission comes back with
+     * the feature and a check behind it.
+     *
+     * @var array<int, string>
+     */
+    public const OBSOLETE = [
+        'delete_users',
+        'impersonate_users',
+        'moderate_photos',
+        'unmatch_users',
+        'close_conversations',
+        'remove_messages',
+        'merge_cases',
+        'automation_rules',
+        'edit_automation_rules',
+        'manage_api_tokens',
+        'login_log',
+        'export_analytics',
+    ];
 
     public function run(): void
     {
@@ -171,7 +189,15 @@ class PermissionSeeder extends Seeder
             }
         }
 
+        // Removing the row removes every grant of it: spatie's pivot rows are
+        // cascaded, so no role is left pointing at a permission that is gone.
+        $dropped = Permission::query()->whereIn('name', self::OBSOLETE)->delete();
+
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        if ($dropped > 0) {
+            $this->command?->warn("Removed {$dropped} permission(s) that nothing checked.");
+        }
 
         $this->command?->info('Seeded '.Permission::query()->count().' permissions.');
     }

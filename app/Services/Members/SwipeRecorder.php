@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Members;
 
+use App\Jobs\SendMemberPush;
 use App\Models\AppUser;
 use App\Models\Conversation;
 use App\Models\MatchRecord;
@@ -28,9 +29,21 @@ final class SwipeRecorder
             throw ValidationException::withMessages(['target_id' => 'You cannot swipe on yourself.']);
         }
 
-        $this->enforceDailyLikeLimit($member, $action);
-
         return DB::transaction(function () use ($member, $target, $action, $source): ?MatchRecord {
+            /*
+             * The cap is counted and enforced inside the transaction, behind a
+             * lock on the member's own row.
+             *
+             * Counting outside it let parallel requests all read the same total
+             * before any of them had inserted, so the daily limit could be
+             * walked straight past by sending swipes concurrently. The lock
+             * only serialises one member against themselves, which is what a
+             * person does anyway.
+             */
+            AppUser::query()->whereKey($member->id)->lockForUpdate()->first();
+
+            $this->enforceDailyLikeLimit($member, $action);
+
             Swipe::query()->updateOrCreate(
                 ['app_user_id' => $member->id, 'target_app_user_id' => $target->id],
                 ['action' => $action, 'source' => $source, 'created_at' => now()],
@@ -86,6 +99,18 @@ final class SwipeRecorder
                     $participant->forceFill(['first_match_at' => now()])->saveQuietly();
                 }
             }
+
+            /*
+             * Both people hear about it, after commit.
+             *
+             * The template has been editable in the console from the start and
+             * nothing referenced it, so "it's a match" was never delivered —
+             * the moment the whole product is built around, silent.
+             */
+            DB::afterCommit(function () use ($member, $target): void {
+                SendMemberPush::dispatch($member->id, 'match.new', ['name' => $target->display_name], route('member.matches'));
+                SendMemberPush::dispatch($target->id, 'match.new', ['name' => $member->display_name], route('member.matches'));
+            });
 
             return $match;
         });

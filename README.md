@@ -35,8 +35,10 @@ rather than drawn.
 | Node | 20 or newer (only to build the CSS and JS) |
 | MySQL | 8.x (MariaDB 10.6+ works too) |
 
-XAMPP ships with everything except Composer and Node. Nothing else is needed —
-no Redis, no queue worker, no Docker.
+XAMPP ships with everything except Composer and Node. Nothing else is needed
+to run it locally — no Redis, no Docker. A production deployment wants two
+background processes as well: the scheduler and a queue worker, both described
+under [Running it for real](#the-scheduler).
 
 ### Install
 
@@ -286,6 +288,33 @@ On Windows, a Task Scheduler task running `php artisan schedule:run` every
 minute does the same. Without it the product still works — suspensions clear
 themselves on the member's next request — but nothing else ends on time.
 `php artisan platform:run-due-tasks` can always be run by hand.
+
+### The queue worker
+
+Email and push notifications are queued, so they need a worker running
+alongside the scheduler:
+
+```
+php artisan queue:work --tries=3
+```
+
+Use a process supervisor (systemd, supervisord, or a Windows service) so it
+restarts if it stops. **Without a worker, queued mail and push are never
+delivered** — nothing fails visibly, the member simply never hears from you.
+`composer dev` runs one for local work, and `QUEUE_CONNECTION=sync` in `.env`
+falls back to sending inside the request if you would rather not run one.
+
+### Before you go live
+
+```
+php artisan platform:preflight
+```
+
+Checks the things that expose real people: debug mode, demo accounts that
+still take the published password, an empty `APP_KEY`, a localhost `APP_URL`,
+and a mailer that swallows everything. It exits non-zero when any of those are
+true, so it can sit in a deploy pipeline. Warnings (environment name, missing
+queue worker, push switched off) do not block it.
 
 ### The website and member app
 

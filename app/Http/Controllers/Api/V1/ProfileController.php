@@ -12,12 +12,14 @@ use App\Models\City;
 use App\Models\Interest;
 use App\Models\MatchRecord;
 use App\Services\Members\ContentScanner;
+use App\Services\Members\MatchActions;
 use App\Services\Members\ProfileCompletion;
 use App\Services\Members\VerificationSubmission;
 use App\Support\ProfileOptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
@@ -88,13 +90,32 @@ class ProfileController extends Controller
         $data = $request->validate([
             'interested_in' => ['sometimes', 'array', 'min:1'],
             'age_min' => ['sometimes', 'integer', 'min:18', 'max:99'],
-            'age_max' => ['sometimes', 'integer', 'min:18', 'max:99', 'gte:age_min'],
+            'age_max' => ['sometimes', 'integer', 'min:18', 'max:99'],
             'max_distance_km' => ['sometimes', 'integer', 'min:1', 'max:500'],
             'global_mode' => ['sometimes', 'boolean'],
             'show_verified_only' => ['sometimes', 'boolean'],
         ]);
 
-        $request->user()->preferences->update($data);
+        $preferences = $request->user()->preferences;
+
+        /*
+         * Checked against the stored pair, not the payload.
+         *
+         * `gte:age_min` only fires when age_min is in the same request, so
+         * PATCH {"age_max": 20} was refused while PATCH {"age_min": 60} sailed
+         * past and left 60..28 in the database — a range no member can satisfy,
+         * and an empty deck for ever with nothing on screen to explain it.
+         */
+        $min = (int) ($data['age_min'] ?? $preferences->age_min);
+        $max = (int) ($data['age_max'] ?? $preferences->age_max);
+
+        if ($min > $max) {
+            throw ValidationException::withMessages([
+                array_key_exists('age_min', $data) ? 'age_min' : 'age_max' => "That would leave an impossible range ({$min} to {$max}). Send both ages to move the whole range.",
+            ]);
+        }
+
+        $preferences->update($data);
 
         return response()->json(['data' => new MeResource($request->user()->fresh('preferences'))]);
     }
@@ -127,14 +148,9 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function unmatch(Request $request, MatchRecord $match): JsonResponse
+    public function unmatch(Request $request, MatchRecord $match, MatchActions $matches): JsonResponse
     {
-        abort_unless(
-            in_array($request->user()->id, [$match->app_user_one_id, $match->app_user_two_id], true),
-            403,
-        );
-
-        $match->forceFill(['status' => 'unmatched', 'unmatched_by' => $request->user()->id])->save();
+        $matches->end($request->user(), $match);
 
         return response()->json(['message' => 'Unmatched.']);
     }
@@ -173,11 +189,11 @@ class ProfileController extends Controller
         return response()->json(['data' => new VerificationResource($verification)], 202);
     }
 
-    public function gestureCode(): JsonResponse
+    public function gestureCode(Request $request, VerificationSubmission $submission): JsonResponse
     {
         return response()->json([
-            'gesture_code' => VerificationSubmission::newGestureCode(),
-            'expires_in' => 600,
+            'gesture_code' => $submission->issueGestureCode($request->user()),
+            'expires_in' => VerificationSubmission::GESTURE_TTL_MINUTES * 60,
         ]);
     }
 }

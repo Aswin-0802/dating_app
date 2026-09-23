@@ -31,8 +31,14 @@ trait WithDataTable
     #[Url(except: 'desc')]
     public string $sortDirection = 'desc';
 
+    /*
+     * Deliberately not typed `int`. Livewire binds the query string straight
+     * onto the property, so ?perPage=abc threw a TypeError during hydration —
+     * before any code of ours could reject it. It is coerced and clamped in
+     * bootedWithDataTable() instead, and is an int everywhere after that.
+     */
     #[Url(except: 25)]
-    public int $perPage = 25;
+    public int|string $perPage = 25;
 
     #[Url(except: 'comfortable')]
     public string $density = 'comfortable';
@@ -57,6 +63,41 @@ trait WithDataTable
     {
         $this->perPage = (int) config('platform.tables.per_page', 25);
         $this->density = (string) config('platform.tables.density', 'comfortable');
+    }
+
+    /**
+     * Normalise everything that arrives from the URL.
+     *
+     * Runs after hydration on every request, so it covers a shared link, a
+     * stale bookmark and a hand-edited query string alike. Each value falls
+     * back to its default rather than raising: a bad URL should show the
+     * table, not a stack trace.
+     */
+    public function bootedWithDataTable(): void
+    {
+        $options = $this->perPageOptions();
+        $perPage = (int) $this->perPage;
+
+        // Clamped to the offered sizes. Unbounded, ?perPage=100000 is a way to
+        // ask one admin request to build a hundred thousand rows.
+        $this->perPage = in_array($perPage, $options, true)
+            ? $perPage
+            : (int) config('platform.tables.per_page', 25);
+
+        // sortField is whitelisted in applySort(); direction never was, and
+        // went to orderBy() verbatim.
+        if (! in_array($this->sortDirection, ['asc', 'desc'], true)) {
+            $this->sortDirection = $this->defaultSortDirection();
+        }
+
+        if (! in_array($this->density, ['comfortable', 'compact'], true)) {
+            $this->density = (string) config('platform.tables.density', 'comfortable');
+        }
+
+        // Page zero and negative pages produce a negative OFFSET.
+        if ($this->getPage() < 1) {
+            $this->setPage(1);
+        }
     }
 
     public function sort(string $field): void

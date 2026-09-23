@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\AppUser;
+use App\Models\GatewayEvent;
 use App\Models\Order;
 use App\Models\PaymentGateway;
 use App\Models\PaymentLog;
@@ -13,6 +14,7 @@ use App\Models\Setting;
 use App\Models\Subscription;
 use App\Services\Billing\Subscriptions;
 use App\Services\Payments\Checkout;
+use App\Services\Payments\WebhookEvent;
 use App\Support\Currency;
 use Database\Seeders\MasterSeeder;
 use Database\Seeders\NotificationTemplateSeeder;
@@ -21,8 +23,10 @@ use Database\Seeders\RoleSeeder;
 use Database\Seeders\SettingSeeder;
 use Database\Seeders\SystemSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
+use RuntimeException;
 use Tests\TestCase;
 
 class CheckoutTest extends TestCase
@@ -272,6 +276,97 @@ class CheckoutTest extends TestCase
     }
 
     // ---- webhooks ---------------------------------------------------------------------
+
+    /**
+     * A retry after a failed fulfilment must do the work, not skip it.
+     *
+     * The dedup row is written before fulfilment and outside the transaction
+     * that fulfilment rolls back. Treating the row itself as proof of handling
+     * meant one transient failure stranded a paid order for good.
+     *
+     * The failure is induced rather than mocked — both classes are final — by
+     * throwing from a query listener once the subscription insert has run, so
+     * the transaction really does roll back completed work.
+     */
+    public function test_a_paid_order_is_still_fulfilled_when_the_first_attempt_fails(): void
+    {
+        $this->enableStripe();
+        $member = $this->member();
+
+        $order = Order::query()->create([
+            'app_user_id' => $member->id, 'purpose' => 'plan', 'reference' => 'gold',
+            'description' => 'Gold · 1 month', 'amount_minor' => 2499, 'currency' => 'USD',
+            'billing_period' => 'monthly', 'gateway' => 'stripe', 'gateway_ref' => 'cs_retry', 'status' => 'pending',
+        ]);
+
+        $event = new WebhookEvent(
+            id: 'evt_retry_1',
+            type: 'checkout.session.completed',
+            paid: true,
+            failed: false,
+            gatewayRef: 'cs_retry',
+            paymentRef: 'pi_retry',
+            payload: ['id' => 'evt_retry_1'],
+        );
+
+        $failed = false;
+
+        DB::listen(function ($query) use (&$failed): void {
+            if (! $failed && str_contains($query->sql, 'insert into `subscriptions`')) {
+                $failed = true;
+
+                throw new RuntimeException('Simulated failure part-way through fulfilment.');
+            }
+        });
+
+        try {
+            app(Checkout::class)->handleWebhook('stripe', $event);
+            $this->fail('EXPECTED the first attempt to fail.');
+        } catch (RuntimeException) {
+            // The gateway sees a 500 and will retry, which is the whole point.
+        }
+
+        $this->assertTrue($failed, 'EXPECTED the induced failure to have fired.');
+
+        // Nothing was granted, and the order is still owed to the member.
+        $this->assertSame('pending', $order->fresh()->status);
+        $this->assertSame(0, Subscription::query()->where('app_user_id', $member->id)->count());
+
+        /*
+         * And nobody was told about it. Subscriptions::grant() sends after its
+         * own transaction, but checkout calls it from inside fulfil()'s — so
+         * "after the transaction" was still inside one, and the member got a
+         * "your plan has started" email for a plan the rollback removed.
+         */
+        $this->assertDatabaseMissing('email_logs', [
+            'recipient_id' => $member->id,
+            'template_key' => 'billing.plan_started',
+        ]);
+
+        // The event was recorded, but not as handled.
+        $this->assertDatabaseCount('gateway_events', 1);
+        $this->assertNull(GatewayEvent::query()->firstOrFail()->processed_at);
+
+        // The retry: same event id, and this time it must go through.
+        $this->assertTrue(app(Checkout::class)->handleWebhook('stripe', $event));
+
+        $this->assertSame('paid', $order->fresh()->status);
+        $this->assertTrue($member->fresh()->is_premium);
+        $this->assertSame(1, Subscription::query()->where('app_user_id', $member->id)->count());
+        $this->assertNotNull(GatewayEvent::query()->firstOrFail()->processed_at);
+
+        // Now that the plan is real, the member is told. (This class fakes
+        // notifications, so only the attempt is visible here; the delivery
+        // outcome is covered in BillingTest.)
+        $this->assertDatabaseHas('email_logs', [
+            'recipient_id' => $member->id,
+            'template_key' => 'billing.plan_started',
+        ]);
+
+        // And a third delivery of a now-handled event still changes nothing.
+        $this->assertFalse(app(Checkout::class)->handleWebhook('stripe', $event));
+        $this->assertSame(1, Subscription::query()->where('app_user_id', $member->id)->count());
+    }
 
     public function test_a_stripe_webhook_with_a_bad_signature_is_refused(): void
     {

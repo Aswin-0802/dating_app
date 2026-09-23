@@ -18,6 +18,19 @@
     $from = $paginator->firstItem() ?? 0;
     $to = $paginator->lastItem() ?? 0;
     $total = $paginator->total();
+
+    /*
+     * The window of numbered links, clamped to pages that exist.
+     *
+     * A page number past the end is not hypothetical — it arrives from a stale
+     * bookmark whenever a queue shrinks. Left unclamped the window ran from
+     * currentPage-2 down to lastPage, and PHP's range() happily counts
+     * backwards: ?page=999999 built a million URLs and exhausted memory.
+     */
+    $lastPage = max(1, $paginator->lastPage());
+    $currentPage = min(max(1, $paginator->currentPage()), $lastPage);
+    $windowStart = max(1, $currentPage - 2);
+    $windowEnd = min($lastPage, $currentPage + 2);
 @endphp
 
 <div class="flex flex-col items-center justify-between gap-3 sm:flex-row">
@@ -55,7 +68,7 @@
 
             @unless ($simple)
                 <div class="hidden items-center gap-1 md:flex">
-                    @foreach ($paginator->getUrlRange(max(1, $paginator->currentPage() - 2), min($paginator->lastPage(), $paginator->currentPage() + 2)) as $page => $url)
+                    @foreach ($paginator->getUrlRange($windowStart, $windowEnd) as $page => $url)
                         <button
                             type="button"
                             wire:click="gotoPage({{ $page }})"

@@ -62,7 +62,6 @@ class Messages extends Component
     public function send(MessageSender $sender): void
     {
         abort_if($this->conversation === null, 404);
-        abort_unless($this->conversation->status === 'open', 403);
 
         $this->validate(['body' => ['required', 'string', 'max:2000']], ['body.required' => 'Write something first.']);
 
@@ -81,10 +80,13 @@ class Messages extends Component
         }
     }
 
+    /**
+     * SafetyActions::block() closes the thread now, so this only has to move
+     * the reader off a page they can no longer open.
+     */
     protected function afterSafetyAction(bool $blocked): void
     {
         if ($blocked && $this->conversation !== null) {
-            $this->conversation->forceFill(['status' => 'closed'])->save();
             $this->redirectRoute('member.messages', navigate: true);
         }
     }

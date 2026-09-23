@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Jobs\SendCampaignPush;
 use App\Models\PushCampaign;
 use App\Services\Notifications\CampaignAudience;
-use App\Services\Push\FcmSender;
-use App\Services\Push\PushMessage;
 use App\Support\PushSettings;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
-use Throwable;
 
 /**
  * Sends approved campaigns whose time has come.
@@ -27,7 +26,7 @@ class SendCampaigns extends Command
 
     protected $description = 'Send approved push campaigns that are due';
 
-    public function handle(FcmSender $sender): int
+    public function handle(): int
     {
         if (! PushSettings::enabled()) {
             $this->warn('Push is not configured, so nothing was sent.');
@@ -43,15 +42,15 @@ class SendCampaigns extends Command
             ->get();
 
         foreach ($campaigns as $campaign) {
-            $this->send($campaign, $sender);
+            $this->send($campaign);
         }
 
-        $this->line('Campaigns sent: '.$campaigns->count());
+        $this->line('Campaigns queued: '.$campaigns->count());
 
         return self::SUCCESS;
     }
 
-    private function send(PushCampaign $campaign, FcmSender $sender): void
+    private function send(PushCampaign $campaign): void
     {
         // Claimed first, so two overlapping runs cannot both send it.
         $claimed = PushCampaign::query()
@@ -64,33 +63,66 @@ class SendCampaigns extends Command
         }
 
         $audience = $campaign->audience_filters['audience'] ?? 'all';
-        $message = new PushMessage(
-            title: $campaign->title,
-            body: $campaign->body,
-            link: $campaign->deep_link ?: route('member.discover'),
-            data: ['campaign' => (string) $campaign->uuid],
-        );
 
-        $sent = 0;
-        $failed = 0;
+        // Counted up front so the totals start from the members who can never
+        // receive this, rather than having to be reconciled afterwards.
+        $skipped = $this->recordMembersWithoutDevice($campaign, $audience);
+
+        $campaign->forceFill(['sent_count' => 0, 'failed_count' => $skipped])->save();
+
+        $memberIds = CampaignAudience::query($audience)
+            ->whereIn('id', fn ($q) => $q->select('app_user_id')->from('push_tokens')->distinct())
+            ->pluck('id');
+
+        if ($memberIds->isEmpty()) {
+            $this->markComplete($campaign);
+            $this->line("  {$campaign->name}: nobody to send to ({$skipped} with no device)");
+
+            return;
+        }
+
+        /*
+         * Handed to the queue in chunks rather than sent from this command.
+         *
+         * The scheduler tick now returns as soon as the work is queued, and
+         * several workers share the Firebase round trips. The batch's finally()
+         * closes the campaign off whether every chunk succeeded or not — a
+         * campaign stuck on "sending" for ever is worse than one that reports
+         * its failures.
+         */
+        $campaignId = $campaign->id;
+
+        Bus::batch(
+            $memberIds->chunk(100)
+                ->map(fn ($chunk) => new SendCampaignPush($campaignId, $chunk->values()->all()))
+                ->all()
+        )
+            ->name("campaign:{$campaignId}")
+            ->finally(function () use ($campaignId): void {
+                PushCampaign::query()
+                    ->whereKey($campaignId)
+                    ->update(['status' => 'sent', 'completed_at' => now()]);
+            })
+            ->dispatch();
+
+        $this->line("  {$campaign->name}: queued for {$memberIds->count()}, {$skipped} with no device");
+    }
+
+    private function markComplete(PushCampaign $campaign): void
+    {
+        $campaign->forceFill(['status' => 'sent', 'completed_at' => now()])->save();
+    }
+
+    /**
+     * Members in the audience with no device.
+     *
+     * Recorded rather than silently dropped, so the totals add up to the
+     * audience size and "why did only 800 of 1,000 get it?" has an answer.
+     */
+    private function recordMembersWithoutDevice(PushCampaign $campaign, string $audience): int
+    {
         $skipped = 0;
 
-        CampaignAudience::query($audience)
-            ->whereIn('id', fn ($q) => $q->select('app_user_id')->from('push_tokens')->distinct())
-            ->chunkById(200, function ($members) use ($campaign, $sender, $message, &$sent, &$failed): void {
-                foreach ($members as $member) {
-                    try {
-                        $result = $sender->sendToMember($member, $message, $campaign->id);
-                        $result['sent'] > 0 ? $sent++ : $failed++;
-                    } catch (Throwable $e) {
-                        report($e);
-                        $failed++;
-                    }
-                }
-            });
-
-        // Members in the audience with no device: recorded rather than
-        // silently dropped, so the totals add up to the audience size.
         $withoutDevice = CampaignAudience::query($audience)
             ->whereNotIn('id', fn ($q) => $q->select('app_user_id')->from('push_tokens')->distinct())
             ->select('id')
@@ -110,13 +142,6 @@ class SendCampaigns extends Command
             $skipped += count($rows);
         }
 
-        $campaign->forceFill([
-            'status' => 'sent',
-            'completed_at' => now(),
-            'sent_count' => $sent,
-            'failed_count' => $failed + $skipped,
-        ])->save();
-
-        $this->line("  {$campaign->name}: {$sent} sent, {$failed} failed, {$skipped} with no device");
+        return $skipped;
     }
 }

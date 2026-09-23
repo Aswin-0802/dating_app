@@ -66,16 +66,29 @@ final class MemberNotifier
         $subject = $this->render((string) $template->subject, $values);
         $body = $this->render($template->body, $values);
 
+        /*
+         * The log row is written first, as `queued`, and settled to `sent` or
+         * `failed` by RecordEmailOutcome when the send actually happens.
+         *
+         * Writing `sent` at this point would be a lie once the mail is queued:
+         * all that has happened is that a job was accepted. "Did they get the
+         * renewal warning?" has to be answerable from the console, so the log
+         * has to describe delivery rather than intent.
+         */
+        $log = $this->log($member, $subject, $templateKey, 'queued');
+
         try {
-            $member->notify(new TemplatedMail($subject, $body, $actionText, $actionUrl, $templateKey));
+            $member->notify(new TemplatedMail($subject, $body, $actionText, $actionUrl, $templateKey, $log?->id));
         } catch (Throwable $e) {
-            $this->log($member, $subject, $templateKey, 'failed', str($e->getMessage())->limit(180)->toString());
+            $log?->forceFill([
+                'status' => 'failed',
+                'failure_reason' => str($e->getMessage())->limit(180)->toString(),
+            ])->save();
+
             Log::warning("Could not email {$member->email}: {$e->getMessage()}");
 
             return false;
         }
-
-        $this->log($member, $subject, $templateKey, 'sent');
 
         return true;
     }
@@ -101,10 +114,10 @@ final class MemberNotifier
         return $text;
     }
 
-    private function log(AppUser $member, string $subject, string $templateKey, string $status, ?string $error = null): void
+    private function log(AppUser $member, string $subject, string $templateKey, string $status, ?string $error = null): ?EmailLog
     {
         try {
-            EmailLog::query()->create([
+            return EmailLog::query()->create([
                 'to' => $member->email,
                 'subject' => $subject,
                 'template_key' => $templateKey,
@@ -117,6 +130,8 @@ final class MemberNotifier
         } catch (Throwable $e) {
             // A logging failure must never swallow a message that was sent.
             Log::warning('Could not write an email log row: '.$e->getMessage());
+
+            return null;
         }
     }
 }

@@ -7,7 +7,6 @@ namespace App\Services\Members;
 use App\Enums\ReportCategory;
 use App\Models\AppUser;
 use App\Models\Block;
-use App\Models\MatchRecord;
 use App\Models\Report;
 use App\Services\Moderation\CaseAggregator;
 use Illuminate\Support\Facades\DB;
@@ -52,9 +51,7 @@ final class SafetyActions
         }
 
         return DB::transaction(function () use ($reporter, $reported, $category, $description, $messageUuid): Report {
-            $message = $messageUuid !== null
-                ? DB::table('messages')->where('uuid', $messageUuid)->first()
-                : null;
+            $message = $this->evidenceFor($reporter, $reported, $messageUuid);
 
             $report = Report::query()->create([
                 'uuid' => (string) Str::uuid(),
@@ -81,6 +78,10 @@ final class SafetyActions
     /**
      * Blocking also unmatches: leaving the match in place would keep the other
      * person visible in the blocker's list, which defeats the point.
+     *
+     * It closes the conversation too. Marking the match blocked while the
+     * thread stayed open let the blocked person carry on messaging — the block
+     * changed a status column and nothing a member could feel.
      */
     public function block(AppUser $member, AppUser $target, ?string $reason = null): void
     {
@@ -94,11 +95,45 @@ final class SafetyActions
                 ['reason' => $reason, 'created_at' => now()],
             );
 
-            MatchRecord::query()
-                ->involving($member)
-                ->involving($target)
-                ->update(['status' => 'blocked', 'unmatched_by' => $member->id]);
+            app(MatchActions::class)->endAllBetween($member, $target, 'blocked');
         });
+    }
+
+    /**
+     * Resolve the message a report points at, if it is really evidence.
+     *
+     * A message id was previously taken on trust, so a reporter could attach
+     * somebody else's message to a report against an unrelated member. A
+     * moderator would then open a case against an innocent person and, through
+     * the reveal flow, read a private message from a conversation neither of
+     * them was in.
+     *
+     * Failing the check drops the evidence rather than the report: the
+     * complaint may still be genuine, and refusing it outright would give an
+     * abuser a way to find out which ids are real.
+     */
+    private function evidenceFor(AppUser $reporter, AppUser $reported, ?string $messageUuid): ?object
+    {
+        if ($messageUuid === null) {
+            return null;
+        }
+
+        $message = DB::table('messages')->where('uuid', $messageUuid)->first();
+
+        if ($message === null) {
+            return null;
+        }
+
+        $reporterIsInIt = DB::table('conversation_participants')
+            ->where('conversation_id', $message->conversation_id)
+            ->where('app_user_id', $reporter->id)
+            ->exists();
+
+        // Reported by somebody in the room, and about something the reported
+        // member actually said.
+        return $reporterIsInIt && (int) $message->sender_app_user_id === $reported->id
+            ? $message
+            : null;
     }
 
     public function unblock(AppUser $member, AppUser $target): void

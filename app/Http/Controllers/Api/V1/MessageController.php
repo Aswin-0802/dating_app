@@ -32,9 +32,12 @@ class MessageController extends Controller
         ]);
     }
 
-    public function index(Request $request, Conversation $conversation): JsonResponse
+    public function index(Request $request, Conversation $conversation, MessageSender $sender): JsonResponse
     {
-        $this->authorizeParticipation($request, $conversation);
+        // Reading is gated exactly like writing. A thread closed by a block or
+        // an unmatch disappears for both people; leaving it readable kept the
+        // blocked party watching the conversation they had been removed from.
+        $sender->assertUsableBy($conversation, $request->user());
 
         // Cursor pagination, never offset: a thread grows from the end, so page
         // numbers shift under the reader every time somebody replies.
@@ -51,7 +54,9 @@ class MessageController extends Controller
 
     public function store(Request $request, Conversation $conversation, MessageSender $sender): JsonResponse
     {
-        $this->authorizeParticipation($request, $conversation);
+        // send() asserts this too — it is the owner of the rule. Repeated here
+        // only so a stranger gets 403 rather than a 422 describing the payload.
+        $sender->assertUsableBy($conversation, $request->user());
 
         $data = $request->validate([
             'body' => ['required_without:media_path', 'nullable', 'string', 'max:2000'],
@@ -75,17 +80,5 @@ class MessageController extends Controller
         $sender->markRead($conversation, $request->user());
 
         return response()->json(['message' => 'Marked as read.']);
-    }
-
-    /**
-     * Ownership, not a policy.
-     *
-     * The only person entitled to a conversation is somebody in it, so this is
-     * a membership check rather than a permission — there is no role that grants
-     * access to strangers' threads through this API.
-     */
-    private function authorizeParticipation(Request $request, Conversation $conversation): void
-    {
-        abort_unless($conversation->hasParticipant($request->user()), 403, 'This conversation is not yours.');
     }
 }

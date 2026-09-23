@@ -217,7 +217,10 @@
                             :name="$user->display_name"
                             :age="$user->age"
                             :photo="$user->primaryPhoto?->thumb_url"
-                            :meta="$user->email"
+                            {{-- Gated like every other reading of a member's contact
+                                 details: an analyst can see that an account exists
+                                 without learning how to contact the person. --}}
+                            :meta="auth()->user()->can('view_user_pii') ? $user->email : null"
                             :verified="$user->verification_status === VerificationStatus::Approved"
                             :href="route('admin.users.show', $user)"
                         />

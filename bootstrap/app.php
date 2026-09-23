@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsureAppUserIsNotBanned;
 use App\Http\Middleware\EnsureMemberCanUseApp;
 use App\Http\Middleware\EnsureStaffIsActive;
 use App\Http\Middleware\RespectMaintenanceMode;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -56,6 +57,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Settings -> General -> Maintenance mode; the console stays reachable.
         $middleware->web(append: [RespectMaintenanceMode::class]);
         $middleware->api(append: [RespectMaintenanceMode::class]);
+
+        // Clickjacking, MIME sniffing, referrer leakage. On both groups: the
+        // API answers browsers too, through the member website's fetches.
+        $middleware->web(append: [SecurityHeaders::class]);
+        $middleware->api(append: [SecurityHeaders::class]);
 
         $middleware->encryptCookies(except: [
             'platform_theme',

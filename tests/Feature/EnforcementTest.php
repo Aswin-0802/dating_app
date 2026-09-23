@@ -50,6 +50,70 @@ class EnforcementTest extends TestCase
         return app(ApplyEnforcement::class);
     }
 
+    /**
+     * Lifting a restriction returns a member to where they were. It is not a
+     * decision to publish them: an account that was still `pending` (profile
+     * unfinished) or that the member had deactivated themselves used to be
+     * promoted straight into the deck the moment a suspension ended.
+     *
+     * @dataProvider statusesThatMustSurviveARestriction
+     */
+    public function test_lifting_a_ban_restores_the_status_the_account_had_before(string $before): void
+    {
+        $status = AccountStatus::from($before);
+        $this->member->forceFill(['account_status' => $status])->save();
+
+        $this->action()->apply(
+            subject: $this->member->fresh(),
+            step: LadderStep::Suspend,
+            reason: ReasonCode::HarassmentConfirmed,
+            actor: $this->moderator,
+            durationHours: 24,
+        );
+
+        $this->assertSame(AccountStatus::Suspended, $this->member->fresh()->account_status);
+
+        $this->action()->lift(
+            ban: Ban::query()->where('app_user_id', $this->member->id)->firstOrFail(),
+            actor: $this->moderator,
+            reason: ReasonCode::AppealOverturned,
+        );
+
+        $this->assertSame(
+            $status,
+            $this->member->fresh()->account_status,
+            "EXPECTED a lift to restore {$before}, not to promote the account.",
+        );
+    }
+
+    /** @return array<string, array<int, string>> */
+    public static function statusesThatMustSurviveARestriction(): array
+    {
+        return [
+            'pending' => ['pending'],
+            'deactivated' => ['deactivated'],
+        ];
+    }
+
+    public function test_lifting_a_ban_still_restores_an_ordinary_member_to_active(): void
+    {
+        $this->action()->apply(
+            subject: $this->member,
+            step: LadderStep::Suspend,
+            reason: ReasonCode::HarassmentConfirmed,
+            actor: $this->moderator,
+            durationHours: 24,
+        );
+
+        $this->action()->lift(
+            ban: Ban::query()->where('app_user_id', $this->member->id)->firstOrFail(),
+            actor: $this->moderator,
+            reason: ReasonCode::AppealOverturned,
+        );
+
+        $this->assertSame(AccountStatus::Active, $this->member->fresh()->account_status);
+    }
+
     public function test_a_suspension_writes_the_action_the_ban_and_the_mirror_together(): void
     {
         $this->actingAs($this->moderator);

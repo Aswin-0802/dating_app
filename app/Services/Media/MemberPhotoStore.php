@@ -24,16 +24,33 @@ use RuntimeException;
  */
 final class MemberPhotoStore
 {
-    public const MAX_PHOTOS = 6;
+    /** Only the fallback for a fresh install; the operator's setting wins. */
+    public const DEFAULT_MAX_PHOTOS = 6;
 
     private const FULL_WIDTH = 1200;
 
     private const THUMB_WIDTH = 480;
 
+    /**
+     * How many photos a member may have.
+     *
+     * Read from Settings → Matching, which is the number the API advertises
+     * and the number the settings screen shows. It used to be a constant here
+     * while /api/v1/config reported the setting, so a client that honoured the
+     * advertised limit of 9 failed on the seventh upload with no way to know
+     * why. One source of truth, and it is the operator's.
+     */
+    public static function maxPhotos(): int
+    {
+        return max(1, (int) platform_setting('matching.max_photos', self::DEFAULT_MAX_PHOTOS));
+    }
+
     public function store(AppUser $member, UploadedFile $file): Photo
     {
-        if ($member->photos()->count() >= self::MAX_PHOTOS) {
-            throw new RuntimeException('You can have up to '.self::MAX_PHOTOS.' photos.');
+        $limit = self::maxPhotos();
+
+        if ($member->photos()->count() >= $limit) {
+            throw new RuntimeException('You can have up to '.$limit.' photos.');
         }
 
         $image = $this->decode($file);

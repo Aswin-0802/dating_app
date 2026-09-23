@@ -18,7 +18,6 @@ class Preference extends Model
     {
         return [
             'interested_in' => 'array',
-            'deal_breakers' => 'array',
             'global_mode' => 'boolean',
             'show_verified_only' => 'boolean',
         ];

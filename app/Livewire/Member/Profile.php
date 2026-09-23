@@ -127,7 +127,7 @@ class Profile extends Component
             'checklist' => $completion->checklist($me),
             'percent' => (int) $me->profile_completion,
             'genders' => collect(Gender::cases())->mapWithKeys(fn (Gender $g): array => [$g->value => $g->label()])->all(),
-            'maxPhotos' => MemberPhotoStore::MAX_PHOTOS,
+            'maxPhotos' => MemberPhotoStore::maxPhotos(),
         ])->layout('components.layouts.member', ['title' => 'Your profile']);
     }
 
@@ -174,7 +174,7 @@ class Profile extends Component
     public function updatedUploads(MemberPhotoStore $store, ProfileCompletion $completion): void
     {
         $this->validate([
-            'uploads' => ['array', 'max:'.MemberPhotoStore::MAX_PHOTOS],
+            'uploads' => ['array', 'max:'.MemberPhotoStore::maxPhotos()],
             'uploads.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
         ], ['uploads.*.max' => 'Each photo can be up to 8 MB.', 'uploads.*.image' => 'That file is not an image.']);
 
