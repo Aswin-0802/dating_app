@@ -354,9 +354,11 @@ Things worth knowing:
 
 ### The API
 
-28 endpoints under `/api/v1`, authenticated with Sanctum bearer tokens. Auth,
-profile, discovery deck, swipes, matches, conversations, messages, reports,
-blocks and verification. Every list endpoint is cursor-paginated.
+39 endpoints under `/api/v1`, authenticated with Sanctum bearer tokens. Auth,
+profile and photos, discovery deck, swipes, matches and who-liked-you,
+conversations, messages, reports, blocks, verification, push devices, phone
+verification and account deletion. Every list endpoint is cursor-paginated, and
+every endpoint calls the same services as the website, so the two cannot drift.
 
 ---
 

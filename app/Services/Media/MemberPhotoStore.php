@@ -11,6 +11,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 /**
@@ -50,7 +51,7 @@ final class MemberPhotoStore
         $limit = self::maxPhotos();
 
         if ($member->photos()->count() >= $limit) {
-            throw new RuntimeException('You can have up to '.$limit.' photos.');
+            throw new PhotoLimitReached($limit);
         }
 
         $image = $this->decode($file);
@@ -109,6 +110,42 @@ final class MemberPhotoStore
         DB::transaction(function () use ($photo): void {
             Photo::query()->where('app_user_id', $photo->app_user_id)->update(['is_primary' => false]);
             $photo->update(['is_primary' => true]);
+        });
+    }
+
+    /**
+     * Put the member's photos in the order given.
+     *
+     * The list has to be the member's own photos, all of them, once each.
+     * A uuid that is not theirs is refused outright rather than skipped: a
+     * client that sends somebody else's id is either broken or probing, and
+     * neither should get a partial success. A list that is merely incomplete
+     * is a validation problem, because the client that built it is stale.
+     *
+     * @param  array<int, string>  $uuids  every photo uuid, in the new order
+     */
+    public function reorder(AppUser $member, array $uuids): void
+    {
+        $owned = $member->photos()->pluck('uuid');
+        $given = collect($uuids)->values();
+
+        abort_if($given->diff($owned)->isNotEmpty(), 403, 'Those photos are not yours.');
+
+        if ($owned->diff($given)->isNotEmpty() || $given->count() !== $owned->count()) {
+            throw ValidationException::withMessages([
+                'uuids' => 'Include every photo exactly once, in the order you want them.',
+            ]);
+        }
+
+        // All or nothing: a half-applied reorder leaves two photos claiming
+        // the same position.
+        DB::transaction(function () use ($member, $given): void {
+            foreach ($given as $index => $uuid) {
+                Photo::query()
+                    ->where('app_user_id', $member->id)
+                    ->where('uuid', $uuid)
+                    ->update(['position' => $index + 1]);
+            }
         });
     }
 

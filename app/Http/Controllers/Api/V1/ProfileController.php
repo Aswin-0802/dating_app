@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\AppUserResource;
 use App\Http\Resources\Api\V1\MatchResource;
 use App\Http\Resources\Api\V1\MeResource;
 use App\Http\Resources\Api\V1\VerificationResource;
 use App\Models\City;
 use App\Models\Interest;
 use App\Models\MatchRecord;
+use App\Services\Members\AccountDeletion;
 use App\Services\Members\ContentScanner;
+use App\Services\Members\Likers;
 use App\Services\Members\MatchActions;
 use App\Services\Members\ProfileCompletion;
 use App\Services\Members\VerificationSubmission;
@@ -130,7 +133,62 @@ class ProfileController extends Controller
         $ids = Interest::query()->whereIn('slug', $data['slugs'])->pluck('id');
         $request->user()->interests()->sync($ids);
 
+        // Interests are a checklist item. The website recomputed completion
+        // here and this endpoint did not, so a member finishing their profile
+        // from the app stayed pending.
+        app(ProfileCompletion::class)->refresh($request->user());
+
         return response()->json(['data' => new MeResource($request->user()->fresh('interests'))]);
+    }
+
+    /**
+     * Who has liked this member and is waiting for an answer.
+     *
+     * Everybody may know how many; only a plan with `see_likers` may know who.
+     * The refusal carries the count so the app can show "7 people liked you"
+     * as the upsell without revealing anyone.
+     */
+    public function likers(Request $request, Likers $likers): JsonResponse
+    {
+        $member = $request->user();
+
+        if (! $member->hasPremiumFeature('see_likers')) {
+            return response()->json([
+                'message' => 'Seeing who liked you is a Premium feature.',
+                'code' => 'premium_required',
+                'count' => $likers->count($member),
+            ], 403);
+        }
+
+        $page = $likers->query($member)
+            ->with(['photos', 'city'])
+            ->orderByDesc('id')
+            ->cursorPaginate(25);
+
+        return response()->json([
+            'data' => AppUserResource::collection($page->items()),
+            'meta' => [
+                'next_cursor' => $page->nextCursor()?->encode(),
+                'count' => $likers->count($member),
+            ],
+        ]);
+    }
+
+    /**
+     * Delete the account.
+     *
+     * Soft-delete and anonymise — see AccountDeletion for why a hard erase is
+     * the wrong thing on a platform whose moderation record is evidence.
+     */
+    public function destroy(Request $request, AccountDeletion $deletion): JsonResponse
+    {
+        $data = $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        $deletion->delete($request->user(), $data['password']);
+
+        return response()->json(['message' => 'Your account has been deleted.']);
     }
 
     public function matches(Request $request): JsonResponse

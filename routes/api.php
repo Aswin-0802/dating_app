@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\PhoneController;
+use App\Http\Controllers\Api\V1\PhotoController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SafetyController;
 use App\Http\Controllers\Api\V1\SwipeController;
@@ -113,9 +114,27 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // ---- me ----
         Route::get('me', [ProfileController::class, 'me'])->name('me');
         Route::patch('me', [ProfileController::class, 'update'])->name('me.update');
+        Route::delete('me', [ProfileController::class, 'destroy'])->name('me.destroy');
         Route::patch('me/profile', [ProfileController::class, 'updateProfile'])->name('me.profile');
         Route::patch('me/preferences', [ProfileController::class, 'updatePreferences'])->name('me.preferences');
         Route::put('me/interests', [ProfileController::class, 'syncInterests'])->name('me.interests');
+
+        /*
+         * Photos need only profile:write, which a PENDING token carries. A
+         * photo is one of the checklist items behind the pending → active
+         * promotion, so a member who could not upload one from the app could
+         * be stuck in pending for ever.
+         */
+        Route::middleware('ability:profile:write')->group(function (): void {
+            Route::post('me/photos', [PhotoController::class, 'store'])->name('me.photos.store');
+            Route::patch('me/photos/reorder', [PhotoController::class, 'reorder'])->name('me.photos.reorder');
+            Route::patch('me/photos/{uuid}/primary', [PhotoController::class, 'primary'])->name('me.photos.primary');
+            Route::delete('me/photos/{uuid}', [PhotoController::class, 'destroy'])->name('me.photos.destroy');
+        });
+
+        // Premium-gated in the controller, not here: a free member gets the
+        // count with the refusal, which is the upsell.
+        Route::get('me/likers', [ProfileController::class, 'likers'])->name('me.likers');
 
         // ---- discovery ----
         Route::get('deck', [SwipeController::class, 'deck'])

@@ -8,6 +8,7 @@ use App\Enums\AccountStatus;
 use App\Livewire\Member\Concerns\InteractsWithMember;
 use App\Models\AppUser;
 use App\Models\PushToken;
+use App\Services\Members\AccountDeletion;
 use App\Services\Members\SafetyActions;
 use App\Services\Sms\PhoneVerification;
 use App\Support\PushSettings;
@@ -34,6 +35,8 @@ class Account extends Component
     public string $newPassword_confirmation = '';
 
     public string $deactivatePassword = '';
+
+    public string $deletePassword = '';
 
     // ---- phone verification ----------------------------------------------------
 
@@ -125,6 +128,33 @@ class Account extends Component
         Auth::guard('member')->logout();
         session()->regenerateToken();
         session()->flash('status', 'Your account has been deactivated. Contact support if you want it back.');
+
+        $this->redirectRoute('home');
+    }
+
+    /**
+     * Delete the account — not the same thing as deactivating it.
+     *
+     * Deactivation is reversible and keeps everything. Deletion anonymises
+     * the account and cannot be undone. Both go through the same services
+     * the mobile API uses.
+     */
+    public function deleteAccount(AccountDeletion $deletion): void
+    {
+        $this->validate(['deletePassword' => ['required', 'string']], [], ['deletePassword' => 'password']);
+
+        try {
+            $deletion->delete($this->member(), $this->deletePassword);
+        } catch (ValidationException $e) {
+            throw ValidationException::withMessages([
+                'deletePassword' => $e->errors()['password'][0] ?? 'That password is not right.',
+            ]);
+        }
+
+        Auth::guard('member')->logout();
+        session()->invalidate();
+        session()->regenerateToken();
+        session()->flash('status', 'Your account has been deleted.');
 
         $this->redirectRoute('home');
     }

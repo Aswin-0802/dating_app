@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Livewire\Member;
 
-use App\Enums\AccountStatus;
 use App\Livewire\Member\Concerns\InteractsWithMember;
 use App\Models\AppUser;
 use App\Models\MatchRecord;
+use App\Services\Members\Likers;
 use App\Services\Members\MatchActions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -59,16 +59,9 @@ class Matches extends Component
      */
     private function likers(AppUser $me): Collection
     {
-        return AppUser::query()
-            ->whereIn('id', fn ($q) => $q->select('app_user_id')
-                ->from('swipes')
-                ->where('target_app_user_id', $me->id)
-                ->whereIn('action', ['like', 'superlike'])
-                ->where('is_match', false))
-            ->whereNotIn('id', fn ($q) => $q->select('target_app_user_id')->from('swipes')->where('app_user_id', $me->id))
-            ->whereNotIn('id', fn ($q) => $q->select('blocked_app_user_id')->from('blocks')->where('app_user_id', $me->id))
-            ->whereNotIn('id', fn ($q) => $q->select('app_user_id')->from('blocks')->where('blocked_app_user_id', $me->id))
-            ->where('account_status', AccountStatus::Active->value)
+        // The exclusions live in the shared Likers service, so this page and
+        // the mobile API cannot disagree about who a member is allowed to see.
+        return app(Likers::class)->query($me)
             ->with('primaryPhoto')
             ->latest('last_active_at')
             ->limit(24)

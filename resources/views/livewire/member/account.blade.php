@@ -240,4 +240,19 @@
             <x-ui.button variant="ghost" @click="confirming = false">Cancel</x-ui.button>
         </form>
     </div>
+
+    <div x-data="{ confirming: false }" class="rounded-3xl border border-destructive/30 bg-card p-5 sm:p-6">
+        <h2 class="font-semibold">Delete account</h2>
+        <p class="mt-1 text-sm text-muted-foreground">This cannot be undone. Your name, email, phone, photos and profile are removed and you are signed out everywhere. Messages you sent stay visible to the people you sent them to. If you only want a break, deactivate instead.</p>
+
+        <x-ui.button variant="outline" class="mt-4" x-show="! confirming" @click="confirming = true">Delete my account</x-ui.button>
+
+        <form wire:submit="deleteAccount" x-show="confirming" x-cloak class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start">
+            <div class="flex-1">
+                <x-ui.input type="password" placeholder="Your password" wire:model="deletePassword" :error="$errors->first('deletePassword')" autocomplete="current-password" />
+            </div>
+            <x-ui.button type="submit" variant="destructive">Delete permanently</x-ui.button>
+            <x-ui.button variant="ghost" @click="confirming = false">Cancel</x-ui.button>
+        </form>
+    </div>
 </div>
