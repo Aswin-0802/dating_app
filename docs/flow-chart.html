@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dating Platform — Flow Chart</title>
+<meta name="description" content="One chart of the whole product: what a member does from sign-up to chat and premium, and what the trust and safety team does when something is reported.">
+<link rel="stylesheet" href="assets/doc.css">
+<style>
+:root {
+    --background: oklch(0.995 0.003 20); --foreground: oklch(0.21 0.02 315); --card: oklch(1 0 0);
+    --muted-bg: oklch(0.968 0.006 20); --muted-foreground: oklch(0.52 0.02 315); --border: oklch(0.922 0.008 20);
+    --primary: oklch(0.55 0.2 15); --primary-subtle: oklch(0.955 0.025 15);
+    --success: oklch(0.58 0.15 155); --warning: oklch(0.72 0.16 75); --destructive: oklch(0.56 0.21 27);
+}
+[data-theme="dark"] {
+    --background: oklch(0.16 0.02 315); --foreground: oklch(0.95 0.008 315); --card: oklch(0.2 0.022 315);
+    --muted-bg: oklch(0.26 0.022 315); --muted-foreground: oklch(0.68 0.018 315); --border: oklch(0.3 0.025 315);
+    --primary: oklch(0.65 0.19 15); --primary-subtle: oklch(0.29 0.055 15);
+    --success: oklch(0.7 0.15 155); --warning: oklch(0.79 0.15 75); --destructive: oklch(0.67 0.19 27);
+}
+:root, [data-theme="dark"] {
+    --ink: var(--foreground); --muted: var(--muted-foreground); --line: var(--border); --paper: var(--card);
+    --wash: var(--muted-bg); --brand: var(--primary); --brand-wash: var(--primary-subtle);
+    --ok: var(--success); --warn: var(--warning); --stop: var(--destructive);
+}
+body { background: var(--background); color: var(--foreground); }
+.sheet.wide { max-width: 80rem; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--muted); }
+.topbar a { color: var(--brand); text-decoration: none; }
+.toggle { font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0.35rem 0.8rem; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); cursor: pointer; }
+.toggle:hover { border-color: var(--brand); color: var(--brand); }
+h1 { font-size: 2rem; letter-spacing: -0.02em; margin: 0 0 0.5rem; }
+p.lede { color: var(--muted); font-size: 1.05rem; margin: 0 0 1.25rem; max-width: 50rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; font-size: 0.85rem; color: var(--muted); margin: 0 0 1rem; }
+.legend span::before { content: ""; display: inline-block; width: 0.95rem; height: 0.95rem; border-radius: 3px; vertical-align: -0.15rem; margin-right: 0.45rem; border: 1.5px solid; }
+.legend .m::before { background: var(--primary-subtle); border-color: var(--primary); }
+.legend .s::before { background: oklch(0.955 0.022 320); border-color: oklch(0.52 0.16 320); }
+[data-theme="dark"] .legend .s::before { background: oklch(0.29 0.05 320); border-color: oklch(0.63 0.15 320); }
+.legend .g::before { background: oklch(0.955 0.03 155); border-color: var(--success); }
+.legend .w::before { background: oklch(0.965 0.04 75); border-color: var(--warning); }
+.legend .r::before { background: oklch(0.955 0.03 27); border-color: var(--destructive); }
+[data-theme="dark"] .legend .g::before { background: oklch(0.28 0.05 155); }
+[data-theme="dark"] .legend .w::before { background: oklch(0.3 0.055 75); }
+[data-theme="dark"] .legend .r::before { background: oklch(0.29 0.06 27); }
+.legend .j::before { background: var(--muted-bg); border-color: var(--muted-foreground); border-style: dashed; border-radius: 999px; }
+.chart { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 1rem; overflow-x: auto; }
+.chart svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+.chart .err { background: oklch(0.955 0.03 27); color: var(--destructive); padding: 0.75rem 1rem; border-radius: 6px; white-space: pre-wrap; }
+svg .label, svg .label * { text-transform: none; letter-spacing: normal; font-weight: inherit; color: inherit; margin: 0; display: inline; }
+svg .nodeLabel, svg .edgeLabel, svg .cluster-label { font-size: 14px; }
+@media print {
+    .topbar { display: none; }
+    .chart { border: 0; padding: 0; }
+}
+</style>
+</head>
+<body>
+<main class="sheet wide">
+
+<div class="topbar">
+    <div><a href="index.html">Documentation</a> · Flow chart</div>
+    <button type="button" class="toggle" id="themeToggle">Dark theme</button>
+</div>
+
+<h1>How the platform works, on one page</h1>
+<p class="lede">Read top to bottom. The left side is what a member does; the purple boxes are what the trust &amp; safety
+team does when a member verifies, reports someone, or appeals. Every arrow is how the product behaves today.</p>
+
+<p class="legend">
+    <span class="m">member</span>
+    <span class="s">trust &amp; safety team</span>
+    <span class="g">good outcome</span>
+    <span class="w">limit or waiting</span>
+    <span class="r">restriction or refusal</span>
+    <span class="j">jump — continues elsewhere on the chart</span>
+</p>
+
+<div class="chart" id="chart">
+<script type="text/x-mermaid">
+flowchart TD
+  START(["Visitor"]) --> SIGNUP["Sign up<br/>name · email · password · must be 18+<br/>gender · who you want to meet"]
+  SIGNUP --> LOGIN["Log in"]
+  LOGIN --> PROFILE["Complete your profile<br/>bio · job · education · height · what you are looking for<br/>photo · three interests · city"]
+  PROFILE --> HALF{"Profile at least half complete?"}
+  HALF -- "not yet" --> PROFILE
+  HALF -- "yes" --> HOME["Account active<br/>discover · matches · messages"]:::good
+
+  HOME --> VERIFY["Verify who you are (optional, earns a badge)<br/>the app shows a 4-character code<br/>take a selfie holding that code · send it"]
+  VERIFY --> VQ["Verification queue<br/>a reviewer compares the selfie with the profile photos<br/>within the response-time target"]:::staff
+  VQ --> VDEC{"Reviewer's decision"}
+  VDEC -- "approved" --> BADGE["Verified badge on the profile<br/>members can choose to see verified people only"]:::good
+  VDEC -- "rejected, with a reason" --> VREJ["Told why · can try again<br/>three attempts in total"]:::warn
+  VREJ --> VERIFY
+  VDEC -- "might be under 18" --> VMIN["Restricted review queue<br/>senior reviewers only · cannot be approved here, only refused"]:::staff
+
+  HOME --> DISCOVER["Discover people<br/>filtered by age · gender · distance or city<br/>optionally verified people only · never anyone you blocked or who blocked you"]
+  DISCOVER --> SWIPE{"Like or pass?"}
+  SWIPE -- "pass" --> DISCOVER
+  SWIPE -- "like" --> LIMIT{"Free plan: daily likes used up?"}
+  LIMIT -- "yes" --> WAIT["Wait until tomorrow<br/>or go Premium for unlimited likes"]:::warn
+  WAIT --> J4(["see Premium, further down"]):::jump
+  LIMIT -- "no" --> MUTUAL{"Did they like you too?"}
+  MUTUAL -- "not yet" --> DISCOVER
+  MUTUAL -- "yes" --> MATCH["It's a match!<br/>both people get a notification"]:::good
+  MATCH --> CHAT["Chat opens<br/>messages · new-message notifications<br/>links and phone numbers are flagged for the safety team to see"]
+  CHAT --> UNMATCH["Unmatch"] --> CLOSED["Chat closed for both people"]:::warn
+  CHAT --> BLOCK["Block this person"]
+  DISCOVER --> BLOCK
+  BLOCK --> BLOCKED["Chat closed · you disappear from each other's Discover<br/>they are not told"]:::warn
+  CHAT --> REPORT["Report this person<br/>pick a category · optionally point at a message"]
+  DISCOVER --> REPORT
+
+  REPORT --> CASE["Report becomes a case<br/>every report about the same person lands in one case<br/>a response deadline is set by how serious it is"]:::staff
+  CASE --> REVIEW["A moderator claims and reviews the case<br/>can read the reported messages only with a written reason, which is recorded"]:::staff
+  REVIEW --> DECIDE{"Moderator's decision<br/>a graduated ladder, one step at a time"}
+  DECIDE -- "no action, or a warning on the record" --> NOACT["Case closed"]
+  DECIDE -- "temporary restriction, for a set time" --> TEMP["Feature limit · shadow ban · suspension<br/>shadow ban: hidden from everyone's Discover, member not told, must carry a review date<br/>suspension: locked out until it ends"]:::bad
+  DECIDE -- "permanent ban" --> BAN["Account banned permanently<br/>optionally the device too"]:::bad
+  DECIDE -- "not sure" --> ESC["Passed to a senior reviewer"]:::staff
+  ESC --> DECIDE
+
+  TEMP -- "suspension" --> RESTRICTED["The member sees a restricted page<br/>which rule was broken and for how long"]:::bad
+  BAN --> RESTRICTED
+  TEMP -- "time runs out" --> EXPIRE["Lifted automatically<br/>account goes back to what it was"]:::good
+  EXPIRE --> J1(["back to Account active"]):::jump
+  RESTRICTED --> APPEAL["Submit an appeal<br/>one per restriction · a short written statement"]
+  APPEAL --> AQ["Appeal reviewed by a different moderator<br/>never the one who made the original decision"]:::staff
+  AQ --> ADEC{"Appeal outcome"}
+  ADEC -- "upheld" --> RESTRICTED
+  ADEC -- "overturned" --> LIFT["Restriction lifted<br/>account goes back to what it was"]:::good
+  LIFT --> J2(["back to Account active"]):::jump
+
+  PENTRY(["From Account active, at any time"]):::jump --> PREMIUM["Premium<br/>choose a plan · pay by card (Stripe or Razorpay) on the payment page"]
+  PREMIUM --> PAID{"Payment confirmed?"}
+  PAID -- "no" --> PREMIUM
+  PAID -- "yes" --> PERKS["Premium active<br/>unlimited likes · see who already liked you · badge"]:::good
+  PERKS --> RENEW["Reminders 7, 3 and 1 days before it ends<br/>ends automatically unless renewed · renewing early adds to the time left"]
+  RENEW --> J3(["back to Account active"]):::jump
+
+  DENTRY(["From Account settings, at any time"]):::jump --> DEACT["Deactivate account (reversible)<br/>or delete it permanently: name, photos and contact details removed,<br/>messages you sent stay with the people you sent them to"]
+  DEACT --> OUT(["Signed out · account closed"])
+
+  ANNOUNCE["Campaigns and announcements<br/>written and approved by staff · sent to members' phones at the scheduled time"]:::staff
+
+  %% Reading order. Invisible links only rank the sections top to bottom so the
+  %% chart reads as one column instead of four side by side.
+  BADGE ~~~ DISCOVER
+  VMIN ~~~ DISCOVER
+  VREJ ~~~ DISCOVER
+  BLOCKED ~~~ CASE
+  CLOSED ~~~ CASE
+  J1 ~~~ PENTRY
+  J2 ~~~ PENTRY
+  J3 ~~~ DENTRY
+  OUT ~~~ ANNOUNCE
+</script>
+<div class="render"></div>
+</div>
+
+<footer class="doc-end">
+    <p>Flow chart · One page for the whole product. For the engineering view with file references, see the
+    <a href="application-flow.html">Application Flow</a> document.</p>
+</footer>
+
+</main>
+
+<script src="assets/mermaid.min.js"></script>
+<script>
+(function () {
+    var PALETTES = {
+        light: { bg: '#ffffff', node: '#fdf2f6', text: '#2a2030', border: '#d9b6c5', line: '#7d737f', cluster: '#faf7fa',
+                 staff: '#f3e8f6', staffB: '#8f3aa1', good: '#eef7f2', goodB: '#1c7a54', warn: '#fdf6e7', warnB: '#9a6a12', bad: '#fdeceb', badB: '#b4262c' },
+        dark:  { bg: '#221c25', node: '#3a2530', text: '#eeeaf0', border: '#8a4a63', line: '#b7aeba', cluster: '#1e181f',
+                 staff: '#35283d', staffB: '#c48ad2', good: '#1f3b30', goodB: '#6fd3a3', warn: '#3f3420', warnB: '#e8c46a', bad: '#4a2326', badB: '#f08a86' }
+    };
+    function theme() { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
+    var run = 0;
+    async function render() {
+        var p = PALETTES[theme()], my = ++run;
+        mermaid.initialize({
+            startOnLoad: false, theme: 'base', securityLevel: 'loose',
+            flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis', padding: 10, nodeSpacing: 28, rankSpacing: 48 },
+            themeVariables: { background: p.bg, primaryColor: p.node, primaryTextColor: p.text, primaryBorderColor: p.border,
+                secondaryColor: p.node, tertiaryColor: p.cluster, lineColor: p.line, textColor: p.text, nodeTextColor: p.text,
+                edgeLabelBackground: p.bg, fontFamily: '"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif', fontSize: '14px' }
+        });
+        var src = document.querySelector('#chart script[type="text/x-mermaid"]').textContent.trim()
+            + '\nclassDef staff fill:' + p.staff + ',stroke:' + p.staffB + ',color:' + p.text
+            + '\nclassDef good fill:' + p.good + ',stroke:' + p.goodB + ',color:' + p.text
+            + '\nclassDef warn fill:' + p.warn + ',stroke:' + p.warnB + ',color:' + p.text
+            + '\nclassDef bad fill:' + p.bad + ',stroke:' + p.badB + ',color:' + p.text + ',stroke-width:2px'
+            + '\nclassDef jump fill:' + p.cluster + ',stroke:' + p.line + ',color:' + p.text + ',stroke-dasharray:4 3\n';
+        var target = document.querySelector('#chart .render');
+        try {
+            var out = await mermaid.render('flow-' + my, src);
+            if (my === run) target.innerHTML = out.svg;
+        } catch (e) {
+            target.innerHTML = '<pre class="err">The chart failed to render: ' + String(e && e.message ? e.message : e) + '</pre>';
+            if (window.console) console.error(e);
+        }
+    }
+    function apply(name) {
+        document.documentElement.setAttribute('data-theme', name);
+        document.getElementById('themeToggle').textContent = name === 'dark' ? 'Light theme' : 'Dark theme';
+        try { localStorage.setItem('flow_theme', name); } catch (e) {}
+    }
+    var initial = 'light';
+    try { initial = localStorage.getItem('flow_theme') || initial; } catch (e) {}
+    if (initial !== 'dark' && initial !== 'light') initial = 'light';
+    apply(initial);
+    document.getElementById('themeToggle').addEventListener('click', function () { apply(theme() === 'dark' ? 'light' : 'dark'); render(); });
+    if (window.mermaid) { render(); } else {
+        document.querySelector('#chart .render').innerHTML = '<pre class="err">assets/mermaid.min.js did not load. Open this file from the docs/ folder.</pre>';
+    }
+})();
+</script>
+</body>
+</html>

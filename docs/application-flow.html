@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dating Platform — Application Flow</title>
+<meta name="description" content="How the platform actually behaves, drawn from the code: guards, the member lifecycle, discovery, matching, messaging, enforcement, payments, verification, notifications, the scheduler and the API surface.">
+<link rel="stylesheet" href="assets/doc.css">
+<style>
+/*
+ * Brand tokens, copied from resources/css/theme.css so the two documents and
+ * the product agree. doc.css's own variables are mapped onto them below, so
+ * the dark theme reaches every existing rule without rewriting doc.css.
+ */
+:root {
+    --background: oklch(0.995 0.003 20);
+    --foreground: oklch(0.21 0.02 315);
+    --card: oklch(1 0 0);
+    --muted-bg: oklch(0.968 0.006 20);
+    --muted-foreground: oklch(0.52 0.02 315);
+    --border: oklch(0.922 0.008 20);
+    --primary: oklch(0.55 0.2 15);
+    --primary-subtle: oklch(0.955 0.025 15);
+    --accent: oklch(0.52 0.16 320);
+    --success: oklch(0.58 0.15 155);
+    --success-subtle: oklch(0.955 0.03 155);
+    --warning: oklch(0.72 0.16 75);
+    --warning-subtle: oklch(0.965 0.04 75);
+    --destructive: oklch(0.56 0.21 27);
+    --destructive-subtle: oklch(0.955 0.03 27);
+    --info: oklch(0.58 0.14 240);
+    --info-subtle: oklch(0.955 0.028 240);
+}
+
+[data-theme="dark"] {
+    --background: oklch(0.16 0.02 315);
+    --foreground: oklch(0.95 0.008 315);
+    --card: oklch(0.2 0.022 315);
+    --muted-bg: oklch(0.26 0.022 315);
+    --muted-foreground: oklch(0.68 0.018 315);
+    --border: oklch(0.3 0.025 315);
+    --primary: oklch(0.65 0.19 15);
+    --primary-subtle: oklch(0.29 0.055 15);
+    --accent: oklch(0.63 0.15 320);
+    --success: oklch(0.7 0.15 155);
+    --success-subtle: oklch(0.28 0.05 155);
+    --warning: oklch(0.79 0.15 75);
+    --warning-subtle: oklch(0.3 0.055 75);
+    --destructive: oklch(0.67 0.19 27);
+    --destructive-subtle: oklch(0.29 0.06 27);
+    --info: oklch(0.68 0.14 240);
+    --info-subtle: oklch(0.28 0.05 240);
+}
+
+/* doc.css variables, re-pointed at the tokens. */
+:root, [data-theme="dark"] {
+    --ink: var(--foreground);
+    --muted: var(--muted-foreground);
+    --line: var(--border);
+    --paper: var(--card);
+    --wash: var(--muted-bg);
+    --brand: var(--primary);
+    --brand-wash: var(--primary-subtle);
+    --ok: var(--success);
+    --warn: var(--warning);
+    --stop: var(--destructive);
+}
+
+body { background: var(--background); color: var(--foreground); }
+
+[data-theme="dark"] .warn { background: var(--warning-subtle); }
+[data-theme="dark"] .do { background: var(--success-subtle); }
+[data-theme="dark"] .pill.ok { background: var(--success-subtle); border-color: var(--success); }
+[data-theme="dark"] .pill.warn { background: var(--warning-subtle); border-color: var(--warning); }
+[data-theme="dark"] .pill.stop { background: var(--destructive-subtle); border-color: var(--destructive); }
+[data-theme="dark"] .pill { border-color: var(--primary); }
+[data-theme="dark"] pre { background: oklch(0.12 0.02 315); }
+
+/* ---- layout: sticky nav + content ------------------------------------------ */
+
+.sheet.wide { max-width: 96rem; }
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.topbar .crumbs a { color: var(--brand); text-decoration: none; }
+
+.toggle {
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.toggle:hover { border-color: var(--brand); color: var(--brand); }
+
+.layout {
+    display: grid;
+    grid-template-columns: 16rem minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: start;
+}
+
+.sidenav {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+    font-size: 0.86rem;
+    padding-right: 0.5rem;
+}
+
+.sidenav h2 {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.6rem;
+    padding: 0;
+    border: 0;
+}
+
+.sidenav ol { list-style: none; margin: 0 0 1.25rem; padding: 0; }
+
+.sidenav li { margin: 0; }
+
+.sidenav a {
+    display: block;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    color: var(--ink);
+    text-decoration: none;
+    line-height: 1.35;
+}
+
+.sidenav a:hover { background: var(--wash); color: var(--brand); }
+
+.sidenav a .n { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 0.35rem; }
+
+.sidenav .tools { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+.sidenav .tools button {
+    font: inherit;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.sidenav .tools button:hover { color: var(--brand); border-color: var(--brand); }
+
+/* ---- sections ----------------------------------------------------------------- */
+
+section.flow { scroll-margin-top: 1rem; }
+
+section.flow > h2 { margin-top: 2.5rem; }
+
+section.flow > h2 .n { color: var(--muted); font-weight: 500; margin-right: 0.5rem; }
+
+details.dg {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--paper);
+    margin: 1rem 0 1.75rem;
+    overflow: hidden;
+}
+
+details.dg > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 0.7rem 1rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    background: var(--wash);
+    border-bottom: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+details.dg > summary::-webkit-details-marker { display: none; }
+
+details.dg > summary::before {
+    content: "▸";
+    color: var(--muted);
+    font-size: 0.8rem;
+    transition: transform 120ms ease;
+}
+
+details.dg[open] > summary::before { transform: rotate(90deg); }
+
+details.dg[open] > summary { border-bottom-color: var(--line); }
+
+.diagram { padding: 1rem 1rem 0.5rem; overflow-x: auto; }
+
+.diagram .render svg { max-width: 100%; height: auto; }
+
+/*
+ * doc.css styles `.label` for call-out captions (uppercase, tiny, brand
+ * colour). Mermaid also uses class="label" on every node and edge text.
+ *
+ * This reset is deliberately NOT scoped to .diagram: mermaid.render() measures
+ * each label in a temporary element outside it, and if the measuring styles
+ * differ from the displaying styles every box is sized for the wrong font and
+ * the last line of text is clipped. Scoping to svg catches both places.
+ */
+svg .label,
+svg .label * {
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: inherit;
+    color: inherit;
+    margin: 0;
+    display: inline;
+}
+
+svg .nodeLabel, svg .edgeLabel, svg .cluster-label { font-size: 14px; }
+
+.diagram .err {
+    background: var(--destructive-subtle);
+    color: var(--destructive);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    white-space: pre-wrap;
+}
+
+.caption {
+    padding: 0.85rem 1rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.9rem;
+}
+
+.caption p { margin: 0 0 0.6rem; }
+
+.caption p:last-child { margin-bottom: 0; }
+
+.cites {
+    margin: 0.6rem 0 0;
+    padding: 0.7rem 1rem;
+    background: var(--wash);
+    border-top: 1px solid var(--line);
+    font-size: 0.8rem;
+}
+
+.cites .lbl {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+}
+
+.cites ul { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 2rem; }
+
+.cites li { margin: 0 0 0.25rem; break-inside: avoid; }
+
+.cites code { background: var(--paper); }
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0 0 1rem;
+}
+
+.legend span::before {
+    content: "";
+    display: inline-block;
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 3px;
+    vertical-align: -0.15rem;
+    margin-right: 0.4rem;
+    border: 1.5px solid;
+}
+
+.legend .l-dead::before { background: var(--destructive-subtle); border-color: var(--destructive); }
+.legend .l-off::before { background: var(--muted-bg); border-color: var(--muted-foreground); border-style: dashed; }
+.legend .l-ok::before { background: var(--success-subtle); border-color: var(--success); }
+.legend .l-warn::before { background: var(--warning-subtle); border-color: var(--warning); }
+
+.tells {
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--brand);
+    background: var(--brand-wash);
+    border-radius: 0 10px 10px 0;
+    padding: 1.1rem 1.4rem;
+    margin: 0 0 2rem;
+}
+
+.tells h2 { margin: 0 0 0.6rem; padding: 0; border: 0; font-size: 1.15rem; }
+
+.tells ol { margin: 0; padding-left: 1.3rem; }
+
+.tells li { margin-bottom: 0.5rem; }
+
+.tells li strong { color: var(--ink); }
+
+table.api td:nth-child(1) { font-family: var(--mono); font-size: 0.82rem; white-space: nowrap; }
+
+table.api tr.grp td {
+    background: var(--wash);
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+table.api tr.missing td { color: var(--stop); background: var(--destructive-subtle); }
+
+table.api tr.missing td:first-child { font-weight: 700; }
+
+[data-theme="dark"] table.api tbody tr:nth-child(even):not(.grp):not(.missing) { background: oklch(0.18 0.02 315); }
+
+kbd {
+    font-family: var(--mono);
+    font-size: 0.78em;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 0.05em 0.4em;
+    background: var(--wash);
+}
+
+/* ---- print ---------------------------------------------------------------------- */
+
+@media print {
+    .topbar, .sidenav { display: none; }
+
+    .layout { display: block; }
+
+    details.dg { break-inside: avoid; }
+
+    details.dg > summary::before { display: none; }
+
+    .cites ul { columns: 1; }
+
+    section.flow > h2 { break-before: page; }
+
+    section.flow:first-of-type > h2 { break-before: auto; }
+}
+
+@media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+
+    .sidenav { position: static; max-height: none; }
+
+    .cites ul { columns: 1; }
+}
+</style>
+</head>
+<body>
+<main class="sheet wide">
+
+<div class="topbar">
+    <div class="crumbs">
+        <a href="index.html">Documentation</a> · Application flow
+    </div>
+    <div>
+        <button type="button" class="toggle" id="themeToggle" aria-label="Toggle light and dark theme">Dark theme</button>
+    </div>
+</div>
+
+<header class="cover">
+    <p class="eyebrow">Application flow</p>
+    <h1>How the platform actually behaves</h1>
+    <p class="lede">Twelve diagrams derived from the code as it stands, not from a plan or a wish list. Under each one is a
+    plain-English caption and the file and line where that logic lives, so every arrow can be checked against the source.</p>
+    <dl>
+        <div><dt>Document</dt><dd>Application flow</dd></div>
+        <div><dt>Audience</dt><dd>Engineers, reviewers, owners</dd></div>
+        <div><dt>Derived from</dt><dd>routes, services, actions, middleware, enums, migrations</dd></div>
+        <div><dt>Print</dt><dd><kbd>Ctrl</kbd>+<kbd>P</kbd> — use the light theme</dd></div>
+    </dl>
+</header>
+
+<aside class="tells" id="tells">
+    <h2>What this tells you</h2>
+    <ol>
+        <li><strong>The mobile path now reaches <code>active</code> on its own.</strong> <code>POST /api/v1/me/photos</code>
+            exists, needs only the <code>profile:write</code> ability a pending token carries, and recomputes completion after every
+            upload and delete — so a member who signs up in the app can fill every checklist item. Diagram 2.</li>
+        <li><strong>Photos, account deletion and “who liked you” all have endpoints.</strong> Six routes were added; the API surface is
+            39 endpoints, seven public. Deletion is a soft-delete plus anonymisation, on purpose — the moderation record survives it.
+            Diagram 12.</li>
+        <li><strong>Only some notifications are wired.</strong> <code>match.new</code>, <code>message.new</code>, and the four
+            billing templates are sent. <code>appeal.received</code>, <code>appeal.decided</code>, <code>verification.approved</code>,
+            <code>verification.rejected</code>, <code>verification.prompt</code>, <code>likes.waiting</code>,
+            <code>match.silent_nudge</code> and <code>profile.incomplete</code> exist only as editable templates. Enforcement
+            records <code>notified_user = true</code> without sending anything. Diagram 10.</li>
+        <li><strong>The payment flow is web-only.</strong> Stripe Checkout and Razorpay Payment Links are hosted, offsite pages.
+            Apple and Google require in-app purchase for digital subscriptions inside a native app, so this flow cannot be used
+            there as-is. Diagram 8.</li>
+        <li><strong>No staff path closes a conversation.</strong> The only triggers are a block (either direction) or an unmatch
+            (web or API). The <code>close_conversations</code> permission was removed because nothing checked it. Diagram 5.</li>
+        <li><strong>One API write still does not recompute profile completion.</strong> <code>PATCH /me</code> (city) saves
+            without calling <code>ProfileCompletion::refresh()</code>; the city counts on the next write that does.
+            <code>PUT /me/interests</code> now refreshes, as the website always did. Diagram 2.</li>
+        <li><strong>Only suspensions self-clear on the next request.</strong> Expired shadow bans and feature limits wait for the
+            five-minute scheduler. Diagram 11.</li>
+        <li><strong>Email and push are queued.</strong> Without a running worker they are never delivered and nothing fails visibly.
+            Diagram 10.</li>
+    </ol>
+</aside>
+
+<div class="layout">
+
+<nav class="sidenav" aria-label="Diagrams">
+    <h2>Diagrams</h2>
+    <ol>
+        <li><a href="#guards"><span class="n">1</span>Audiences and guards</a></li>
+        <li><a href="#lifecycle"><span class="n">2</span>Member lifecycle</a></li>
+        <li><a href="#deck"><span class="n">3</span>Discovery deck</a></li>
+        <li><a href="#swipe"><span class="n">4</span>Swipe → match → conversation</a></li>
+        <li><a href="#messaging"><span class="n">5</span>Messaging and safety</a></li>
+        <li><a href="#enforcement"><span class="n">6</span>Report → case → enforcement</a></li>
+        <li><a href="#reveal"><span class="n">7</span>Message content reveal</a></li>
+        <li><a href="#payment"><span class="n">8</span>Subscription and payment</a></li>
+        <li><a href="#verification"><span class="n">9</span>Verification</a></li>
+        <li><a href="#notifications"><span class="n">10</span>Notifications</a></li>
+        <li><a href="#scheduler"><span class="n">11</span>Scheduler</a></li>
+        <li><a href="#api"><span class="n">12</span>API surface map</a></li>
+    </ol>
+    <h2>View</h2>
+    <div class="tools">
+        <button type="button" id="expandAll">Expand all</button>
+        <button type="button" id="collapseAll">Collapse all</button>
+    </div>
+</nav>
+
+<div class="content">
+
+<p class="legend">
+    <span class="l-dead">blocked / refused / restricted</span>
+    <span class="l-off">not built / no code path</span>
+    <span class="l-ok">side effect that fires</span>
+    <span class="l-warn">worth noticing</span>
+</p>
+
+<!-- ============================================================ 1 -->
+<section class="flow" id="guards">
+<h2><span class="n">1</span>Three audiences, four guards</h2>
+<details class="dg" open>
+<summary>Who can be signed in, on what, against which table</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  V["Visitor — no session, no token"] --> PUB["Public routes<br/>/  /safety  /terms  /privacy<br/>/login  /join  /forgot-password  /reset-password<br/>/admin/login  /admin/forgot-password<br/>GET /api/v1/config · interests · countries · states · cities<br/>POST /api/v1/auth/register · login (throttle:auth)"]
+  PUB --> G1["Member — web session<br/>guard member (session) · provider app_users<br/>auth:member + member.active · everything under /app<br/>reset broker app_users → member_password_reset_tokens"]
+  G1 -. "a member session is not a token" .- G2["Member — API token<br/>guard api (sanctum) · provider app_users<br/>auth:sanctum + appuser.active + throttle:api<br/>token abilities issued at register and login"]
+  G2 -. "neither opens anything under /admin" .- G3["Staff — web session<br/>guard web (session) · provider users<br/>auth:web + staff.active + permission:… · everything under /admin<br/>reset broker users → password_reset_tokens"]
+  G1 --> T1[("app_users")]
+  G2 --> T1
+  G3 --> T2[("users")]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Two populations, two tables. Members are <code>app_users</code>, reachable through a browser session on the
+<code>member</code> guard or a Sanctum token on the <code>api</code> guard. Staff are <code>users</code>, only ever on the
+<code>web</code> guard. Each population has its own password-reset broker and token table. Being signed in on one guard
+grants nothing on another: a member's browser session does not authenticate API calls, and neither a member session nor a
+member token opens anything under <code>/admin</code>.</p>
+<p>The <code>appuser.active</code> and <code>member.active</code> middleware are what turn a ban into a locked door: they read
+the mirror columns on <code>app_users</code> (diagram 6) on every request. Staff get the same treatment from
+<code>staff.active</code>, which also runs on Livewire updates so a suspended moderator loses an open tab, not just the next login.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>config/auth.php:49-66</code> — the three guards and two providers</li>
+<li><code>config/auth.php:119-133</code> — the two password brokers and their token tables</li>
+<li><code>app/Http/Controllers/Auth/PasswordResetController.php:29,35</code> — audience → broker selection</li>
+<li><code>routes/web.php:41-59</code> — member guest and <code>auth:member</code> groups</li>
+<li><code>routes/web.php:106-120</code> — staff login and reset routes</li>
+<li><code>routes/api.php:108</code> — <code>auth:sanctum</code>, <code>appuser.active</code>, <code>throttle:api</code></li>
+<li><code>bootstrap/app.php:65-77</code> — middleware aliases</li>
+<li><code>app/Http/Middleware/EnsureStaffIsActive.php:21</code> — staff suspension</li>
+<li><code>app/Providers/AppServiceProvider.php:55</code> — persistent Livewire middleware for members and staff</li>
+</ul></div>
+</details>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="flow" id="lifecycle">
+<h2><span class="n">2</span>Member lifecycle</h2>
+<details class="dg" open>
+<summary>From visitor to active — from either client</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  V["Visitor"] --> R1["Website: /join<br/>Livewire Member/Auth/Register"]
+  V --> R2["Mobile: POST /api/v1/auth/register<br/>AuthController::register"]
+  R1 --> MA["MemberAccounts::register()"]
+  R2 --> MA
+  MA --> P["app_users row<br/>account_status = pending (column default)<br/>profile + preferences rows created"]
+  P --> TP["Token abilities while pending<br/>profile:read · profile:write · verify<br/>no swipe, no message, no report"]:::warn
+  P --> CL["Completion checklist — 8 items<br/>bio · job · education · height · relationship goal<br/>photo · three interests · city"]
+  subgraph WEB["Web path — /app/profile"]
+    W1["edit fields · pick interests · set city"] ~~~ W2
+    W2["upload photo<br/>MemberPhotoStore::store"] --> W3
+    W1 --> W3["ProfileCompletion::refresh()<br/>after every upload, delete and interest save"]
+  end
+  subgraph MOB["Mobile path — /api/v1/me/*"]
+    X1["PATCH /me/profile<br/>bio · job · education · height · goal<br/>refresh() is called"] ~~~ X2
+    X2["PUT /me/interests<br/>refresh() is called"] ~~~ X3
+    X3["POST /me/photos — multipart<br/>through MemberPhotoStore, like the website<br/>refresh() is called · needs only profile:write"]:::ok ~~~ X5
+    X5["PATCH /me (city)<br/>refresh() is NOT called —<br/>counted on the next write that does"]:::warn
+  end
+  CL --> WEB
+  CL --> MOB
+  W3 --> RF{"refresh(): completion ≥ 50%<br/>and account_status is pending?"}
+  X1 --> RF
+  X2 --> RF
+  X3 --> RF
+  RF -- "yes" --> AC["account_status = active<br/>profile_completed_at set once"]
+  RF -- "no" --> P
+  AC --> TA["Token abilities once active<br/>profile:read · profile:write · swipe · message · report · verify<br/>(a shadow-banned member keeps the full set)"]:::ok
+  AC --> LIVE["Active member<br/>deck · swipes · matches · messages · premium<br/>(continues in the next figure)"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Every account starts <code>pending</code> — that is the column default, and neither registration path changes it. Promotion to
+<code>active</code> happens in exactly one place, <code>ProfileCompletion::refresh()</code>, when at least half of the eight
+checklist items are done. Until then a mobile token carries only <code>profile:read</code>, <code>profile:write</code> and
+<code>verify</code>, so the deck, swipes, messages and reports are refused by the <code>ability:</code> middleware.</p>
+<p><strong>Both clients can now fill every item.</strong> The mobile API's <code>POST /me/photos</code> goes through the same
+<code>MemberPhotoStore</code> the website uses — the GD re-encode that strips EXIF and neutralises hostile files is the security
+control, and there is one path through it — and recomputes completion after every upload and delete. It needs only
+<code>profile:write</code>, which a pending token carries, so a member who signs up in the app is never stuck. One write still
+does not recompute: <code>PATCH /me</code> (city); the city counts on the next write that does.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>database/migrations/2026_02_01_000001_create_app_users_table.php:53-55</code> — <code>account_status</code> default <code>pending</code></li>
+<li><code>app/Services/Members/MemberAccounts.php:25</code> — shared registration</li>
+<li><code>app/Http/Controllers/Api/V1/AuthController.php:22-42</code> — API register, token issued with abilities</li>
+<li><code>app/Http/Controllers/Api/V1/AuthController.php:100-105</code> — <code>abilitiesFor()</code>: pending vs active sets</li>
+<li><code>app/Services/Members/ProfileCompletion.php:17-31</code> — the eight checklist items</li>
+<li><code>app/Services/Members/ProfileCompletion.php:33-48</code> — <code>refresh()</code>, the <code>≥ 50%</code> promotion</li>
+<li><code>app/Livewire/Member/Profile.php:174,207</code> — web photo upload and delete call <code>refresh()</code></li>
+<li><code>app/Http/Controllers/Api/V1/ProfileController.php:58-86</code> — <code>PATCH /me/profile</code> calls <code>refresh()</code></li>
+<li><code>app/Http/Controllers/Api/V1/ProfileController.php:126-139</code> — <code>PUT /me/interests</code> calls <code>refresh()</code></li>
+<li><code>app/Http/Controllers/Api/V1/PhotoController.php:35-63</code> — <code>POST /me/photos</code> through <code>MemberPhotoStore</code>, then <code>refresh()</code></li>
+<li><code>app/Http/Controllers/Api/V1/ProfileController.php:38</code> — <code>PATCH /me</code> does not</li>
+<li><code>routes/api.php:113-133</code> — the <code>me/*</code> routes, photos behind <code>ability:profile:write</code></li>
+<li><code>app/Livewire/Member/Account.php:119-128</code> — self-deactivation</li>
+<li><code>app/Http/Middleware/EnsureAppUserIsNotBanned.php:34-66</code> — API doors for suspended, banned, deactivated</li>
+<li><code>app/Http/Middleware/EnsureMemberCanUseApp.php:38-60</code> — web doors, redirect to <code>/app/restricted</code></li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:318-327</code> — <code>statusAfterRestrictions()</code></li>
+</ul></div>
+</details>
+
+<details class="dg" open>
+<summary>Leaving active — and what an account returns to</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart LR
+  LIVE["Active member<br/>deck · swipes · matches · messages · premium"]
+  LIVE -- "self, /app/account" --> D["deactivated<br/>signed out · web login refused<br/>API 403 account_deactivated"]:::off
+  LIVE -- "ApplyEnforcement" --> LI["limited<br/>feature_limit"]:::warn
+  LIVE -- "ApplyEnforcement" --> SB["shadow_banned<br/>out of every deck · token and app behave as normal"]:::dead
+  LIVE -- "ApplyEnforcement" --> S["suspended<br/>suspended_until · web → /app/restricted<br/>API 403 account_restricted"]:::dead
+  LIVE -- "ApplyEnforcement" --> B["banned<br/>permanent_ban or device_ban<br/>same doors as suspended"]:::dead
+  LI -- "expiry · lift · appeal overturned" --> RS["back to the status held before the ban<br/>statusAfterRestrictions():<br/>pending or deactivated survive, otherwise active"]
+  SB -- "expiry · lift · appeal overturned" --> RS
+  S -- "expiry · lift · appeal overturned" --> RS
+  B -- "lift · appeal overturned only" --> RS
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Leaving <code>active</code> goes one of two ways. The member can deactivate themselves. Everything else is an enforcement
+(diagram 6), and when it ends — by expiry, a lift, or an overturned appeal — the account returns to the status it held before:
+a <code>pending</code> or <code>deactivated</code> account is not promoted by a suspension running out. A permanent or device ban
+has no expiry, so only a lift or an appeal ends it.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Livewire/Member/Account.php:119-128</code> — self-deactivation; <code>:142</code> — deletion, through <code>AccountDeletion</code></li>
+<li><code>app/Enums/BanType.php:45-58</code> — ban type → account status; which types are temporary</li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:293-306</code> — the mirror written on apply</li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:318-327</code> — <code>statusAfterRestrictions()</code></li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:329</code> — <code>recomputeMirror()</code> on lift and expiry</li>
+</ul></div>
+</details>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="flow" id="deck">
+<h2><span class="n">3</span>Discovery deck</h2>
+<details class="dg" open>
+<summary>Every exclusion, in the order the query applies them</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  IN["Member opens Discover"] --> C{"Which client?"}
+  C -- "Mobile: GET /api/v1/deck<br/>SwipeController::deck → DiscoveryDeck::for()" --> Q
+  C -- "Website: /app/discover<br/>Discover → DiscoveryDeck::withFallback()" --> Q
+  Q["query() — exclusions in this order"] --> E1["1. not myself<br/>id != member.id"]
+  E1 --> E2["2. account_status = active<br/>pending · limited · shadow_banned · suspended<br/>banned · deactivated are all out"]
+  E2 --> E3["3. not already swiped<br/>NOT IN swipes WHERE app_user_id = me"]
+  E3 --> E4["4. not blocked by me<br/>NOT IN blocks WHERE app_user_id = me"]
+  E4 --> E5["5. has not blocked me<br/>NOT IN blocks WHERE blocked_app_user_id = me"]
+  E5 --> E6["6. gender IN preferences.interested_in"]
+  E6 --> E7["7. ageBetween(age_min, age_max)<br/>a birthdate range, so it uses the index"]
+  E7 --> E8["8. show_verified_only?<br/>verification_status = approved"]
+  E8 --> SC{"scopeFor()"}
+  SC -- "global_mode" --> ANY["anywhere — no geographic limit"]
+  SC -- "has coordinates and max_distance_km" --> RAD["radius"]
+  SC -- "no coordinates, has city_id" --> CITY["city_id = mine"]
+  SC -- "neither" --> ANY
+  RAD --> BB["bounding box on (last_latitude, last_longitude)<br/>indexed range scan · candidates with no coordinates excluded"]
+  BB --> HV["haversine ≤ radius km<br/>acos(…) evaluated only over the box's survivors"]
+  ANY --> PK
+  CITY --> PK
+  HV --> PK["pickIds(): random pivot on the primary key,<br/>walk the index from there, wrap to the start if short<br/>no ORDER BY RAND()"]
+  PK --> HY["hydrate at most 30 rows<br/>photos · profile · city · interests · then shuffle()"]
+  HY --> OUT["deck"]
+  OUT --> FB{"withFallback() only:<br/>deck empty and scope was not anywhere?"}
+  FB -- "yes" --> WIDE["run again with scope = anywhere<br/>widened = true, and the member is told"]:::warn
+  FB -- "no · or the API's for()" --> DONE["returned"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>The exclusions are the safety rules of the product expressed as SQL. A shadow ban has no code of its own — it is simply
+that <code>shadow_banned</code> is not <code>active</code>, and this is the only place that takes effect. Blocks are checked in both
+directions, so blocking someone also removes you from their deck.</p>
+<p>Geography is one of three scopes. A radius wins whenever it can be computed: a bounding box over the coordinate index throws
+away nearly everyone cheaply, and the haversine trims the square's corners to a circle over the few rows left. Members with no
+coordinates cannot satisfy a radius and are excluded from one. Random order is a random pivot on the primary key walked in index
+order, then a PHP shuffle of the handful kept — not <code>ORDER BY RAND()</code>, which sorted every candidate on every swipe.</p>
+<p>The two clients differ in one thing: the website's <code>withFallback()</code> widens to <em>anywhere</em> when the local area is
+empty and says so; the mobile API's <code>for()</code> returns the empty deck, so existing app clients see no change in behaviour.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/DiscoveryDeck.php:169-190</code> — <code>query()</code>, exclusions 1–8 and the scope</li>
+<li><code>app/Services/Members/DiscoveryDeck.php:175</code> self · <code>:176</code> active · <code>:177</code> swiped · <code>:180,183</code> blocks · <code>:186</code> gender · <code>:187</code> age · <code>:188</code> verified</li>
+<li><code>app/Services/Members/DiscoveryDeck.php:90-103</code> — <code>scopeFor()</code>: anywhere / radius / city</li>
+<li><code>app/Services/Members/DiscoveryDeck.php:205-229</code> — <code>withinRadius()</code>: bounding box at <code>:220</code>, haversine at <code>:226</code></li>
+<li><code>app/Services/Members/DiscoveryDeck.php:150-167</code> — <code>pickIds()</code> random pivot and wrap-around</li>
+<li><code>app/Services/Members/DiscoveryDeck.php:50</code> — <code>for()</code> · <code>:69-84</code> — <code>withFallback()</code></li>
+<li><code>app/Http/Controllers/Api/V1/SwipeController.php:24</code> — API uses <code>for()</code></li>
+<li><code>app/Livewire/Member/Discover.php:143</code> — website uses <code>withFallback()</code></li>
+<li><code>app/Models/AppUser.php:244-257</code> — <code>scopeAgeBetween</code></li>
+<li><code>database/migrations/2026_09_22_000003_add_missing_hot_path_indexes.php</code> — <code>birthdate</code> and coordinate indexes</li>
+</ul></div>
+</details>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="flow" id="swipe">
+<h2><span class="n">4</span>Swipe → match → conversation</h2>
+<details class="dg" open>
+<summary>One transaction, from a like to an open thread</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  A["Mobile: POST /api/v1/swipes<br/>ability:swipe · throttle:swipe"] --> R
+  B["Website: Discover like / pass"] --> R
+  R["SwipeRecorder::record()"] --> S{"target is me?"}
+  S -- "yes" --> X1["422 You cannot swipe on yourself"]:::dead
+  S -- "no" --> TX["DB::transaction"]
+  TX --> LK["SELECT the member's own row FOR UPDATE<br/>serialises this member's swipes against each other"]
+  LK --> DL{"like or superlike,<br/>and the plan lacks unlimited_likes?"}
+  DL -- "likes today ≥ matching.daily_like_limit_free" --> X2["422 daily limit reached<br/>nothing written"]:::dead
+  DL -- "under the cap · a pass · or unlimited" --> UP["swipes.updateOrCreate(member, target)<br/>a re-swipe REPLACES the earlier decision<br/>intended: one row per pair, a pass may become a like"]:::warn
+  UP --> FS["first_swipe_at set once"]
+  FS --> PA{"action is pass?"}
+  PA -- "yes" --> N1["done — no match"]
+  PA -- "no" --> RC{"reciprocated?<br/>a like or superlike from the target already exists"}
+  RC -- "no" --> N1
+  RC -- "yes" --> AM{"a match row for this pair already exists?"}
+  AM -- "yes" --> N1
+  AM -- "no" --> MR["matches row<br/>canonical order: app_user_one_id is the lower id<br/>swapped on save · unique index on the pair"]
+  MR --> SW["both swipes flagged is_match"]
+  SW --> CV["conversations row · status = open"]
+  CV --> PT["conversation_participants: both members<br/>every ownership check reads this table"]
+  PT --> FM["first_match_at set once on each side"]
+  FM --> AC["DB::afterCommit → SendMemberPush match.new to both, queued"]:::ok
+  AC --> OUT["is_match = true"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>A match is derived, never asserted: it exists only when a like meets a like already on the other side, and the unique index on
+the canonically-ordered pair means the same two people can never match twice. The conversation and its participant rows are
+created in the same transaction, because a conversation without participants belongs to nobody and both people would be refused
+their own thread.</p>
+<p>The daily like limit is a product rule, not burst protection, so it lives here rather than in the rate limiter. It is counted
+and enforced <em>inside</em> the transaction behind a lock on the member's own row, so concurrent requests cannot all read the same
+total and walk past the cap. A re-swipe on someone already decided about replaces the earlier row — that is deliberate, and it is
+how a pass can later become a like.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/SwipeRecorder.php:26-31</code> — <code>record()</code>, self-swipe refused</li>
+<li><code>app/Services/Members/SwipeRecorder.php:43</code> — <code>lockForUpdate</code> on the member row</li>
+<li><code>app/Services/Members/SwipeRecorder.php:45,135-147</code> — daily like limit, inside the transaction</li>
+<li><code>app/Services/Members/SwipeRecorder.php:47</code> — <code>updateOrCreate</code>: re-swipe replaces</li>
+<li><code>app/Services/Members/SwipeRecorder.php:62-72</code> — reciprocity and duplicate-match checks</li>
+<li><code>app/Services/Members/SwipeRecorder.php:74-95</code> — match, <code>is_match</code>, conversation, participants</li>
+<li><code>app/Services/Members/SwipeRecorder.php:110</code> — <code>afterCommit</code> push to both</li>
+<li><code>app/Models/MatchRecord.php:48-62</code> — canonical ordering on save</li>
+<li><code>app/Models/AppUser.php:317</code> — <code>hasPremiumFeature('unlimited_likes')</code></li>
+<li><code>routes/api.php:121-125</code> — <code>deck</code> and <code>swipes</code> with <code>ability:swipe</code></li>
+</ul></div>
+</details>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="flow" id="messaging">
+<h2><span class="n">5</span>Messaging and safety</h2>
+<details class="dg" open>
+<summary>Conversation state: what closes a thread</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart LR
+  O(["conversations.status = open<br/>created with the match"])
+  C(["closed"])
+  O -- "block, either direction<br/>SafetyActions::block → MatchActions::endAllBetween(blocked)" --> C
+  O -- "unmatch from the website<br/>Matches::unmatch → MatchActions::end(unmatched)" --> C
+  O -- "unmatch from the API<br/>DELETE /api/v1/matches/{uuid} → MatchActions::end(unmatched)" --> C
+  NA["staff close: no code path<br/>close_conversations was removed — nothing checked it"]:::off
+  NA -.-> C
+  C --> L["closed threads leave both people's lists<br/>website and API list only status = open"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>A thread has two states and three ways to leave the first. All three funnel through <code>MatchActions</code>, which owns the pair
+“end the match, close the conversation” so a caller cannot write one row and forget the other — the API used to. Blocking does
+not delete anything; it marks the match <code>blocked</code> rather than <code>unmatched</code>, so the moderation queue can tell the two
+apart. There is no staff action that closes a conversation.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/MatchActions.php:29-45</code> — <code>end()</code>: match status + conversation closed, one transaction</li>
+<li><code>app/Services/Members/MatchActions.php:53-60</code> — <code>endAllBetween()</code>, used by block</li>
+<li><code>app/Services/Members/SafetyActions.php:86-100</code> — <code>block()</code></li>
+<li><code>app/Livewire/Member/Matches.php:46</code> — web unmatch</li>
+<li><code>app/Http/Controllers/Api/V1/ProfileController.php:209-214</code> — API unmatch</li>
+<li><code>app/Livewire/Member/Messages.php:99</code> and <code>app/Http/Controllers/Api/V1/MessageController.php:22-24</code> — lists show <code>open</code> only</li>
+<li><code>database/seeders/PermissionSeeder.php</code> <code>OBSOLETE</code> — <code>close_conversations</code> removed</li>
+</ul></div>
+</details>
+
+<details class="dg" open>
+<summary>Sending a message: the three guards, one service for both clients</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  W["Website: Messages::send()"] --> S
+  A1["Mobile: POST /api/v1/conversations/{uuid}/messages<br/>ability:message · throttle:message"] --> S
+  A2["Mobile: GET /api/v1/conversations/{uuid}/messages<br/>reads are gated the same way"] --> G
+  S["MessageSender::send()"] --> G["assertUsableBy(conversation, member)"]
+  G --> G1{"1. participant?<br/>conversation_participants"}
+  G1 -- "no" --> X["403 This conversation is not yours"]:::dead
+  G1 -- "yes" --> G2{"2. status is open?"}
+  G2 -- "no" --> Y["403 This conversation is closed"]:::dead
+  G2 -- "yes" --> G3{"3. a block in either direction?<br/>isBlockedPair()"}
+  G3 -- "yes" --> Y
+  G3 -- "no" --> OK["messages row · links and contact details scanned on write<br/>counters incremented in SQL · first_message_at · first_reply_at"]
+  OK --> N["DB::afterCommit → SendMemberPush message.new to the other party"]:::ok
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Three separate rules, answered in one place. They used to live in the website's Livewire component, which meant the website
+enforced them and the mobile API did not — a blocked member could keep messaging over the API. Both clients now go through
+<code>MessageSender::send()</code>, and the API's read endpoint applies the same check. A block gets the same refusal as a closed
+thread rather than its own, because telling someone they were blocked tells them exactly who to reach another way. The block check
+is a backstop: closing the thread on block (above) is the primary guard.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/MessageSender.php:129-134</code> — <code>assertUsableBy()</code>: participation, status, block</li>
+<li><code>app/Services/Members/MessageSender.php:154-171</code> — <code>isBlockedPair()</code></li>
+<li><code>app/Services/Members/MessageSender.php:23-86</code> — <code>send()</code>, counters at <code>:52,78</code></li>
+<li><code>app/Services/Members/MessageSender.php:102-118</code> — <code>notifyRecipient()</code> after commit</li>
+<li><code>app/Http/Controllers/Api/V1/MessageController.php:40,59</code> — API read and write both call the guard</li>
+<li><code>app/Livewire/Member/Messages.php:62</code> — website send</li>
+<li><code>app/Models/Conversation.php:55</code> — <code>hasParticipant()</code></li>
+<li><code>app/Services/Members/ContentScanner.php</code> — link and contact-info flags</li>
+</ul></div>
+</details>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="flow" id="enforcement">
+<h2><span class="n">6</span>Report → case → enforcement ladder</h2>
+<details class="dg" open>
+<summary>From a report to a ban, and what is written where</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  R1["Mobile: POST /api/v1/reports<br/>ability:report · throttle:report 10 per hour"] --> SA
+  R2["Website: report modal<br/>HandlesSafety::submitReport"] --> SA
+  SA["SafetyActions::report()"] --> D1{"reporting myself?<br/>same person already reported in 24h?"}
+  D1 -- "yes" --> X1["422"]:::dead
+  D1 -- "no" --> EV["evidenceFor(): a message id is kept only if<br/>the reporter is in that conversation AND<br/>its sender is the reported member — otherwise dropped, report still filed"]
+  EV --> RP["reports row<br/>severity from the category, not the reporter<br/>reporter credibility snapshotted"]
+  RP --> CA["CaseAggregator::absorb()<br/>the subject's open case, locked"]
+  CA -- "no open case" --> CO["report_cases row · status new<br/>case_number VEY-YYYY-NNNNNN<br/>sla_due_at = now + slaHours: low 72h · medium 24h · high 8h · critical 1h"]
+  CA -- "one already open" --> CM["merged: severity can only rise<br/>SLA keeps the earlier deadline · counters refreshed"]
+  CO --> CL
+  CM --> CL
+  CL["Opened by a moderator → claimed automatically<br/>if moderation.auto_claim_on_open · status in_review"] --> DB["Decision bar<br/>warn · feature_limit · shadow_ban · suspend · permanent_ban · escalate"]
+  DB --> AE["ApplyEnforcement::apply()"]
+  AE --> GD["guard(): some reasons require a note ·<br/>feature_limit / shadow_ban / suspend require a duration ·<br/>shadow_ban requires a review date and may not exceed<br/>enforcement.shadow_ban_max_hours"]
+  GD --> TX["ONE transaction"]
+  TX --> MA["moderation_actions row<br/>APPEND-ONLY — updating or deleting throws<br/>actor_type = human or automation · policy clause recorded"]
+  MA --> CB{"step.createsBan()?"}
+  CB -- "note · warn · escalate: no" --> CS
+  CB -- "feature_limit · shadow_ban · suspend · permanent_ban · device_ban" --> BN["bans row<br/>expires_at · review_due_at · limited_features<br/>previous_account_status kept when it was pending or deactivated"]
+  BN --> MI["mirror onto app_users in the same transaction<br/>feature_limit → limited · shadow_ban → shadow_banned + shadow_banned_until<br/>suspend → suspended + suspended_until · permanent / device → banned + banned_at<br/>active_ban_id set"]
+  MI --> CS["case status = actioned · outcome recorded<br/>notified_user stored — no notification is wired"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Reports become cases, and cases are what moderators work. <code>CaseAggregator</code> folds every report about one member into
+that member's single open case under a row lock, so ten reports in a minute are one item in the queue, not ten. Severity comes
+from the category — reporters mislabel — and a new report can only raise it. The SLA clock is set from severity when the case
+opens.</p>
+<p>Enforcement is one write path for the console and for automation alike, which is why <code>actor_type</code> is a parameter. In
+a single transaction it appends a moderation action, creates the ban row for the five steps that carry one, and writes the mirror
+columns on <code>app_users</code> that the middleware in diagram 1 reads. A shadow ban cannot be created without a review date — it
+is invisible to the member, so nothing but a calendar entry would ever prompt anyone to revisit it. Moderation actions are
+append-only at the model level: an update or delete throws.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/SafetyActions.php:28-78</code> — <code>report()</code>: self and 24-hour checks at <code>:36-52</code>, evidence guard at <code>:115-138</code></li>
+<li><code>app/Services/Moderation/CaseAggregator.php:26-45</code> — <code>absorb()</code> under <code>lockForUpdate</code>; <code>:47</code> open; <code>:71</code> merge</li>
+<li><code>app/Enums/Severity.php:39-47</code> — <code>slaHours()</code></li>
+<li><code>app/Livewire/Cases/Show.php:77-93</code> — claim on open; <code>:182</code> close without action</li>
+<li><code>app/Enums/LadderStep.php:138-148</code> — the decision bar; <code>:101-108</code> <code>createsBan()</code>; <code>:121</code> review date</li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:38-110</code> — <code>apply()</code>, one transaction</li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:209-245</code> — <code>guard()</code></li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:247-291</code> — <code>createBan()</code>, <code>previous_account_status</code> at <code>:271</code></li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:293-306</code> — <code>mirrorOntoMember()</code></li>
+<li><code>app/Enums/BanType.php:45-53</code> — ban type → account status</li>
+<li><code>app/Models/ModerationAction.php:47-55</code> — updates and deletes throw</li>
+<li><code>app/Http/Controllers/Api/V1/SafetyController.php:21</code> · <code>app/Livewire/Member/Concerns/HandlesSafety.php:56</code> — the two report entry points</li>
+</ul></div>
+</details>
+
+<details class="dg" open>
+<summary>Appeals, lifts and expiry: reversing without erasing</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  M["Member on /app/restricted<br/>one appeal per ban · statement of at least 20 characters"] --> AP["appeals row · status new<br/>original_decider_id = the staff member who acted<br/>sla_due_at = appeal_hours"]
+  AP --> AS{"Assign"}
+  AS -- "to the original decider" --> X["refused"]:::dead
+  AS -- "to anyone else holding decide_appeals" --> RV["review"]
+  RV --> DC{"Decide<br/>Appeal::canBeDecidedBy() refuses the original decider again"}
+  DC -- "upheld" --> U["restriction stands"]
+  DC -- "overturned · partially_overturned<br/>note of at least 20 characters" --> LF["ApplyEnforcement::lift()"]
+  EX["Scheduler: bans past expires_at<br/>ApplyEnforcement::expire() · actor_type automation"] --> LA
+  LF --> LA["a NEW moderation_actions row, step lift<br/>the original gains reversed_by_action_id<br/>nothing is edited or deleted"]
+  LA --> RM["recomputeMirror()<br/>strongest remaining ban decides the status —<br/>or, with none left, statusAfterRestrictions()"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>An appeal records who made the original decision and is routed away from them twice — at assignment and again at decision — so
+the process cannot rubber-stamp its own work. An overturn actually lifts the ban; an appeals process that records a verdict
+without changing anything would be theatre. A lift is a new action linked back to the one it reverses, never an edit, and the
+scheduler's expiry uses the same path with <code>actor_type = automation</code> so the audit trail does not put a person's name on
+something the clock did.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Livewire/Member/Restricted.php:55-63</code> — appeal created with <code>original_decider_id</code></li>
+<li><code>app/Models/Appeal.php:80-92</code> — <code>canBeDecidedBy()</code></li>
+<li><code>app/Livewire/Appeals/Show.php:91</code> — assignment to the original decider refused</li>
+<li><code>app/Livewire/Appeals/Show.php:113-160</code> — <code>decide()</code>; overturn calls <code>lift()</code> at <code>:146</code></li>
+<li><code>app/Enums/AppealStatus.php:58-61</code> — which outcomes reverse enforcement</li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:119-165</code> — <code>lift()</code>; <code>reversed_by_action_id</code> at <code>:150</code></li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:175-207</code> — <code>expire()</code></li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:329</code> — <code>recomputeMirror()</code>; <code>:318</code> <code>statusAfterRestrictions()</code></li>
+</ul></div>
+</details>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="flow" id="reveal">
+<h2><span class="n">7</span>Message content reveal</h2>
+<details class="dg" open>
+<summary>Why bodies are hidden, and what it takes to read one</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  H["Message model: body is in $hidden<br/>serialising a message never includes its text<br/>the console's lists and case pages show metadata only"]
+  H --> RQ["Staff clicks Reveal on a conversation<br/>Conversations/Show::reveal()"]
+  RQ --> SV["MessageRevealService::reveal()"]
+  SV --> P{"can view_message_content?"}
+  P -- "no" --> X1["AuthorizationException"]:::dead
+  P -- "yes" --> RS{"reason is one of the fixed set?<br/>case_review · appeal_review<br/>legal_request · safety_escalation"}
+  RS -- "no" --> X2["refused"]:::dead
+  RS -- "yes" --> JS{"justification ≥ 10 characters?<br/>unless privacy.require_justification is off"}
+  JS -- "no" --> X2
+  JS -- "yes" --> MS["messagesFor(): the anchored message ± privacy.message_context_window<br/>or the whole thread when there is no anchor"]
+  MS --> L1["message_access_logs row<br/>who · conversation · anchor · case · reason · justification · count · IP"]:::ok
+  L1 --> L2["activity_logs row, marked sensitive<br/>ActivityLogger::logSensitiveAccess()"]:::ok
+  L2 --> OUT["bodies returned to the screen<br/>for privacy.message_reveal_minutes"]
+  OUT --> RL["relock() · or navigation · or the window ending"]
+  RL --> H
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Privacy here is structural, not procedural. Because <code>body</code> is in the model's <code>$hidden</code> array, no list, resource
+or accidental <code>toArray()</code> can leak message text — it has to be asked for. Asking means holding the permission, choosing one
+of four fixed reasons, and writing a justification, and the ask produces two immutable records: one in the dedicated access log
+and one in the general audit log flagged as sensitive. The access-audit screen exists so that staff reveals are themselves
+reviewable.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Models/Message.php:31</code> — <code>protected $hidden = ['body']</code></li>
+<li><code>app/Livewire/Conversations/Show.php:73</code> — <code>reveal()</code>; <code>:101</code> — <code>relock()</code></li>
+<li><code>app/Services/Messaging/MessageRevealService.php:46-99</code> — <code>reveal()</code>: permission, reason, both records</li>
+<li><code>app/Services/Messaging/MessageRevealService.php:144-163</code> — <code>guardReason()</code>: fixed set, 10-character minimum</li>
+<li><code>config/platform.php:185-190</code> — the four reveal reasons</li>
+<li><code>app/Services/Messaging/MessageRevealService.php:103,132</code> — reveal window and context window settings</li>
+<li><code>app/Models/MessageAccessLog.php</code> · <code>app/Services/Audit/ActivityLogger.php</code> — the two records</li>
+</ul></div>
+</details>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="flow" id="payment">
+<h2><span class="n">8</span>Subscription and payment</h2>
+<details class="dg" open>
+<summary>Two confirmations, one fulfilment</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  PR["/app/premium<br/>plans from the Plans master · gateways that are on and hold keys"] --> ST["POST /app/checkout<br/>CheckoutController::start · throttle 10/min<br/>one gateway → used · several → the member chose"]
+  ST --> CK["Checkout::start()<br/>orders row · status pending · amount in minor units"]
+  CK --> DR{"driver"}
+  DR -- "stripe" --> S1["Stripe hosted Checkout Session"]
+  DR -- "razorpay" --> S2["Razorpay Payment Link"]
+  S1 --> OFF["member pays on the gateway's own page"]
+  S2 --> OFF
+  OFF --> RT["A. return page<br/>GET /app/checkout/{order}/return<br/>Checkout::reconcile() asks the gateway"]
+  OFF --> WH["B. webhook<br/>POST /webhooks/payments/{gateway} · CSRF exempt<br/>Stripe: t= and v1= HMAC, 300-second window<br/>Razorpay: HMAC over the raw body"]
+  WH --> SIG{"signature valid?"}
+  SIG -- "no" --> X1["400 · not retried"]:::dead
+  SIG -- "yes" --> HW["Checkout::handleWebhook()<br/>gateway_events firstOrCreate(gateway, event_id)"]
+  HW --> DUP{"processed_at already set?"}
+  DUP -- "yes" --> X2["duplicate — return false, nothing happens"]:::off
+  DUP -- "no" --> FUL
+  RT --> FUL
+  RF["POST /app/checkout/{order}/refresh<br/>the member's 'check again' button"] --> RT
+  FUL["Checkout::fulfil() — ONE transaction<br/>SELECT the order FOR UPDATE · already paid? return as-is<br/>so the return page and the webhook cannot both grant"]
+  FUL --> SG["Subscriptions::grant()<br/>earlier active subscription closed · mirror on app_users:<br/>is_premium · premium_tier · premium_until"]
+  SG --> ER{"renewing early on the same plan?"}
+  ER -- "yes" --> EX1["new period starts at the current ends_at<br/>time already paid for is kept"]:::ok
+  ER -- "no" --> EX2["new period starts now"]
+  EX1 --> MP["mark the event processed · order paid · payment log"]
+  EX2 --> MP
+  MP --> EM["DB::afterCommit → billing.plan_started email<br/>after the OUTERMOST commit, so a rollback never sends it"]:::ok
+  FAIL["fulfilment throws → 500 to the gateway<br/>processed_at stays null → the retry does the work"]:::warn
+  HW -.-> FAIL
+  SCH["Scheduler: platform:run-due-tasks<br/>Subscriptions::expireDue() on lapsed rows<br/>mirror cleared only if this is still the plan they are on<br/>billing.expired email"] --> PR
+  IAP["Not usable inside a native app.<br/>Apple and Google require in-app purchase for digital subscriptions<br/>and take 15–30%. This flow is web only."]:::dead
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>A payment is confirmed up to three times — by the return page, by the webhook, and again when the gateway retries the webhook —
+and the member must end up with exactly one subscription. Both confirmations converge on <code>fulfil()</code>, which re-reads the
+order under a row lock and does nothing if it is already paid. Webhooks are deduplicated by the gateway's own event id, but a row
+counts as a duplicate only once <code>processed_at</code> is set: if fulfilment fails, the retry is not mistaken for a repeat and is
+allowed to finish the job.</p>
+<p>Renewing early adds to the time left rather than replacing it. Expiry is the scheduler's job; the mirror is cleared only when
+the lapsed row is still the plan the member is on, because a renewal may already have replaced it. None of this applies inside a
+native mobile app: the stores require in-app purchase for digital subscriptions, which this web-hosted checkout does not use.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Livewire/Member/Premium.php:34</code> — offered gateways</li>
+<li><code>app/Http/Controllers/Member/CheckoutController.php:29-80</code> — start; <code>:83</code> return; <code>:111</code> refresh</li>
+<li><code>app/Services/Payments/Checkout.php:62-111</code> — <code>start()</code>; <code>:119-152</code> <code>reconcile()</code></li>
+<li><code>app/Services/Payments/Checkout.php:161-216</code> — <code>fulfil()</code>: lock at <code>:164</code>, already-paid at <code>:166</code>, early renewal at <code>:184-190</code></li>
+<li><code>app/Services/Payments/Checkout.php:225-281</code> — <code>handleWebhook()</code>: <code>isProcessed()</code> at <code>:248</code>, <code>markProcessed()</code> at <code>:253,263,278</code></li>
+<li><code>app/Http/Controllers/WebhookController.php:30-58</code> — 400 on bad signature, 500 to force a retry</li>
+<li><code>app/Services/Payments/StripeDriver.php:161-168</code> — timestamp window and HMAC</li>
+<li><code>app/Services/Payments/RazorpayDriver.php:132-135</code> — HMAC over the raw body</li>
+<li><code>app/Services/Billing/Subscriptions.php:39-111</code> — <code>grant()</code>; email after outermost commit at <code>:102</code></li>
+<li><code>app/Services/Billing/Subscriptions.php:144-178</code> — <code>expireDue()</code></li>
+<li><code>database/migrations/2026_09_22_000001_add_processed_at_to_gateway_events.php</code> — the dedup column</li>
+<li><code>bootstrap/app.php:46</code> — <code>webhooks/*</code> exempt from CSRF</li>
+</ul></div>
+</details>
+</section>
+
+<!-- ============================================================ 9 -->
+<section class="flow" id="verification">
+<h2><span class="n">9</span>Verification</h2>
+<details class="dg" open>
+<summary>A code the server remembers, a photo the server keeps private</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  W["Website: /app/verification<br/>Verification::mount"] --> IS
+  A["Mobile: GET /api/v1/verification/gesture"] --> IS
+  IS["VerificationSubmission::issueGestureCode()<br/>4 characters · cached against the member for 10 minutes<br/>asking again replaces the last one"]
+  IS --> CAP["member photographs themselves holding the code"]
+  CAP --> SB["submit: website Verification::submit<br/>or POST /api/v1/verification · ability:verify · throttle 3 per day"]
+  SB --> VS["VerificationSubmission::submit()"]
+  VS --> AT{"attempts used ≥ verification.max_attempts (3)?"}
+  AT -- "yes" --> X1["refused — contact support"]:::dead
+  AT -- "no" --> CC{"code matches the outstanding one?<br/>hash_equals"}
+  CC -- "no · or expired" --> X2["422 — ask for a new code and retake"]:::dead
+  CC -- "yes" --> DSK["selfie stored on the private verifications disk<br/>never on the public disk"]
+  DSK --> VR["verifications row · status pending · queue standard<br/>sla_due_at = verification.sla_hours · code consumed (single use)<br/>member verification_status = pending"]
+  VR --> Q["/admin/verifications — the standard queue<br/>sorted by risk, SLA pills"]
+  Q --> RV["Review screen — selfie shown only through a signed, short-lived URL<br/>behind permission verifications · every view logged as sensitive"]
+  RV --> D{"Decision"}
+  D -- "approve<br/>refused when minor_suspected or in the restricted queue" --> AP["status approved<br/>member verification_status approved · verified_at"]:::ok
+  D -- "reject · enumerated reason code, note where the reason needs one" --> RJ["status rejected<br/>member verification_status rejected · member may retry within the cap"]:::dead
+  D -- "escalate" --> ES["status escalated · queue restricted_minor<br/>tighter SLA restricted_verification_hours"]:::warn
+  ES --> RQ["/admin/verifications/restricted<br/>404 — not 403 — without restricted_minor_queue<br/>selfie route applies the same check"]
+  RQ --> D2{"reject or escalate only<br/>canBeApproved() is false here"}
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>The gesture code is what stops a photograph of a photograph, and that only holds if the server remembers what it issued. It is
+generated server-side, held against the member for ten minutes, compared with a constant-time check, and consumed on use — a
+client cannot choose its own. Selfies are identity data: they go to a private disk and are served to staff only through a signed
+URL that expires, behind the <code>verifications</code> permission, with every view written to the sensitive audit log.</p>
+<p>Approval sets the member's status and <code>verified_at</code> in the same transaction. A submission that a reviewer suspects
+involves a minor is escalated into a separate queue that staff without its permission cannot even see, and inside that queue
+approval is not offered — only rejection or further escalation.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/VerificationSubmission.php:30,43-49</code> — TTL and <code>issueGestureCode()</code></li>
+<li><code>app/Services/Members/VerificationSubmission.php:63-106</code> — <code>submit()</code>: attempts at <code>:67</code>, <code>hash_equals</code> at <code>:73</code>, private disk at <code>:81</code>, single use at <code>:99</code></li>
+<li><code>app/Livewire/Member/Verification.php:34,54</code> — website issue and submit</li>
+<li><code>app/Http/Controllers/Api/V1/ProfileController.php:231,250</code> — API submit and gesture endpoints</li>
+<li><code>routes/api.php:166-169</code> — <code>ability:verify</code>, <code>throttle:verification</code></li>
+<li><code>app/Providers/PlatformServiceProvider.php:69</code> — verification limiter: 3 per 1440 minutes</li>
+<li><code>routes/admin.php:68-82</code> — standard queue, restricted queue, review, signed selfie route</li>
+<li><code>app/Http/Controllers/Admin/VerificationSelfieController.php:27-44</code> — permission, restricted check, sensitive log, private disk response</li>
+<li><code>app/Models/Verification.php:105</code> — <code>temporarySignedRoute</code>; <code>:140</code> <code>canBeApproved()</code></li>
+<li><code>app/Livewire/Verifications/Review.php:80-140</code> — approve, reject, escalate</li>
+<li><code>app/Actions/Verification/DecideVerification.php:30-50</code> approve · <code>:64-85</code> reject · <code>:104-118</code> escalate to <code>restricted_minor</code></li>
+</ul></div>
+</details>
+</section>
+
+<!-- ============================================================ 10 -->
+<section class="flow" id="notifications">
+<h2><span class="n">10</span>Notifications</h2>
+<details class="dg" open>
+<summary>What fires today, and what is only a template</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  H1["SENT BY CODE"]
+  N1["match.new — push<br/>SwipeRecorder afterCommit → SendMemberPush × 2"]:::ok
+  N2["message.new — push<br/>MessageSender afterCommit → SendMemberPush"]:::ok
+  N3["billing.plan_started — email<br/>Subscriptions::grant, after the outermost commit"]:::ok
+  N4["billing.renewal_push — days 7, 3, 1 · billing.renewal_email — day 3<br/>SendRenewalReminders, hourly"]:::ok
+  N5["billing.expired — email<br/>Subscriptions::expireDue"]:::ok
+  N6["push campaigns — operator-authored, not templates<br/>SendCampaigns → Bus::batch of SendCampaignPush"]:::ok
+  H2["TEMPLATE EXISTS · NOTHING SENDS IT"]
+  U1["appeal.received · appeal.decided"]:::off
+  U2["verification.approved · verification.rejected · verification.prompt"]:::off
+  U3["likes.waiting · match.silent_nudge"]:::off
+  U4["profile.incomplete — the key appears only as a risk factor"]:::off
+  U5["enforcement.* — ApplyEnforcement stores notified_user = true and sends nothing"]:::off
+  H3["DELIVERY"]
+  E1["email: MemberNotifier::email() writes email_logs as queued<br/>→ TemplatedMail (ShouldQueue)<br/>→ RecordEmailOutcome settles the row to sent or failed when it actually happens"]
+  P1["push: SendMemberPush job re-reads the member<br/>skips suspended · banned · deactivated — a shadow-banned member is NOT skipped<br/>→ MemberNotifier::push() → FcmSender, FCM HTTP v1 · one push_logs row per member"]
+  WK["needs a queue worker<br/>without one, nothing above is delivered and nothing fails visibly"]:::warn
+  H1 ~~~ N1 ~~~ N2 ~~~ N3 ~~~ N4 ~~~ N5 ~~~ N6 ~~~ H2 ~~~ U1 ~~~ U2 ~~~ U3 ~~~ U4 ~~~ U5 ~~~ H3 ~~~ E1 ~~~ P1 ~~~ WK
+  N6 --> H3
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Every member-facing message takes its words from a template the operator can edit, and every send is logged so “did they get
+it?” is answerable from the console. Six things are actually sent; nine templates are editable text with no code behind them.
+Enforcement is the awkward one — the console records that the member was notified, and no notification exists.</p>
+<p>Both channels are queued. The email log is written as <code>queued</code> and only settled to <code>sent</code> or
+<code>failed</code> when the mail is handed over, because writing <code>sent</code> at dispatch would be a lie the moment a worker
+stops. Push is a job that re-reads the member before sending, so a ban applied in the meantime is respected — but a shadow ban
+is deliberately not, since an account that suddenly goes quiet is a tell.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/SwipeRecorder.php:110</code> · <code>app/Services/Members/MessageSender.php:102</code> — the two event pushes</li>
+<li><code>app/Services/Billing/Subscriptions.php:102</code> and <code>expireDue()</code> — plan started, plan expired</li>
+<li><code>app/Console/Commands/SendRenewalReminders.php:30-31,110-111</code> — reminder days and both channels</li>
+<li><code>app/Console/Commands/SendCampaigns.php:95</code> — campaign batch</li>
+<li><code>database/seeders/NotificationTemplateSeeder.php</code> — every template key; the unwired ones are referenced nowhere in <code>app/</code></li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:69</code> — <code>notified_user</code> stored, no sender called</li>
+<li><code>app/Services/Notifications/MemberNotifier.php:34,58</code> — <code>push()</code> and <code>email()</code></li>
+<li><code>app/Notifications/TemplatedMail.php:25</code> — <code>ShouldQueue</code></li>
+<li><code>app/Listeners/RecordEmailOutcome.php:36</code> — settles <code>email_logs</code></li>
+<li><code>app/Jobs/SendMemberPush.php:39-58</code> — status check, shadow ban not skipped</li>
+<li><code>app/Services/Push/FcmSender.php</code> — FCM HTTP v1 sender</li>
+</ul></div>
+</details>
+</section>
+
+<!-- ============================================================ 11 -->
+<section class="flow" id="scheduler">
+<h2><span class="n">11</span>Scheduler</h2>
+<details class="dg" open>
+<summary>One cron entry, three commands, and what happens without them</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart LR
+  CRON["cron, every minute<br/>php artisan schedule:run"] --> T1
+  CRON --> T2
+  CRON --> T3
+  T1["platform:run-due-tasks<br/>every 5 minutes · withoutOverlapping"] --> B1["bans past expires_at, still unlifted<br/>ApplyEnforcement::expire() each one<br/>new Lift action · actor automation · mirror recomputed"]
+  T1 --> S1["Subscriptions::expireDue()<br/>lapsed rows → expired · mirror cleared if still current<br/>billing.expired email"]
+  T2["platform:send-renewal-reminders<br/>hourly · withoutOverlapping"] --> R1["subscriptions ending within 7, 3, 1 days → push<br/>within 3 days → email<br/>each reminder recorded once on the subscription"]
+  T3["platform:send-campaigns<br/>every 5 minutes · withoutOverlapping"] --> C1["approved campaigns whose time has come<br/>claimed with a status update so two runs cannot both send<br/>chunked into a job batch · finally() marks it sent"]
+  MW["No scheduler running?<br/>suspended_until in the past is cleared on the member's next request<br/>by appuser.active and member.active — suspensions only.<br/>Shadow bans and feature limits wait for run-due-tasks."]:::warn
+  QW["Queue worker — separate process<br/>runs the email, push and campaign jobs the commands dispatch"]:::warn
+  T3 --> QW
+  T2 --> QW
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Everything the clock owns hangs off one cron line. Restrictions and plans end on time, renewal warnings go out at the right
+hour, and approved campaigns leave when scheduled. The product degrades gracefully without it: a suspension clears itself the
+next time the member does anything, because both member-facing middleware check <code>suspended_until</code> — but that is the only
+self-clearing case. A lapsed shadow ban or feature limit, and every renewal reminder and campaign, waits for the scheduler. The
+commands themselves now mostly dispatch jobs, so a queue worker is the other process that has to be running.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>routes/console.php:25-28</code> run-due-tasks · <code>:33-36</code> renewal reminders · <code>:39-42</code> campaigns</li>
+<li><code>app/Console/Commands/RunDueTasks.php:41-60</code> — expiring bans; <code>:35</code> — expiring subscriptions</li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:175-207</code> — <code>expire()</code></li>
+<li><code>app/Console/Commands/SendRenewalReminders.php:30-31,89,110-121</code> — days, channel, recorded once</li>
+<li><code>app/Console/Commands/SendCampaigns.php:53-109</code> — claim, chunk, batch, finally</li>
+<li><code>app/Http/Middleware/EnsureAppUserIsNotBanned.php:34-40</code> · <code>app/Http/Middleware/EnsureMemberCanUseApp.php:38-44</code> — suspensions self-clear</li>
+<li><code>README.md</code> — “The scheduler” and “The queue worker”</li>
+</ul></div>
+</details>
+</section>
+
+<!-- ============================================================ 12 -->
+<section class="flow" id="api">
+<h2><span class="n">12</span>API surface map</h2>
+<details class="dg" open>
+<summary>The middleware stack every authenticated call passes through</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  REQ["request to /api/v1/…"] --> PUBQ{"public route?"}
+  PUBQ -- "yes" --> PUB["config · interests · countries · states · cities<br/>auth/register · auth/login (throttle:auth)"]
+  PUBQ -- "no" --> M1["auth:sanctum<br/>valid token → the app_users row"]
+  M1 --> M2["appuser.active<br/>clears an expired suspension · 403 for suspended, banned, deactivated"]
+  M2 --> M3["throttle:api<br/>90 per minute per member"]
+  M3 --> AB{"route requires an ability?"}
+  AB -- "ability:swipe · message · report · verify" --> M4["token must carry it<br/>a pending token lacks swipe, message and report"]:::warn
+  AB -- "no" --> M5
+  M4 --> M5["route-specific throttle, if any<br/>deck · swipe · message · report · verification · phone"]
+  M5 --> CT["controller → the same services the website uses<br/>response through a Resource — never a bare model"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Thirty-nine endpoints, seven public. Everything else passes the same four gates before a route-specific ability or throttle is
+considered. Limits are read from settings so they can be tightened during an incident without a deploy; accounts under 24 hours
+old get half the swipe and message allowances. Responses always go through a Resource — that is where risk scores, internal notes
+and shadow-ban state would otherwise leak, and <code>MeResource</code> maps <code>shadow_banned</code> to <code>active</code> on the way out.</p>
+</div>
+</details>
+
+<details class="dg" open>
+<summary>All 39 endpoints</summary>
+<div class="caption">
+<table class="api">
+<thead><tr><th>Endpoint</th><th>Auth</th><th>Ability</th><th>Throttle</th><th>Handler</th></tr></thead>
+<tbody>
+<tr class="grp"><td colspan="5">Public — 7</td></tr>
+<tr><td>GET /api/v1/config</td><td>none</td><td>—</td><td>—</td><td>routes/api.php:43</td></tr>
+<tr><td>GET /api/v1/interests</td><td>none</td><td>—</td><td>—</td><td>routes/api.php:56</td></tr>
+<tr><td>GET /api/v1/countries</td><td>none</td><td>—</td><td>—</td><td>routes/api.php:61</td></tr>
+<tr><td>GET /api/v1/states</td><td>none</td><td>—</td><td>—</td><td>routes/api.php:68</td></tr>
+<tr><td>GET /api/v1/cities</td><td>none</td><td>—</td><td>—</td><td>routes/api.php:76</td></tr>
+<tr><td>POST /api/v1/auth/register</td><td>none</td><td>—</td><td>auth · 8/min per IP, 5/min per IP+email</td><td>AuthController::register:22</td></tr>
+<tr><td>POST /api/v1/auth/login</td><td>none</td><td>—</td><td>auth</td><td>AuthController::login:45</td></tr>
+
+<tr class="grp"><td colspan="5">Session — 2 · all rows below: auth:sanctum + appuser.active + throttle:api 90/min</td></tr>
+<tr><td>POST /api/v1/auth/logout</td><td>token</td><td>—</td><td>api</td><td>AuthController::logout:76</td></tr>
+<tr><td>POST /api/v1/auth/logout-all</td><td>token</td><td>—</td><td>api</td><td>AuthController::logoutAll:83</td></tr>
+
+<tr class="grp"><td colspan="5">Me — 6</td></tr>
+<tr><td>GET /api/v1/me</td><td>token</td><td>—</td><td>api</td><td>ProfileController::me:29</td></tr>
+<tr><td>PATCH /api/v1/me</td><td>token</td><td>—</td><td>api</td><td>ProfileController::update:38 — does not refresh completion</td></tr>
+<tr><td>DELETE /api/v1/me</td><td>token</td><td>—</td><td>api</td><td>ProfileController::destroy:183 → AccountDeletion — password required; soft-delete + anonymise</td></tr>
+<tr><td>PATCH /api/v1/me/profile</td><td>token</td><td>—</td><td>api</td><td>ProfileController::updateProfile:58 — refreshes completion</td></tr>
+<tr><td>PATCH /api/v1/me/preferences</td><td>token</td><td>—</td><td>api</td><td>ProfileController::updatePreferences:91 — validates the merged age pair</td></tr>
+<tr><td>PUT /api/v1/me/interests</td><td>token</td><td>—</td><td>api</td><td>ProfileController::syncInterests:126 — refreshes completion</td></tr>
+
+<tr class="grp"><td colspan="5">Photos — 4 · ability:profile:write, so a pending token can use them</td></tr>
+<tr><td>POST /api/v1/me/photos</td><td>token</td><td>profile:write</td><td>api</td><td>PhotoController::store:35 → MemberPhotoStore::store; 422 <code>photo_limit_reached</code> at the settings limit; refreshes completion</td></tr>
+<tr><td>PATCH /api/v1/me/photos/reorder</td><td>token</td><td>profile:write</td><td>api</td><td>PhotoController::reorder:85 → MemberPhotoStore::reorder — full list, atomic, 403 on any foreign uuid</td></tr>
+<tr><td>PATCH /api/v1/me/photos/{uuid}/primary</td><td>token</td><td>profile:write</td><td>api</td><td>PhotoController::primary:76 → MemberPhotoStore::makePrimary — 403 unless owned</td></tr>
+<tr><td>DELETE /api/v1/me/photos/{uuid}</td><td>token</td><td>profile:write</td><td>api</td><td>PhotoController::destroy:66 → MemberPhotoStore::delete (soft) — 403 unless owned; refreshes completion</td></tr>
+
+<tr class="grp"><td colspan="5">Discovery — 2</td></tr>
+<tr><td>GET /api/v1/deck</td><td>token</td><td>swipe</td><td>deck · 60/min</td><td>SwipeController::deck:22 → DiscoveryDeck::for()</td></tr>
+<tr><td>POST /api/v1/swipes</td><td>token</td><td>swipe</td><td>swipe · 120/min, halved under 24h</td><td>SwipeController::store:32 → SwipeRecorder</td></tr>
+
+<tr class="grp"><td colspan="5">Matches — 3</td></tr>
+<tr><td>GET /api/v1/matches</td><td>token</td><td>—</td><td>api</td><td>ProfileController::matches:194</td></tr>
+<tr><td>DELETE /api/v1/matches/{uuid}</td><td>token</td><td>—</td><td>api</td><td>ProfileController::unmatch:209 → MatchActions::end</td></tr>
+<tr><td>GET /api/v1/me/likers</td><td>token</td><td>—</td><td>api</td><td>ProfileController::likers:151 → Likers (shared with the website) — 403 <code>premium_required</code> with the count unless the plan has <code>see_likers</code></td></tr>
+
+<tr class="grp"><td colspan="5">Conversations — 4</td></tr>
+<tr><td>GET /api/v1/conversations</td><td>token</td><td>—</td><td>api</td><td>MessageController::conversations:18 — open only</td></tr>
+<tr><td>GET /api/v1/conversations/{uuid}/messages</td><td>token</td><td>—</td><td>api</td><td>MessageController::index:35 — assertUsableBy</td></tr>
+<tr><td>POST /api/v1/conversations/{uuid}/messages</td><td>token</td><td>message</td><td>message · 30/min, halved under 24h</td><td>MessageController::store:55 → MessageSender</td></tr>
+<tr><td>POST /api/v1/conversations/{uuid}/read</td><td>token</td><td>—</td><td>api</td><td>MessageController::markRead:78</td></tr>
+
+<tr class="grp"><td colspan="5">Safety — 4</td></tr>
+<tr><td>POST /api/v1/reports</td><td>token</td><td>report</td><td>report · 10 per 60 min</td><td>SafetyController::report:21 → SafetyActions</td></tr>
+<tr><td>GET /api/v1/blocks</td><td>token</td><td>—</td><td>api</td><td>SafetyController::blocks:46</td></tr>
+<tr><td>POST /api/v1/blocks</td><td>token</td><td>—</td><td>api</td><td>SafetyController::block:58 → closes the thread</td></tr>
+<tr><td>DELETE /api/v1/blocks/{uuid}</td><td>token</td><td>—</td><td>api</td><td>SafetyController::unblock:71</td></tr>
+
+<tr class="grp"><td colspan="5">Phone — 2</td></tr>
+<tr><td>POST /api/v1/phone/send-code</td><td>token</td><td>—</td><td>4 per 10 min</td><td>PhoneController::sendCode:17</td></tr>
+<tr><td>POST /api/v1/phone/verify</td><td>token</td><td>—</td><td>10 per 10 min</td><td>PhoneController::verify:42</td></tr>
+
+<tr class="grp"><td colspan="5">Devices — 2 · no ability on purpose: an account under review must still be reachable</td></tr>
+<tr><td>POST /api/v1/devices/push-token</td><td>token</td><td>—</td><td>api</td><td>DeviceController::storePushToken:23</td></tr>
+<tr><td>DELETE /api/v1/devices/push-token</td><td>token</td><td>—</td><td>api</td><td>DeviceController::deletePushToken:56</td></tr>
+
+<tr class="grp"><td colspan="5">Verification — 3</td></tr>
+<tr><td>GET /api/v1/verification</td><td>token</td><td>—</td><td>api</td><td>ProfileController::verification:216</td></tr>
+<tr><td>GET /api/v1/verification/gesture</td><td>token</td><td>—</td><td>api</td><td>ProfileController::gestureCode:250 — server-issued, 10 min</td></tr>
+<tr><td>POST /api/v1/verification</td><td>token</td><td>verify</td><td>verification · 3 per day</td><td>ProfileController::submitVerification:231</td></tr>
+
+</tbody>
+</table>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>routes/api.php:36-190</code> — every route, its middleware and ability</li>
+<li><code>app/Providers/PlatformServiceProvider.php:46-77</code> — the throttle buckets: api 90, deck 60, swipe 120, message 30, report 10/60min, verification 3/1440min, auth 8 + 5</li>
+<li><code>app/Providers/PlatformServiceProvider.php:53-57</code> — halving for accounts under 24 hours</li>
+<li><code>app/Http/Controllers/Api/V1/AuthController.php:100-105</code> — abilities by status</li>
+<li><code>app/Http/Middleware/EnsureAppUserIsNotBanned.php</code> — <code>appuser.active</code></li>
+<li><code>app/Http/Resources/Api/V1/MeResource.php</code> — <code>shadow_banned</code> reported as <code>active</code></li>
+<li><code>app/Services/Members/Likers.php:28</code> — the one likers query; <code>app/Livewire/Member/Matches.php:64</code> and <code>ProfileController::likers:151</code> both call it</li>
+<li><code>app/Services/Members/AccountDeletion.php:39</code> — soft-delete + anonymise; <code>app/Livewire/Member/Account.php:142</code> — the website's mirror</li>
+<li><code>app/Services/Media/MemberPhotoStore.php:54,127</code> — the limit as a typed exception; <code>reorder()</code></li>
+</ul></div>
+</details>
+</section>
+
+<footer class="doc-end">
+    <p>Application flow · Derived from the code on the date of generation, not from a plan. Companion documents:
+    <a href="project-overview.html">Project Overview</a> and <a href="user-manual.html">User Manual</a>. Diagrams render with a
+    vendored copy of Mermaid in <code>assets/</code>, so this file works offline and from <code>file://</code>.</p>
+</footer>
+
+</div><!-- .content -->
+</div><!-- .layout -->
+</main>
+
+<script src="assets/mermaid.min.js"></script>
+<script>
+(function () {
+    /*
+     * Mermaid draws into SVG with literal colours, and its colour maths does
+     * not understand oklch(). These are hex approximations of the theme.css
+     * tokens, used for the diagrams only; the page itself uses the real ones.
+     */
+    var PALETTES = {
+        light: {
+            bg: '#ffffff', node: '#fdf2f6', node2: '#f6f0f7', text: '#2a2030', border: '#d9b6c5', line: '#7d737f',
+            cluster: '#faf7fa', muted: '#f6f4f5',
+            dead: '#b4262c', deadBg: '#fdeceb', off: '#8a8290', offBg: '#f1eef2',
+            ok: '#1c7a54', okBg: '#eef7f2', warn: '#9a6a12', warnBg: '#fdf6e7'
+        },
+        dark: {
+            bg: '#221c25', node: '#3a2530', node2: '#332a3a', text: '#eeeaf0', border: '#8a4a63', line: '#b7aeba',
+            cluster: '#1e181f', muted: '#2e2731',
+            dead: '#f08a86', deadBg: '#4a2326', off: '#a69ea8', offBg: '#2a242d',
+            ok: '#6fd3a3', okBg: '#1f3b30', warn: '#e8c46a', warnBg: '#3f3420'
+        }
+    };
+
+    function themeName() {
+        return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    }
+
+    function classDefs(p) {
+        return '\nclassDef dead fill:' + p.deadBg + ',stroke:' + p.dead + ',color:' + p.dead + ',stroke-width:2px'
+             + '\nclassDef off fill:' + p.offBg + ',stroke:' + p.off + ',color:' + p.off + ',stroke-dasharray:5 4'
+             + '\nclassDef ok fill:' + p.okBg + ',stroke:' + p.ok + ',color:' + p.ok
+             + '\nclassDef warn fill:' + p.warnBg + ',stroke:' + p.warn + ',color:' + p.warn + '\n';
+    }
+
+    var renderRun = 0;
+
+    async function renderAll() {
+        var p = PALETTES[themeName()];
+        var run = ++renderRun;
+
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'base',
+            securityLevel: 'loose',
+            flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis', padding: 12 },
+            themeVariables: {
+                background: p.bg,
+                primaryColor: p.node,
+                primaryTextColor: p.text,
+                primaryBorderColor: p.border,
+                secondaryColor: p.node2,
+                secondaryTextColor: p.text,
+                tertiaryColor: p.muted,
+                tertiaryTextColor: p.text,
+                lineColor: p.line,
+                textColor: p.text,
+                nodeTextColor: p.text,
+                clusterBkg: p.cluster,
+                clusterBorder: p.border,
+                edgeLabelBackground: p.bg,
+                titleColor: p.text,
+                fontFamily: '"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif',
+                fontSize: '14px'
+            }
+        });
+
+        var blocks = document.querySelectorAll('.diagram');
+        for (var i = 0; i < blocks.length; i++) {
+            if (run !== renderRun) return; // a newer render superseded this one
+            var el = blocks[i];
+            var src = el.querySelector('script[type="text/x-mermaid"]').textContent.trim() + classDefs(p);
+            var target = el.querySelector('.render');
+            try {
+                var out = await mermaid.render('mmd-' + run + '-' + i, src);
+                target.innerHTML = out.svg;
+            } catch (e) {
+                target.innerHTML = '<pre class="err">Diagram failed to render: ' + String(e && e.message ? e.message : e) + '</pre>';
+                if (window.console) console.error('Diagram ' + i, e);
+            }
+        }
+    }
+
+    function applyTheme(name) {
+        document.documentElement.setAttribute('data-theme', name);
+        var btn = document.getElementById('themeToggle');
+        if (btn) btn.textContent = name === 'dark' ? 'Light theme' : 'Dark theme';
+        try { localStorage.setItem('flow_theme', name); } catch (e) {}
+    }
+
+    // Initial theme: remembered choice, else the system preference.
+    var initial = 'light';
+    try { initial = localStorage.getItem('flow_theme') || initial; } catch (e) {}
+    if (initial !== 'dark' && initial !== 'light') {
+        initial = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    applyTheme(initial);
+
+    document.getElementById('themeToggle').addEventListener('click', function () {
+        applyTheme(themeName() === 'dark' ? 'light' : 'dark');
+        renderAll();
+    });
+
+    document.getElementById('expandAll').addEventListener('click', function () {
+        document.querySelectorAll('details.dg').forEach(function (d) { d.open = true; });
+    });
+
+    document.getElementById('collapseAll').addEventListener('click', function () {
+        document.querySelectorAll('details.dg').forEach(function (d) { d.open = false; });
+    });
+
+    // Printing a collapsed diagram prints nothing, so open everything first.
+    window.addEventListener('beforeprint', function () {
+        document.querySelectorAll('details.dg').forEach(function (d) { d.open = true; });
+    });
+
+    if (window.mermaid) {
+        renderAll();
+    } else {
+        document.querySelectorAll('.diagram .render').forEach(function (t) {
+            t.innerHTML = '<pre class="err">assets/mermaid.min.js did not load. The diagram source is in the page; open the file from the docs/ folder so the relative path resolves.</pre>';
+        });
+    }
+})();
+</script>
+</body>
+</html>
