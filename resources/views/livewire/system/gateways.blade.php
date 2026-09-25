@@ -25,7 +25,9 @@
                                 <x-ui.badge variant="muted" size="sm">Off</x-ui.badge>
                             @endif
 
-                            @if ($kind === 'payment' && $gateway->is_test_mode)
+                            @if ($kind === 'payment' && $gateway->isStore())
+                                <x-ui.badge variant="muted" size="sm">In-app purchase</x-ui.badge>
+                            @elseif ($kind === 'payment' && $gateway->is_test_mode)
                                 <x-ui.badge variant="warning" size="sm">Test mode</x-ui.badge>
                             @endif
                         </div>
@@ -48,7 +50,30 @@
                 @if ($kind === 'payment')
                     @php $supported = in_array($gateway->slug, ['stripe', 'razorpay'], true); @endphp
 
-                    @if ($supported)
+                    @if ($gateway->isStore())
+                        {{-- The store tells us about renewals, refunds and expiry
+                             at this address. Without it, a lapsed subscription
+                             is only caught by the expiry job. --}}
+                        <div class="mt-3 rounded-lg bg-muted px-3 py-2.5">
+                            <p class="text-xs font-medium">Notification address</p>
+                            <p class="mt-1 break-all font-mono text-[11px] text-muted-foreground">{{ route('webhooks.store', $gateway->slug) }}</p>
+                            <p class="mt-1.5 text-[11px] text-muted-foreground">
+                                @if ($gateway->slug === 'apple')
+                                    App Store Connect → your app → App Information → App Store Server Notifications → set this as the
+                                    <span class="font-mono">Version 2</span> production <em>and</em> sandbox URL. The key above is an
+                                    App Store Connect API key with the <em>In-App Purchase</em> role. Sandbox and TestFlight purchases are
+                                    honoured on this server whatever the test-mode switch says; the transaction itself says which it is.
+                                @else
+                                    Play Console → Monetise → Monetisation setup → Real-time developer notifications → a Pub/Sub topic with a
+                                    <em>push</em> subscription to this address, authenticated with a service account (OIDC). The JSON key above
+                                    is a service account with access to this app in Play Console. Licence-tester purchases are honoured.
+                                @endif
+                            </p>
+                            @if (! request()->secure() && ! app()->environment('local'))
+                                <p class="mt-1.5 text-[11px] text-destructive">The stores only send notifications to https addresses.</p>
+                            @endif
+                        </div>
+                    @elseif ($supported)
                         {{-- The webhook is what confirms a payment, so its address
                              is shown here rather than buried in documentation. --}}
                         <div class="mt-3 rounded-lg bg-muted px-3 py-2.5">
@@ -104,13 +129,24 @@
                 @if ($editing === $gateway->id)
                     <div class="mt-4 space-y-3 border-t border-border pt-4">
                         @foreach ($gateway->credentialFields() as $field)
-                            <x-ui.input
-                                :label="str($field)->headline()->toString()"
-                                type="password"
-                                wire:model="credentials.{{ $field }}"
-                                :placeholder="($gateway->credentialStatus()[$field] ?? false) ? '•••••••• (saved — leave blank to keep)' : 'Not set'"
-                                autocomplete="off"
-                            />
+                            @if (method_exists($gateway, 'multilineCredentialFields') && in_array($field, $gateway->multilineCredentialFields(), true))
+                                <x-ui.textarea
+                                    :label="str($field)->headline()->toString()"
+                                    rows="4"
+                                    class="font-mono text-xs"
+                                    wire:model="credentials.{{ $field }}"
+                                    :placeholder="($gateway->credentialStatus()[$field] ?? false) ? '•••••••• (saved — leave blank to keep)' : 'Paste the whole file'"
+                                    autocomplete="off"
+                                />
+                            @else
+                                <x-ui.input
+                                    :label="str($field)->headline()->toString()"
+                                    type="password"
+                                    wire:model="credentials.{{ $field }}"
+                                    :placeholder="($gateway->credentialStatus()[$field] ?? false) ? '•••••••• (saved — leave blank to keep)' : (method_exists($gateway, 'optionalCredentialFields') && in_array($field, $gateway->optionalCredentialFields(), true) ? 'Optional' : 'Not set')"
+                                    autocomplete="off"
+                                />
+                            @endif
                         @endforeach
 
                         @if ($kind === 'sms')

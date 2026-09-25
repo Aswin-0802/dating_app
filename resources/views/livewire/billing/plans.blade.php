@@ -106,6 +106,21 @@
             </div>
 
             <fieldset class="space-y-2">
+                <legend class="text-sm font-medium">In-app purchase products</legend>
+                <p class="text-xs text-muted-foreground">
+                    The product identifiers created in App Store Connect and Google Play Console for this plan. Prices are set
+                    there, in each member's currency. Leave a field blank if the plan is not sold in that store for that period.
+                    Put every plan in the <em>same</em> Apple subscription group, or a member can hold two at once.
+                </p>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <x-ui.input label="App Store — monthly" wire:model="appleMonthly" placeholder="plus_monthly" class="font-mono" :error="$errors->first('appleMonthly')" />
+                    <x-ui.input label="App Store — yearly" wire:model="appleYearly" placeholder="plus_yearly" class="font-mono" :error="$errors->first('appleYearly')" />
+                    <x-ui.input label="Google Play — monthly" wire:model="googleMonthly" placeholder="plus_monthly" class="font-mono" :error="$errors->first('googleMonthly')" />
+                    <x-ui.input label="Google Play — yearly" wire:model="googleYearly" placeholder="plus_yearly" class="font-mono" :error="$errors->first('googleYearly')" />
+                </div>
+            </fieldset>
+
+            <fieldset class="space-y-2">
                 <legend class="text-sm font-medium">What it unlocks</legend>
                 <div class="grid gap-2 sm:grid-cols-2">
                     @foreach (App\Models\Plan::FEATURES as $key => $label)

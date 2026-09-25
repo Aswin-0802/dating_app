@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Models\PaymentGateway;
+use App\Models\Plan;
 use App\Models\User;
+use App\Services\Store\StoreDrivers;
 use App\Support\PushSettings;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
@@ -38,6 +41,7 @@ class Preflight extends Command
         $this->checkAppKeyAndUrl();
         $this->checkQueueWorkerIsNeeded();
         $this->checkPushAndMail();
+        $this->checkStores();
 
         foreach ($this->warnings as $warning) {
             $this->warn('  ! '.$warning);
@@ -139,6 +143,40 @@ class Preflight extends Command
         $this->warnings[] = 'QUEUE_CONNECTION is "'.config('queue.default')
             .'". Email and push will not be delivered at all unless a worker is running '
             .'(php artisan queue:work), alongside the scheduler cron.';
+    }
+
+    /**
+     * In-app purchases: a store switched on with credentials the store
+     * refuses means every purchase in the app fails at the receipt step,
+     * after the member has been charged. Found here, not by a member.
+     */
+    private function checkStores(): void
+    {
+        $stores = PaymentGateway::query()->where('kind', 'store')->where('is_active', true)->get();
+
+        if ($stores->isEmpty()) {
+            $this->warnings[] = 'No app store is switched on, so Premium cannot be bought in the mobile app.';
+
+            return;
+        }
+
+        $drivers = app(StoreDrivers::class);
+
+        foreach ($stores as $gateway) {
+            $result = $drivers->for($gateway->slug)?->check() ?? ['ok' => false, 'error' => 'no driver'];
+
+            if (! ($result['ok'] ?? false)) {
+                $this->failures[] = "{$gateway->name} in-app purchases are on but the store refused the credentials: ".($result['error'] ?? 'unknown error');
+            }
+
+            $mapped = Plan::query()->where('is_active', true)
+                ->where(fn ($q) => $q->whereNotNull(Plan::storeColumn($gateway->slug, 'monthly'))->orWhereNotNull(Plan::storeColumn($gateway->slug, 'yearly')))
+                ->exists();
+
+            if (! $mapped) {
+                $this->warnings[] = "{$gateway->name} is on but no plan on sale has a {$gateway->name} product id, so nothing can be bought in the app.";
+            }
+        }
     }
 
     private function checkPushAndMail(): void

@@ -45,7 +45,7 @@
                 @endif
 
                 <x-ui.select size="sm" label="How" placeholder="Any" wire:model.live="source"
-                    :options="['payment' => 'Paid online', 'manual' => 'Given by staff']" />
+                    :options="['payment' => 'Paid online', 'apple' => 'App Store', 'google' => 'Google Play', 'manual' => 'Given by staff']" />
             </div>
         </div>
 
@@ -67,6 +67,9 @@
                             <th class="py-2 pr-3 font-medium">How</th>
                             <th class="py-2 pr-3 text-right font-medium">Paid</th>
                             <th class="py-2 pr-3 font-medium">Status</th>
+                            @if ($canGrant)
+                                <th class="py-2 pr-3 font-medium"><span class="sr-only">Actions</span></th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border">
@@ -89,6 +92,9 @@
                                         <span class="text-muted-foreground">No end date</span>
                                     @else
                                         {{ platform_date($subscription->ends_at) }}
+                                        @if ($subscription->status === 'active' && $subscription->auto_renewing !== null)
+                                            <span class="block text-xs text-muted-foreground">{{ $subscription->auto_renewing ? 'renews' : 'will not renew' }}</span>
+                                        @endif
                                         @if ($subscription->status === 'active' && $subscription->ends_at->isBefore(now()->addDays(7)))
                                             <span class="block text-xs font-medium text-warning-subtle-foreground">
                                                 {{ $subscription->daysLeft() <= 0 ? 'today' : 'in '.$subscription->daysLeft().' days' }}
@@ -97,7 +103,7 @@
                                     @endif
                                 </td>
                                 <td class="py-2.5 pr-3 text-muted-foreground">
-                                    {{ $subscription->source === 'payment' ? 'Paid online' : 'Given by staff' }}
+                                    {{ $subscription->sourceLabel() }}
                                     @if ($subscription->grantedBy)
                                         <span class="block text-xs">{{ $subscription->grantedBy->name }}</span>
                                     @endif
@@ -114,7 +120,33 @@
                                         <x-ui.badge size="sm" variant="warning">Replaced</x-ui.badge>
                                     @endif
                                 </td>
+                                @if ($canGrant)
+                                    <td class="py-2.5 pr-3 text-right">
+                                        @if ($subscription->isFromStore() && $subscription->external_ref !== null && $reassigning !== $subscription->id)
+                                            <x-ui.button size="xs" variant="ghost" wire:click="openReassign({{ $subscription->id }})">Move to another account</x-ui.button>
+                                        @endif
+                                    </td>
+                                @endif
                             </tr>
+                            @if ($canGrant && $reassigning === $subscription->id)
+                                <tr wire:key="reassign-{{ $subscription->id }}" class="bg-muted/40">
+                                    <td colspan="8" class="px-3 py-3">
+                                        <form wire:submit="reassign" class="flex flex-col gap-2 sm:flex-row sm:items-end" novalidate>
+                                            <div class="flex-1">
+                                                <x-ui.input label="Move this {{ $subscription->sourceLabel() }} subscription to the member with email" type="email" wire:model="reassignEmail" placeholder="member@example.com" :error="$errors->first('reassignEmail')" required />
+                                            </div>
+                                            <div class="flex-1">
+                                                <x-ui.input label="Why (kept on the record)" wire:model="reassignNote" placeholder="Signed up twice; ticket #123" :error="$errors->first('reassignNote')" />
+                                            </div>
+                                            <div class="flex gap-2">
+                                                <x-ui.button type="submit" size="sm">Move</x-ui.button>
+                                                <x-ui.button type="button" size="sm" variant="ghost" wire:click="cancelReassign">Cancel</x-ui.button>
+                                            </div>
+                                        </form>
+                                        <p class="mt-1.5 text-xs text-muted-foreground">Every row and order for this store subscription moves, and both members' plans are recalculated. The store keeps billing the same Apple ID or Google account.</p>
+                                    </td>
+                                </tr>
+                            @endif
                         @endforeach
                     </tbody>
                 </table>

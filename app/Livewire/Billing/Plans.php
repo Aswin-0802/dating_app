@@ -38,6 +38,15 @@ class Plans extends Component
 
     public string $yearlyPrice = '';
 
+    /** Store product identifiers, one per period. Blank means not sold in that store for that period. */
+    public string $appleMonthly = '';
+
+    public string $appleYearly = '';
+
+    public string $googleMonthly = '';
+
+    public string $googleYearly = '';
+
     /** @var array<int, string> */
     public array $features = [];
 
@@ -74,7 +83,8 @@ class Plans extends Component
     {
         $this->authorizeEdit();
         $this->resetValidation();
-        $this->reset('editingId', 'name', 'slug', 'tagline', 'monthlyPrice', 'yearlyPrice', 'features', 'perks', 'isFeatured');
+        $this->reset('editingId', 'name', 'slug', 'tagline', 'monthlyPrice', 'yearlyPrice', 'features', 'perks', 'isFeatured',
+            'appleMonthly', 'appleYearly', 'googleMonthly', 'googleYearly');
         $this->badgeColor = '#e11d48';
         $this->isActive = true;
         $this->formOpen = true;
@@ -92,6 +102,10 @@ class Plans extends Component
         $this->tagline = (string) $plan->tagline;
         $this->monthlyPrice = (string) $plan->monthly_price;
         $this->yearlyPrice = $plan->yearly_price === null ? '' : (string) $plan->yearly_price;
+        $this->appleMonthly = (string) $plan->apple_product_id_monthly;
+        $this->appleYearly = (string) $plan->apple_product_id_yearly;
+        $this->googleMonthly = (string) $plan->google_product_id_monthly;
+        $this->googleYearly = (string) $plan->google_product_id_yearly;
         $this->features = $plan->features ?? [];
         $this->perks = implode("\n", $plan->perks ?? []);
         $this->badgeColor = $plan->badge_color;
@@ -122,6 +136,10 @@ class Plans extends Component
             'tagline' => ['nullable', 'string', 'max:120'],
             'monthlyPrice' => ['required', 'numeric', 'min:0', 'max:1000000'],
             'yearlyPrice' => ['nullable', 'numeric', 'min:0', 'max:10000000'],
+            'appleMonthly' => ['nullable', 'string', 'max:120'],
+            'appleYearly' => ['nullable', 'string', 'max:120'],
+            'googleMonthly' => ['nullable', 'string', 'max:120'],
+            'googleYearly' => ['nullable', 'string', 'max:120'],
             'features' => ['array'],
             'features.*' => [Rule::in(array_keys(Plan::FEATURES))],
             'perks' => ['nullable', 'string', 'max:1000'],
@@ -137,6 +155,10 @@ class Plans extends Component
             'slug' => 'code', 'monthlyPrice' => 'monthly price', 'yearlyPrice' => 'yearly price', 'badgeColor' => 'colour',
         ]);
 
+        if (! $this->storeProductsAreUnique()) {
+            return;
+        }
+
         $perks = collect(preg_split('/\R/', $this->perks))
             ->map(fn (string $line): string => trim($line))->filter()->take(8)->values()->all();
 
@@ -145,6 +167,10 @@ class Plans extends Component
             'tagline' => filled($this->tagline) ? trim($this->tagline) : null,
             'monthly_price' => round((float) $this->monthlyPrice, 2),
             'yearly_price' => $this->yearlyPrice === '' ? null : round((float) $this->yearlyPrice, 2),
+            'apple_product_id_monthly' => trim($this->appleMonthly) ?: null,
+            'apple_product_id_yearly' => trim($this->appleYearly) ?: null,
+            'google_product_id_monthly' => trim($this->googleMonthly) ?: null,
+            'google_product_id_yearly' => trim($this->googleYearly) ?: null,
             'features' => array_values(array_intersect(array_keys(Plan::FEATURES), $this->features)),
             'perks' => $perks,
             'badge_color' => strtolower($this->badgeColor),
@@ -174,6 +200,42 @@ class Plans extends Component
 
         $this->formOpen = false;
         session()->flash('status', trim($this->name).' saved.');
+    }
+
+    /**
+     * A store product identifies exactly one plan and period: the same id on
+     * two plans, or on both periods of one, would make a purchase ambiguous.
+     */
+    private function storeProductsAreUnique(): bool
+    {
+        $ok = true;
+
+        foreach (['apple' => ['appleMonthly', 'appleYearly'], 'google' => ['googleMonthly', 'googleYearly']] as $store => [$monthlyField, $yearlyField]) {
+            $monthly = trim($this->{$monthlyField});
+            $yearly = trim($this->{$yearlyField});
+
+            if ($monthly !== '' && $monthly === $yearly) {
+                $this->addError($yearlyField, 'Monthly and yearly need different product ids.');
+                $ok = false;
+            }
+
+            foreach ([$monthlyField => $monthly, $yearlyField => $yearly] as $field => $id) {
+                if ($id === '') {
+                    continue;
+                }
+
+                $clash = Plan::query()->whereKeyNot($this->editingId ?? 0)
+                    ->where(fn ($q) => $q->where(Plan::storeColumn($store, 'monthly'), $id)->orWhere(Plan::storeColumn($store, 'yearly'), $id))
+                    ->value('name');
+
+                if ($clash !== null) {
+                    $this->addError($field, "Already used by the {$clash} plan.");
+                    $ok = false;
+                }
+            }
+        }
+
+        return $ok;
     }
 
     public function toggleActive(int $id, ActivityLogger $logger): void

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Billing;
 
+use App\Models\AppUser;
 use App\Models\Subscription;
+use App\Services\Billing\Subscriptions as SubscriptionService;
 use App\Support\Branding;
 use App\Support\Masters;
 use Illuminate\Contracts\View\View;
@@ -35,6 +37,13 @@ class Subscriptions extends Component
 
     #[Url(except: '')]
     public string $search = '';
+
+    /** The store subscription being moved to another account, if any. */
+    public ?int $reassigning = null;
+
+    public string $reassignEmail = '';
+
+    public string $reassignNote = '';
 
     public function render(): View
     {
@@ -77,6 +86,59 @@ class Subscriptions extends Component
             ->when($this->search !== '', fn (Builder $q) => $q->whereHas('appUser', fn (Builder $u) => $u
                 ->where('display_name', 'like', '%'.trim($this->search).'%')
                 ->orWhere('email', 'like', '%'.trim($this->search).'%')));
+    }
+
+    /**
+     * Support moving a store subscription to a different account: somebody
+     * signed up twice, or redeemed a purchase on the wrong login. Without
+     * this, the first such case gets fixed by editing rows by hand.
+     */
+    public function openReassign(int $id): void
+    {
+        $this->authorize('grant_plans');
+        $this->resetValidation();
+        $this->reassigning = $id;
+        $this->reassignEmail = '';
+        $this->reassignNote = '';
+    }
+
+    public function cancelReassign(): void
+    {
+        $this->reset('reassigning', 'reassignEmail', 'reassignNote');
+        $this->resetValidation();
+    }
+
+    public function reassign(SubscriptionService $subscriptions): void
+    {
+        $this->authorize('grant_plans');
+
+        $subscription = Subscription::query()->findOrFail($this->reassigning);
+
+        abort_unless($subscription->isFromStore() && $subscription->external_ref !== null, 422, 'Only store subscriptions can be moved.');
+
+        $this->validate([
+            'reassignEmail' => ['required', 'email'],
+            'reassignNote' => ['nullable', 'string', 'max:300'],
+        ], [], ['reassignEmail' => 'email', 'reassignNote' => 'note']);
+
+        $to = AppUser::query()->where('email', strtolower(trim($this->reassignEmail)))->first();
+
+        if ($to === null) {
+            $this->addError('reassignEmail', 'No member has that email address.');
+
+            return;
+        }
+
+        if ($to->id === $subscription->app_user_id) {
+            $this->addError('reassignEmail', 'That is already the account it belongs to.');
+
+            return;
+        }
+
+        $moved = $subscriptions->reassignExternal($subscription->source, $subscription->external_ref, $to, auth()->user(), $this->reassignNote ?: null);
+
+        $this->cancelReassign();
+        session()->flash('status', "{$subscription->sourceLabel()} subscription moved to {$to->display_name} ({$moved} ".($moved === 1 ? 'row' : 'rows').').');
     }
 
     public function setView(string $view): void
