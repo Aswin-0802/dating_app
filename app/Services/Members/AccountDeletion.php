@@ -7,6 +7,7 @@ namespace App\Services\Members;
 use App\Enums\AccountStatus;
 use App\Models\AppUser;
 use App\Models\MatchRecord;
+use App\Models\Subscription;
 use App\Services\Audit\ActivityLogger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -69,6 +70,31 @@ final class AccountDeletion
                 'company' => null,
                 'school' => null,
             ])->save();
+
+            /*
+             * A store subscription outlives the account: only the member can
+             * cancel it, in the App Store or Google Play, and they were told
+             * so on the deletion screen. The rows close here so the console
+             * does not list a plan for a deleted member; a renewal that still
+             * arrives is recorded and ignored (StorePurchases).
+             */
+            Subscription::query()->where('app_user_id', $member->id)->active()->whereNotNull('external_ref')->get()
+                ->each(function (Subscription $subscription) use ($member): void {
+                    $subscription->forceFill([
+                        'status' => 'cancelled',
+                        'ended_at' => now(),
+                        'auto_renewing' => false,
+                        'note' => trim(($subscription->note ?? '').' Account deleted; the store subscription can only be cancelled by the member.'),
+                    ])->save();
+
+                    $this->logger->log(
+                        module: 'billing',
+                        action: 'store_plan_orphaned',
+                        subject: $member,
+                        description: "{$subscription->plan_name} via {$subscription->sourceLabel()} left running at the store when member {$member->uuid} deleted their account",
+                        new: ['source' => $subscription->source, 'external_ref' => $subscription->external_ref],
+                    );
+                });
 
             // Every way back in is closed: API tokens, push registrations.
             $member->tokens()->delete();

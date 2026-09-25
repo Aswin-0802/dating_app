@@ -244,6 +244,7 @@
     <div x-data="{ confirming: false }" class="rounded-3xl border border-destructive/30 bg-card p-5 sm:p-6">
         <h2 class="font-semibold">Delete account</h2>
         <p class="mt-1 text-sm text-muted-foreground">This cannot be undone. Your name, email, phone, photos and profile are removed and you are signed out everywhere. Messages you sent stay visible to the people you sent them to. If you only want a break, deactivate instead.</p>
+        <p class="mt-2 text-sm text-muted-foreground"><strong>Subscribed through the App Store or Google Play?</strong> Deleting your account does not cancel that subscription — only you can, in your phone's subscription settings. Cancel it there first or the store will keep charging you.</p>
 
         <x-ui.button variant="outline" class="mt-4" x-show="! confirming" @click="confirming = true">Delete my account</x-ui.button>
 
