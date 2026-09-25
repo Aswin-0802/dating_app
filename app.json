@@ -56,7 +56,8 @@
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to take a selfie for verification."
         }
-      ]
+      ],
+      "expo-iap"
     ],
     "experiments": {
       "typedRoutes": true
