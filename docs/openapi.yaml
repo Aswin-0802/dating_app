@@ -1,0 +1,1111 @@
+openapi: 3.1.0
+info:
+  title: Dating Platform mobile API
+  version: "1"
+  summary: The /api/v1 surface the mobile app uses, derived from routes/api.php and app/Http/Resources/Api/V1.
+  description: |
+    Every endpoint the mobile client calls. The website does not use this API; both clients call the same
+    services underneath, so a rule changed in the console applies identically to both.
+
+    **Authentication.** A Sanctum bearer token from `POST /auth/register` or `POST /auth/login`. Tokens carry
+    **abilities** set at issue time: a `pending` member's token has `profile:read`, `profile:write` and `verify`
+    only; an `active` member's token has those plus `swipe`, `message` and `report`. The existing token is
+    **not** upgraded when the account is promoted — the app must sign in again to get a full token
+    (`AuthController::abilitiesFor`).
+
+    **Pagination.** Every list is cursor-paginated: `{data, meta.next_cursor}`. Pass `?cursor=` to get the
+    next page; `null` means the end. There are no page numbers.
+
+    **Errors.** One envelope everywhere: `{message, code, errors?}`. Branch on `code`, never on the message.
+    Codes: `unauthenticated` (401), `forbidden`, `account_restricted`, `account_deactivated`, `premium_required`
+    (403), `not_found` (404), `validation_failed`, `photo_limit_reached`, `verification_attempts_exhausted`,
+    `product_unknown`, `receipt_invalid` (422), `receipt_owned_elsewhere` (409), `rate_limited` (429, with
+    `Retry-After`), `maintenance`, `sms_unavailable`, `store_unavailable` (503), `server_error` (500).
+
+    **Throttling.** `x-throttle` on each operation names the bucket (app/Providers/PlatformServiceProvider.php):
+    `api` 90/min · `deck` 60/min · `swipe` 120/min · `message` 30/min · `report` 10/hour · `verification` 3/day ·
+    `receipt` 10/hour · `auth` 8/min per IP and 5/min per IP+email · phone `4,10` = 4 per 10 min, `10,10` = 10
+    per 10 min. Limits are settings and can be tightened without a deploy. Accounts under 24 hours old get half
+    of the `swipe` and `message` allowances.
+
+    **Restricted accounts.** Every authenticated route passes `appuser.active`: a suspended or banned member gets
+    `403 account_restricted` with a `restriction` object; a deactivated one `403 account_deactivated`. A
+    shadow-banned member is reported as `active` and refused nothing.
+
+    **Maintenance.** When maintenance mode is on, every route answers `503 maintenance` with `Retry-After`.
+  x-token-abilities:
+    pending: [profile:read, profile:write, verify]
+    active: [profile:read, profile:write, swipe, message, report, verify]
+
+servers:
+  - url: /api/v1
+    description: Relative to the site root, e.g. https://example.com/api/v1
+
+tags:
+  - name: Public
+    description: No token. Reference data and the launch config.
+  - name: Auth
+  - name: Me
+    description: The signed-in member's own account, profile, preferences and interests.
+  - name: Photos
+    description: Need `profile:write`, which a pending token carries, so onboarding can finish in the app.
+  - name: Discovery
+  - name: Matches
+  - name: Conversations
+  - name: Safety
+  - name: Phone
+  - name: Devices
+  - name: Verification
+  - name: Premium
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Sanctum personal access token from /auth/register or /auth/login.
+
+  parameters:
+    cursor:
+      name: cursor
+      in: query
+      required: false
+      schema: { type: string }
+      description: The `meta.next_cursor` of the previous page. Omit for the first page.
+
+  responses:
+    Unauthenticated:
+      description: No token, or a revoked one. `code` is `unauthenticated`; the app signs out.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "Sign in to continue.", code: unauthenticated } } }
+    Forbidden:
+      description: |
+        `forbidden` — the token lacks the ability (a pending member) or the record is not yours.
+        `account_restricted` — suspended or banned; carries `restriction`. `account_deactivated` — the member deactivated the account.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            forbidden: { value: { message: "Not permitted.", code: forbidden } }
+            restricted: { value: { message: "Your account is suspended until 2026-10-01.", code: account_restricted, restriction: { type: suspension, expires_at: "2026-10-01T00:00:00+00:00", policy_clause: "3.2", appealable: true } } }
+            deactivated: { value: { message: "This account is deactivated.", code: account_deactivated } }
+    NotFound:
+      description: No such record, or not one you may see (records are never revealed by a 403 where a 404 will do).
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "Not found.", code: not_found } } }
+    ValidationFailed:
+      description: "`validation_failed`, with `errors` keyed by field."
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "The given data was invalid.", code: validation_failed, errors: { city_id: ["That city is not available right now. Choose another."] } } } }
+    RateLimited:
+      description: "`rate_limited`. `Retry-After` says how many seconds to wait; the app shows a strip, not an error."
+      headers: { Retry-After: { schema: { type: integer }, description: "Seconds until the bucket refills." } }
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "Too many requests. Slow down.", code: rate_limited } } }
+    Maintenance:
+      description: "`maintenance` — the operator switched maintenance mode on. Every route answers this until it is off."
+      headers: { Retry-After: { schema: { type: integer } } }
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "We are down for maintenance.", code: maintenance } } }
+
+  schemas:
+    Error:
+      type: object
+      required: [message, code]
+      properties:
+        message: { type: string, description: "For a person. Never branch on it." }
+        code: { type: string, description: "The machine-readable reason. Branch on this." }
+        errors: { type: object, additionalProperties: { type: array, items: { type: string } }, description: "Field errors, on validation_failed only." }
+        restriction: { $ref: "#/components/schemas/Restriction" }
+        count: { type: integer, description: "On premium_required from /me/likers — how many people liked you." }
+        limit: { type: integer, description: "On photo_limit_reached — the operator's photo cap." }
+    Restriction:
+      type: object
+      description: Sent with 403 account_restricted.
+      properties:
+        type: { type: [string, "null"], enum: [feature_limit, shadow_ban, suspension, permanent_ban, device_ban, null] }
+        expires_at: { type: [string, "null"], format: date-time }
+        policy_clause: { type: [string, "null"] }
+        appealable: { type: boolean }
+    CursorMeta:
+      type: object
+      required: [next_cursor]
+      properties:
+        next_cursor: { type: [string, "null"], description: "Pass as ?cursor= for the next page; null at the end." }
+    Gender:
+      type: string
+      enum: [woman, man, non_binary, other]
+    ReportCategory:
+      type: string
+      enum: [harassment, sexual_content, nudity, fake_profile, impersonation, scam_fraud, spam_promotion, off_platform_solicitation, prostitution, hate_speech, violence_threats, self_harm, underage_suspected, minor_safety, other]
+    Photo:
+      type: object
+      description: PhotoResource. `moderation_status` appears only on your own photos.
+      required: [id, url, thumb_url, position, is_primary]
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: string, format: uri }
+        thumb_url: { type: string, format: uri }
+        position: { type: integer }
+        is_primary: { type: boolean }
+        moderation_status: { type: string, enum: [pending, approved, auto_flagged, rejected], description: "Own photos only. Pending photos are still shown to others — there is no proactive review queue." }
+    Profile:
+      type: object
+      description: ProfileResource. Option keys (education, relationship_goal, drinking, smoking, children) come from the console's Profile questions master; there is no endpoint for the labels.
+      properties:
+        bio: { type: [string, "null"], maxLength: 500 }
+        height_cm: { type: [integer, "null"], minimum: 100, maximum: 250 }
+        job_title: { type: [string, "null"], maxLength: 100 }
+        company: { type: [string, "null"], maxLength: 100 }
+        school: { type: [string, "null"], maxLength: 100 }
+        education: { type: [string, "null"] }
+        relationship_goal: { type: [string, "null"] }
+        drinking: { type: [string, "null"] }
+        smoking: { type: [string, "null"] }
+        children: { type: [string, "null"] }
+        languages: { type: array, items: { type: string } }
+        prompts: { type: array, items: { type: object } }
+    Preferences:
+      type: object
+      description: PreferenceResource.
+      required: [interested_in, age_min, age_max, max_distance_km, global_mode, show_verified_only]
+      properties:
+        interested_in: { type: array, items: { $ref: "#/components/schemas/Gender" } }
+        age_min: { type: integer }
+        age_max: { type: integer }
+        max_distance_km: { type: [integer, "null"] }
+        global_mode: { type: boolean }
+        show_verified_only: { type: boolean }
+    Me:
+      type: object
+      description: MeResource — the signed-in member. A shadow ban is reported as `active` by design.
+      required: [id, display_name, email, account_status, verification_status, is_premium, profile_completion, restrictions]
+      properties:
+        id: { type: string, format: uuid }
+        display_name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: [string, "null"] }
+        birthdate: { type: [string, "null"], format: date }
+        age: { type: [integer, "null"] }
+        gender: { oneOf: [{ $ref: "#/components/schemas/Gender" }, { type: "null" }] }
+        pronouns: { type: [string, "null"] }
+        account_status: { type: string, enum: [active, pending, limited, suspended, banned, deactivated], description: "pending until the profile is at least half complete; then the token must be re-issued." }
+        verification_status: { type: string, enum: [unverified, pending, in_review, approved, rejected, escalated, expired] }
+        is_premium: { type: boolean, description: "The only source of entitlement the app may trust." }
+        premium_tier: { type: [string, "null"], description: "Plan slug." }
+        premium_until: { type: [string, "null"], format: date-time }
+        premium_source: { type: [string, "null"], enum: [manual, payment, apple, google, null], description: "Where the plan came from decides where it is managed." }
+        auto_renewing: { type: [boolean, "null"], description: "The store's word; null for anything not from a store." }
+        profile_completion: { type: integer, minimum: 0, maximum: 100 }
+        city: { type: [object, "null"], properties: { name: { type: string }, state: { type: [string, "null"] }, country: { type: [string, "null"], description: "ISO 3166-1 alpha-2" } } }
+        restrictions: { type: array, items: { type: string }, description: "Feature keys switched off by a feature limit." }
+        profile: { $ref: "#/components/schemas/Profile" }
+        preferences: { $ref: "#/components/schemas/Preferences" }
+        photos: { type: array, items: { $ref: "#/components/schemas/Photo" } }
+        interests: { type: array, items: { type: string }, description: "Interest names." }
+        created_at: { type: [string, "null"], format: date-time }
+    Person:
+      type: object
+      description: AppUserResource — another member. Never their email, phone, birthdate, coordinates, risk or report counts.
+      required: [id, display_name, is_verified]
+      properties:
+        id: { type: string, format: uuid }
+        display_name: { type: string }
+        age: { type: [integer, "null"] }
+        gender: { oneOf: [{ $ref: "#/components/schemas/Gender" }, { type: "null" }] }
+        pronouns: { type: [string, "null"] }
+        is_verified: { type: boolean }
+        city: { type: [string, "null"] }
+        distance_km: { type: integer, description: "Bucketed to whole kilometres; present only when both have coordinates." }
+        photos: { type: array, items: { $ref: "#/components/schemas/Photo" } }
+        profile: { $ref: "#/components/schemas/Profile" }
+        interests: { type: array, items: { type: string } }
+    Match:
+      type: object
+      description: MatchResource.
+      required: [id, status, other, messages_count, has_conversation]
+      properties:
+        id: { type: string, format: uuid }
+        matched_at: { type: [string, "null"], format: date-time }
+        status: { type: string, enum: [active, unmatched, blocked, expired] }
+        other: { oneOf: [{ $ref: "#/components/schemas/Person" }, { type: "null" }] }
+        last_message_at: { type: [string, "null"], format: date-time }
+        messages_count: { type: integer }
+        has_conversation: { type: boolean }
+    Conversation:
+      type: object
+      description: ConversationResource. Lists contain open threads only; a block or unmatch closes one.
+      required: [id, other, messages_count, status]
+      properties:
+        id: { type: string, format: uuid }
+        other: { oneOf: [{ $ref: "#/components/schemas/Person" }, { type: "null" }] }
+        messages_count: { type: integer }
+        last_message_at: { type: [string, "null"], format: date-time }
+        started_at: { type: [string, "null"], format: date-time }
+        status: { type: string, enum: [open, closed, frozen] }
+    Message:
+      type: object
+      description: MessageResource. `body` is null when `removed`.
+      required: [id, type, body, removed, is_mine]
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [text, image, gif, voice, system] }
+        body: { type: [string, "null"] }
+        removed: { type: boolean, description: "Removed by moderation." }
+        media_url: { type: [string, "null"], format: uri }
+        is_mine: { type: boolean }
+        read_at: { type: [string, "null"], format: date-time }
+        sent_at: { type: [string, "null"], format: date-time }
+    Verification:
+      type: object
+      description: VerificationResource — the member's latest selfie verification.
+      required: [id, status, attempts_used, attempts_remaining]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [pending, in_review, approved, rejected, escalated, expired] }
+        submitted_at: { type: [string, "null"], format: date-time }
+        attempts_used: { type: integer }
+        attempts_remaining: { type: integer, description: "Out of verification.max_attempts (3)." }
+        rejection_reason: { type: [string, "null"], description: "The enumerated reason's label, after a rejection." }
+    Config:
+      type: object
+      required: [min_supported_version, maintenance_mode, min_age, max_photos, max_distance_km, daily_like_limit, appeal_window_days]
+      properties:
+        min_supported_version: { type: string, description: "Semver. An older app shows the update screen." }
+        maintenance_mode: { type: boolean }
+        min_age: { type: integer }
+        max_photos: { type: integer }
+        max_distance_km: { type: integer }
+        daily_like_limit: { type: integer, description: "For the free plan. Premium with unlimited_likes has none." }
+        appeal_window_days: { type: integer }
+        support_email: { type: [string, "null"] }
+    Plan:
+      type: object
+      required: [slug, name, features, perks, is_featured, products]
+      properties:
+        slug: { type: string }
+        name: { type: string }
+        tagline: { type: [string, "null"] }
+        features: { type: array, items: { type: string, enum: [unlimited_likes, see_likers, profile_badge, priority_support] } }
+        perks: { type: array, items: { type: string } }
+        is_featured: { type: boolean }
+        products:
+          type: object
+          description: Store product identifiers to ask StoreKit / Play Billing for. A period is omitted when not sold in that store. Prices come from the stores.
+          properties:
+            ios: { type: object, properties: { monthly: { type: string }, yearly: { type: string } } }
+            android: { type: object, properties: { monthly: { type: string }, yearly: { type: string } } }
+    Interest:
+      type: object
+      required: [slug, name, category]
+      properties: { slug: { type: string }, name: { type: string }, category: { type: string } }
+    Country:
+      type: object
+      required: [iso2, name]
+      properties: { iso2: { type: string, minLength: 2, maxLength: 2 }, name: { type: string }, dial_code: { type: [string, "null"] } }
+    State:
+      type: object
+      required: [id, name, country_id]
+      properties: { id: { type: integer }, name: { type: string }, code: { type: [string, "null"] }, country_id: { type: integer } }
+    City:
+      type: object
+      required: [id, name, country_id]
+      properties: { id: { type: integer }, name: { type: string }, country_id: { type: integer }, state: { type: [string, "null"] }, state_id: { type: [integer, "null"] } }
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token: { type: string, description: "Store in secure storage. Abilities depend on user.account_status at issue time." }
+        user: { $ref: "#/components/schemas/Me" }
+    SwipeResponse:
+      type: object
+      required: [is_match, match]
+      properties:
+        is_match: { type: boolean }
+        match: { oneOf: [{ $ref: "#/components/schemas/Match" }, { type: "null" }] }
+
+paths:
+  # ---- Public ---------------------------------------------------------------------
+  /config:
+    get:
+      tags: [Public]
+      summary: Launch configuration
+      description: Read on every launch. Nothing here is hard-coded in the app.
+      operationId: getConfig
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { $ref: "#/components/schemas/Config" } } } }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /plans:
+    get:
+      tags: [Public, Premium]
+      summary: Plans on sale, with store product ids
+      operationId: listPlans
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/Plan" } } } } } } }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /interests:
+    get:
+      tags: [Public]
+      summary: Interests a member can pick
+      operationId: listInterests
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/Interest" } } } } } } }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /countries:
+    get:
+      tags: [Public]
+      summary: Countries that are shown at sign-up
+      operationId: listCountries
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/Country" } } } } } } }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /states:
+    get:
+      tags: [Public]
+      summary: States of a country that are shown at sign-up
+      operationId: listStates
+      parameters:
+        - { name: country, in: query, schema: { type: string, minLength: 2, maxLength: 2 }, description: "ISO 3166-1 alpha-2. Omit for every country." }
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/State" } } } } } } }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /cities:
+    get:
+      tags: [Public]
+      summary: City search (type-ahead)
+      description: |
+        A search, not a list. `search` matches the start of the name and must be two characters or more
+        (one character is `422 validation_failed`). At most 100 rows come back; `meta.truncated` says whether
+        there were more, so the app asks the member to keep typing. Only cities that may be chosen right now —
+        city, state and country all shown — are returned, the same rule the write paths apply.
+      operationId: searchCities
+      parameters:
+        - { name: search, in: query, schema: { type: string, minLength: 2, maxLength: 80 }, description: "Start of the city name, two characters or more." }
+        - { name: country, in: query, schema: { type: string, minLength: 2, maxLength: 2 } }
+        - { name: state, in: query, schema: { type: integer }, description: "A state id from /states." }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/City" } }
+                  meta: { type: object, properties: { limit: { type: integer, example: 100 }, truncated: { type: boolean } } }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+
+  # ---- Auth -----------------------------------------------------------------------
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Create an account
+      description: The account starts `pending`; the token carries only `profile:read`, `profile:write` and `verify` until the profile is at least half complete and the app signs in again. `city_id` is optional here — onboarding asks — but must be a selectable city.
+      operationId: register
+      x-throttle: auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [display_name, email, password, birthdate, gender, interested_in]
+              properties:
+                display_name: { type: string, minLength: 2, maxLength: 60 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8, description: "Letters and numbers." }
+                birthdate: { type: string, format: date, description: "Must make the member at least 18." }
+                gender: { $ref: "#/components/schemas/Gender" }
+                interested_in: { type: array, minItems: 1, items: { $ref: "#/components/schemas/Gender" } }
+                city_id: { type: [integer, "null"], description: "A selectable city (its city, state and country all shown)." }
+      responses:
+        "201": { description: "Created", content: { application/json: { schema: { $ref: "#/components/schemas/AuthResponse" } } } }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in and get a token
+      description: Also how the app swaps a pending token for a full one after promotion. A suspended or banned member is refused with `403 account_restricted`; a deactivated one with `403 account_deactivated`.
+      operationId: login
+      x-throttle: auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties: { email: { type: string, format: email }, password: { type: string } }
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { $ref: "#/components/schemas/AuthResponse" } } } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke this token
+      operationId: logout
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { message: { type: string } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /auth/logout-all:
+    post:
+      tags: [Auth]
+      summary: Revoke every token
+      operationId: logoutAll
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { message: { type: string } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+
+  # ---- Me -------------------------------------------------------------------------
+  /me:
+    get:
+      tags: [Me]
+      summary: The signed-in member
+      description: Re-fetched by the app after any write that could change completion. If `account_status` went pending → active, the app signs in again to swap the token.
+      operationId: getMe
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { $ref: "#/components/schemas/Me" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+    patch:
+      tags: [Me]
+      summary: Name, pronouns, city
+      description: "`city_id` must be a selectable city (city, state and country all shown), except that the member's current city always passes even if it has since been hidden. Does not recompute profile completion; the city counts on the next write that does."
+      operationId: updateMe
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name: { type: string, minLength: 2, maxLength: 60 }
+                pronouns: { type: [string, "null"], maxLength: 30 }
+                city_id: { type: [integer, "null"] }
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { $ref: "#/components/schemas/Me" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+    delete:
+      tags: [Me]
+      summary: Delete the account (permanent)
+      description: Password required. Soft-delete plus anonymisation — name, email, phone, photos and profile text are removed; messages already sent stay with their recipients; the member appears as “Deleted member” in old cases. Every token is revoked. **A store subscription is not cancelled**; only the member can, in the App Store or Google Play.
+      operationId: deleteMe
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [password], properties: { password: { type: string } } } } }
+      responses:
+        "200": { description: "Deleted", content: { application/json: { schema: { type: object, properties: { message: { type: string } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /me/profile:
+    patch:
+      tags: [Me]
+      summary: Bio, work, education and lifestyle
+      description: Recomputes profile completion; the account may become active (see the token note).
+      operationId: updateProfile
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bio: { type: [string, "null"], maxLength: 500 }
+                height_cm: { type: [integer, "null"], minimum: 100, maximum: 250 }
+                job_title: { type: [string, "null"], maxLength: 100 }
+                company: { type: [string, "null"], maxLength: 100 }
+                school: { type: [string, "null"], maxLength: 100 }
+                education: { type: [string, "null"], description: "A key from the Profile questions master." }
+                relationship_goal: { type: string }
+                drinking: { type: string }
+                smoking: { type: string }
+                children: { type: string }
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { $ref: "#/components/schemas/Me" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /me/preferences:
+    patch:
+      tags: [Me]
+      summary: Discovery preferences
+      description: "`age_min` and `age_max` are validated as a pair against what is stored: send both to move the range, or a lone value that would invert it is refused."
+      operationId: updatePreferences
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                interested_in: { type: array, minItems: 1, items: { $ref: "#/components/schemas/Gender" } }
+                age_min: { type: integer }
+                age_max: { type: integer }
+                max_distance_km: { type: [integer, "null"], description: "Up to config.max_distance_km." }
+                global_mode: { type: boolean }
+                show_verified_only: { type: boolean }
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { $ref: "#/components/schemas/Me" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /me/interests:
+    put:
+      tags: [Me]
+      summary: Replace the member's interests
+      description: Interest slugs from /interests, up to the operator's cap. Recomputes profile completion.
+      operationId: syncInterests
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [interests], properties: { interests: { type: array, items: { type: string } } } } } }
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { $ref: "#/components/schemas/Me" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /me/likers:
+    get:
+      tags: [Matches, Premium]
+      summary: Who liked you (premium)
+      description: Members who liked you and are still waiting for an answer. Without a plan that has `see_likers` the answer is `403 premium_required` carrying `count` — how many, never who. Entitlement is the server's decision.
+      operationId: listLikers
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      parameters: [{ $ref: "#/components/parameters/cursor" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Person" } }
+                  meta: { allOf: [{ $ref: "#/components/schemas/CursorMeta" }, { type: object, properties: { count: { type: integer } } }] }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403":
+          description: "`premium_required` with `count`, or the usual account refusals."
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "See who liked you with Premium.", code: premium_required, count: 12 } } }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+
+  # ---- Photos ---------------------------------------------------------------------
+  /me/photos:
+    post:
+      tags: [Photos]
+      summary: Upload a photo
+      description: Multipart. Re-encoded through GD on the server (EXIF, including GPS, is stripped). `422 photo_limit_reached` with `limit` at the operator's cap. Recomputes profile completion.
+      operationId: uploadPhoto
+      security: [{ bearerAuth: [] }]
+      x-ability: profile:write
+      x-throttle: api
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { type: object, required: [photo], properties: { photo: { type: string, format: binary, description: "An image, JPEG/PNG/WebP." } } }
+      responses:
+        "201": { description: "Created", content: { application/json: { schema: { type: object, properties: { data: { $ref: "#/components/schemas/Photo" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422":
+          description: "`validation_failed`, or `photo_limit_reached` with `limit`."
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "You can have up to 6 photos.", code: photo_limit_reached, limit: 6 } } }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /me/photos/reorder:
+    patch:
+      tags: [Photos]
+      summary: Reorder photos
+      description: The full list of your photo ids in the new order — partial lists are `422`, a foreign id is `403`. Atomic.
+      operationId: reorderPhotos
+      security: [{ bearerAuth: [] }]
+      x-ability: profile:write
+      x-throttle: api
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [order], properties: { order: { type: array, items: { type: string, format: uuid } } } } } }
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/Photo" } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /me/photos/{uuid}/primary:
+    patch:
+      tags: [Photos]
+      summary: Make a photo the main one
+      operationId: makePrimaryPhoto
+      security: [{ bearerAuth: [] }]
+      x-ability: profile:write
+      x-throttle: api
+      parameters: [{ name: uuid, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/Photo" } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /me/photos/{uuid}:
+    delete:
+      tags: [Photos]
+      summary: Remove a photo
+      description: Soft-deletes the row and recomputes profile completion. `403` unless it is yours.
+      operationId: deletePhoto
+      security: [{ bearerAuth: [] }]
+      x-ability: profile:write
+      x-throttle: api
+      parameters: [{ name: uuid, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { message: { type: string } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+
+  # ---- Discovery ------------------------------------------------------------------
+  /deck:
+    get:
+      tags: [Discovery]
+      summary: People to swipe on
+      description: Active members matching your preferences, excluding anyone already swiped and blocks in either direction; within your radius when you have coordinates, else your city, else anywhere. The API returns an empty deck when the area is exhausted (the website widens; the API does not). Random order without ORDER BY RAND().
+      operationId: getDeck
+      security: [{ bearerAuth: [] }]
+      x-ability: swipe
+      x-throttle: deck
+      parameters: [{ name: limit, in: query, schema: { type: integer, default: 20, maximum: 30 } }]
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/Person" } }, meta: { type: object, properties: { count: { type: integer } } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /swipes:
+    post:
+      tags: [Discovery]
+      summary: Like or pass
+      description: The server decides the outcome. A like over the free plan's daily cap is `422 validation_failed`; a re-swipe on the same person replaces the earlier decision (deliberate). `is_match` is true only when the other person already liked you; the conversation is created in the same transaction and both sides get a `match.new` push.
+      operationId: swipe
+      security: [{ bearerAuth: [] }]
+      x-ability: swipe
+      x-throttle: swipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_id, action]
+              properties:
+                target_id: { type: string, format: uuid }
+                action: { type: string, enum: [like, pass, superlike] }
+                source: { type: string, enum: [deck, likes_you, profile], default: deck }
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { $ref: "#/components/schemas/SwipeResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+
+  # ---- Matches --------------------------------------------------------------------
+  /matches:
+    get:
+      tags: [Matches]
+      summary: Your matches
+      operationId: listMatches
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      parameters: [{ $ref: "#/components/parameters/cursor" }]
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/Match" } }, meta: { $ref: "#/components/schemas/CursorMeta" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /matches/{match}:
+    delete:
+      tags: [Matches]
+      summary: Unmatch
+      description: Ends the match and closes the conversation for both people (MatchActions). The other person gets `403` on their next read or send.
+      operationId: unmatch
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      parameters: [{ name: match, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { message: { type: string } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+
+  # ---- Conversations --------------------------------------------------------------
+  /conversations:
+    get:
+      tags: [Conversations]
+      summary: Open conversations
+      description: Closed threads (block, unmatch) are not listed.
+      operationId: listConversations
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      parameters: [{ $ref: "#/components/parameters/cursor" }]
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/Conversation" } }, meta: { $ref: "#/components/schemas/CursorMeta" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /conversations/{conversation}/messages:
+    get:
+      tags: [Conversations]
+      summary: Messages, newest first
+      description: The same three guards as sending — participant, thread open, no block either way — so a closed thread is `403` on read as well as on send. The app polls this every six seconds while the thread is on screen; there is no websocket.
+      operationId: listMessages
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      parameters:
+        - { name: conversation, in: path, required: true, schema: { type: string, format: uuid } }
+        - { $ref: "#/components/parameters/cursor" }
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/Message" } }, meta: { $ref: "#/components/schemas/CursorMeta" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+    post:
+      tags: [Conversations]
+      summary: Send a message
+      description: "`403 forbidden` with the message “This conversation is closed” for a closed thread or a block in either direction — the same refusal on purpose, so a blocked person is not told who blocked them. Links and contact details are flagged on write for the safety team. The recipient gets a `message.new` push."
+      operationId: sendMessage
+      security: [{ bearerAuth: [] }]
+      x-ability: message
+      x-throttle: message
+      parameters: [{ name: conversation, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [body], properties: { body: { type: string, minLength: 1, maxLength: 2000 } } } } }
+      responses:
+        "201": { description: "Created", content: { application/json: { schema: { type: object, properties: { data: { $ref: "#/components/schemas/Message" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /conversations/{conversation}/read:
+    post:
+      tags: [Conversations]
+      summary: Mark the thread read
+      operationId: markRead
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      parameters: [{ name: conversation, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { message: { type: string } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+
+  # ---- Safety ---------------------------------------------------------------------
+  /reports:
+    post:
+      tags: [Safety]
+      summary: Report a member
+      description: Becomes (or joins) the reported member's open case in the console, with an SLA set by the category's severity. A message id is kept as evidence only when the reporter is in that conversation and the reported member sent it. Reporting yourself, or the same person twice in 24 hours, is `422`.
+      operationId: report
+      security: [{ bearerAuth: [] }]
+      x-ability: report
+      x-throttle: report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reported_id, category]
+              properties:
+                reported_id: { type: string, format: uuid }
+                category: { $ref: "#/components/schemas/ReportCategory" }
+                description: { type: [string, "null"], maxLength: 1000 }
+                message_id: { type: [string, "null"], format: uuid }
+                block: { type: boolean, default: false, description: "Also block them." }
+      responses:
+        "201": { description: "Filed", content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { id: { type: string, format: uuid }, case_opened: { type: boolean } } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /blocks:
+    get:
+      tags: [Safety]
+      summary: People you blocked
+      operationId: listBlocks
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/Person" } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+    post:
+      tags: [Safety]
+      summary: Block a member
+      description: Closes any conversation between you, removes you from each other's decks, and is never disclosed to them.
+      operationId: block
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [blocked_id], properties: { blocked_id: { type: string, format: uuid }, reason: { type: [string, "null"], maxLength: 200 } } } } }
+      responses:
+        "201": { description: "Blocked", content: { application/json: { schema: { type: object, properties: { message: { type: string } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /blocks/{uuid}:
+    delete:
+      tags: [Safety]
+      summary: Unblock
+      description: The closed conversation stays closed.
+      operationId: unblock
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      parameters: [{ name: uuid, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { message: { type: string } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+
+  # ---- Phone ----------------------------------------------------------------------
+  /phone/send-code:
+    post:
+      tags: [Phone]
+      summary: Text a six-digit code
+      description: Six digits, valid ten minutes, one resend a minute. `503 sms_unavailable` when the operator has not configured an SMS gateway — show it, do not retry.
+      operationId: sendPhoneCode
+      security: [{ bearerAuth: [] }]
+      x-throttle: "4,10"
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [phone], properties: { phone: { type: string, minLength: 8, maxLength: 20, example: "+44 7700 900000" } } } } }
+      responses:
+        "200": { description: "Sent", content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { expires_at: { type: string, format: date-time } } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503":
+          description: "`sms_unavailable` (no gateway configured) or `maintenance`."
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "Phone verification is not available right now.", code: sms_unavailable } } }
+  /phone/verify:
+    post:
+      tags: [Phone]
+      summary: Confirm the code
+      description: Five wrong guesses exhaust the code; ask for a new one. Success sets the member's phone as verified.
+      operationId: verifyPhone
+      security: [{ bearerAuth: [] }]
+      x-throttle: "10,10"
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [code], properties: { code: { type: string, pattern: "^[0-9]{6}$" } } } } }
+      responses:
+        "200": { description: "Verified", content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { status: { type: string, example: verified } } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+
+  # ---- Devices --------------------------------------------------------------------
+  /devices/push-token:
+    post:
+      tags: [Devices]
+      summary: Register a push token
+      description: The FCM **device** token (the server sends through Firebase Cloud Messaging HTTP v1). Re-sent whenever the token rotates. No ability is required, so an account under review stays reachable.
+      operationId: registerPushToken
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token: { type: string, minLength: 20, maxLength: 512 }
+                platform: { type: string, enum: [android, ios, web] }
+                label: { type: [string, "null"], maxLength: 120 }
+                device_fingerprint: { type: [string, "null"], maxLength: 255 }
+      responses:
+        "201": { description: "Registered", content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { status: { type: string, example: registered } } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+    delete:
+      tags: [Devices]
+      summary: Remove a push token
+      description: Called on sign-out.
+      operationId: removePushToken
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [token], properties: { token: { type: string, maxLength: 512 } } } } }
+      responses:
+        "200": { description: "Removed", content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { status: { type: string, example: removed } } } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+
+  # ---- Verification ---------------------------------------------------------------
+  /verification:
+    get:
+      tags: [Verification]
+      summary: Your latest verification
+      description: "`data` is null when you have never submitted one."
+      operationId: getVerification
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { data: { oneOf: [{ $ref: "#/components/schemas/Verification" }, { type: "null" }] } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+    post:
+      tags: [Verification]
+      summary: Submit a selfie holding the code
+      description: Multipart, up to 10 MB. The code must be the one the server issued (ten minutes, single use) or the answer is `422 validation_failed`; after `verification.max_attempts` (3) the answer is `422 verification_attempts_exhausted` and the only way on is support. Accepted submissions go to the standard review queue; a reviewer who suspects a minor escalates to the restricted queue, where approval is not possible. The selfie is stored on a private disk and served to staff only through a signed URL, behind a permission, with every view logged.
+      operationId: submitVerification
+      security: [{ bearerAuth: [] }]
+      x-ability: verify
+      x-throttle: verification
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { type: object, required: [selfie, gesture_code], properties: { selfie: { type: string, format: binary }, gesture_code: { type: string, minLength: 4, maxLength: 4 } } }
+      responses:
+        "202": { description: "Accepted for review", content: { application/json: { schema: { type: object, properties: { data: { $ref: "#/components/schemas/Verification" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422":
+          description: "`validation_failed` (wrong or expired code, bad file) or `verification_attempts_exhausted`."
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "You have used all your verification attempts. Contact support.", code: verification_attempts_exhausted } } }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+  /verification/gesture:
+    get:
+      tags: [Verification]
+      summary: Get a code to hold up
+      description: Four characters, remembered by the server for ten minutes; asking again replaces it.
+      operationId: getGestureCode
+      security: [{ bearerAuth: [] }]
+      x-throttle: api
+      responses:
+        "200": { description: "OK", content: { application/json: { schema: { type: object, properties: { gesture_code: { type: string, example: K7QX }, expires_in: { type: integer, description: "Seconds." } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Maintenance" }
+
+  # ---- Premium --------------------------------------------------------------------
+  /me/premium/receipt:
+    post:
+      tags: [Premium]
+      summary: Redeem an App Store / Google Play purchase
+      description: |
+        "I bought this in the store." The transaction is an identifier, never evidence: the server asks Apple or
+        Google, honours the store's expiry, and answers with a fresh member. Posting the same transaction again is
+        `200` and changes nothing. A sandbox or TestFlight purchase is honoured on a production server. A
+        family-shared transaction may be redeemed by each family member. A store purchase never shortens or
+        downgrades a plan the member already has from elsewhere. Finish the store transaction only after this
+        returns `200` (or `409`); anything else leaves it open for “Restore purchases” to retry.
+      operationId: redeemReceipt
+      security: [{ bearerAuth: [] }]
+      x-ability: profile:write
+      x-throttle: receipt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform, product_id, transaction]
+              properties:
+                platform: { type: string, enum: [ios, android] }
+                product_id: { type: string, maxLength: 120, description: "Cross-checked only; the store's own product id is what is mapped." }
+                transaction: { type: string, maxLength: 20000, description: "iOS: the StoreKit 2 signed transaction (JWS). Android: the purchase token." }
+      responses:
+        "200": { description: "The member, with the plan applied", content: { application/json: { schema: { type: object, properties: { data: { $ref: "#/components/schemas/Me" } } } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: "`receipt_owned_elsewhere` — a purchased transaction already attached to another member. Finish the store transaction; support can move it."
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "This purchase is already attached to another account.", code: receipt_owned_elsewhere } } }
+        "422":
+          description: "`validation_failed`, `product_unknown` (the store's product id maps to no plan) or `receipt_invalid` (unknown, unpaid, expired, revoked, or for another app)."
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "That purchase could not be verified.", code: receipt_invalid } } }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503":
+          description: "`store_unavailable` (Apple or Google unreachable, or the store switched off; `Retry-After: 30`) or `maintenance`."
+          headers: { Retry-After: { schema: { type: integer } } }
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { message: "In-app purchases are not available right now.", code: store_unavailable } } }

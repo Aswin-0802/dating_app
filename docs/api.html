@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dating Platform — API reference</title>
+<meta name="description" content="The mobile API, /api/v1: every endpoint, its authentication and token ability, parameters, request and response schemas, error codes and throttle bucket. Rendered from docs/openapi.yaml.">
+<link rel="stylesheet" href="assets/doc.css">
+<style>
+    body { background: #fff; }
+    .bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem 1.5rem; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--line); font-size: 0.85rem; color: var(--muted); }
+    .bar a { color: var(--brand); text-decoration: none; }
+    .bar code { font-size: 0.8rem; }
+    #redoc { min-height: 60vh; }
+    .err { margin: 2rem; padding: 1rem; border-radius: 8px; background: #fdeceb; color: #b4262c; white-space: pre-wrap; }
+    /* Redoc's "powered by" link fetches a logo from redoc.ly; offline that is a broken image, so it is not shown. */
+    a[href*="redocly.com"], a[href*="redoc.ly"] { display: none !important; }
+    @media print { .bar { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="bar">
+    <div><a href="index.html">Documentation</a> · API reference · <code>/api/v1</code></div>
+    <div>Source: <a href="openapi.yaml">openapi.yaml</a> — the machine-readable spec; import it into Postman, Insomnia or a code generator.</div>
+</div>
+
+<div id="redoc"></div>
+
+<!--
+    Works from file:// with no server: the spec is shipped twice, as
+    openapi.yaml (for tools) and as openapi.yaml.js (for this page, since a
+    browser will not fetch a sibling file from a file:// page). Both come
+    from the same source; `php artisan platform:embed-openapi` regenerates the
+    second, and OpenApiSpecTest fails when they differ. The viewer (Redoc,
+    MIT) and the YAML parser (js-yaml, MIT) are vendored in assets/.
+-->
+<script src="openapi.yaml.js"></script>
+<script src="assets/js-yaml.min.js"></script>
+<script src="assets/redoc.standalone.js"></script>
+<script>
+(function () {
+    var target = document.getElementById('redoc');
+    if (!window.OPENAPI_YAML || !window.jsyaml || !window.Redoc) {
+        target.innerHTML = '<pre class="err">The spec or the viewer did not load. Open this file from the docs/ folder so openapi.yaml.js and assets/ resolve.</pre>';
+        return;
+    }
+    var spec;
+    try {
+        spec = window.jsyaml.load(window.OPENAPI_YAML);
+    } catch (e) {
+        target.innerHTML = '<pre class="err">openapi.yaml does not parse: ' + String(e && e.message ? e.message : e) + '</pre>';
+        return;
+    }
+    Redoc.init(spec, {
+        hideDownloadButton: false,
+        expandResponses: '200,201,202',
+        pathInMiddlePanel: true,
+        theme: {
+            colors: { primary: { main: '#c2265a' } },
+            typography: { fontFamily: '"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif', headings: { fontFamily: 'inherit' }, code: { fontFamily: 'ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace' } },
+            sidebar: { backgroundColor: '#faf7fa' }
+        }
+    }, target);
+})();
+</script>
+</body>
+</html>
