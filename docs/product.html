@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dating Platform — The product</title>
+<meta name="description" content="One document for the whole product: what it is, how a member moves through it on the website and in the app, how every member action reaches the trust and safety team and comes back, and — collapsed underneath — the engineering detail with the file and line it comes from.">
+<link rel="stylesheet" href="assets/doc.css">
+<style>
+/* Brand tokens, copied from resources/css/theme.css so the document and the product agree. */
+:root {
+    --background: oklch(0.995 0.003 20); --foreground: oklch(0.21 0.02 315); --card: oklch(1 0 0);
+    --muted-bg: oklch(0.968 0.006 20); --muted-foreground: oklch(0.52 0.02 315); --border: oklch(0.922 0.008 20);
+    --primary: oklch(0.55 0.2 15); --primary-subtle: oklch(0.955 0.025 15); --accent: oklch(0.52 0.16 320);
+    --success: oklch(0.58 0.15 155); --success-subtle: oklch(0.955 0.03 155);
+    --warning: oklch(0.72 0.16 75); --warning-subtle: oklch(0.965 0.04 75);
+    --destructive: oklch(0.56 0.21 27); --destructive-subtle: oklch(0.955 0.03 27);
+    --info: oklch(0.58 0.14 240); --info-subtle: oklch(0.955 0.028 240);
+}
+[data-theme="dark"] {
+    --background: oklch(0.16 0.02 315); --foreground: oklch(0.95 0.008 315); --card: oklch(0.2 0.022 315);
+    --muted-bg: oklch(0.26 0.022 315); --muted-foreground: oklch(0.68 0.018 315); --border: oklch(0.3 0.025 315);
+    --primary: oklch(0.65 0.19 15); --primary-subtle: oklch(0.29 0.055 15); --accent: oklch(0.63 0.15 320);
+    --success: oklch(0.7 0.15 155); --success-subtle: oklch(0.28 0.05 155);
+    --warning: oklch(0.79 0.15 75); --warning-subtle: oklch(0.3 0.055 75);
+    --destructive: oklch(0.67 0.19 27); --destructive-subtle: oklch(0.29 0.06 27);
+    --info: oklch(0.68 0.14 240); --info-subtle: oklch(0.28 0.05 240);
+}
+:root, [data-theme="dark"] {
+    --ink: var(--foreground); --muted: var(--muted-foreground); --line: var(--border); --paper: var(--card);
+    --wash: var(--muted-bg); --brand: var(--primary); --brand-wash: var(--primary-subtle);
+    --ok: var(--success); --warn: var(--warning); --stop: var(--destructive);
+}
+body { background: var(--background); color: var(--foreground); }
+[data-theme="dark"] .warn { background: var(--warning-subtle); }
+[data-theme="dark"] .note { background: var(--muted-bg); }
+[data-theme="dark"] pre { background: oklch(0.12 0.02 315); }
+[data-theme="dark"] .pill { border-color: var(--primary); }
+.sheet.wide { max-width: 96rem; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--muted); }
+.topbar a { color: var(--brand); text-decoration: none; }
+.toggle { font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0.35rem 0.8rem; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); cursor: pointer; }
+.toggle:hover { border-color: var(--brand); color: var(--brand); }
+.layout { display: grid; grid-template-columns: 16rem minmax(0, 1fr); gap: 2.5rem; align-items: start; }
+.sidenav { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow: auto; font-size: 0.86rem; padding-right: 0.5rem; }
+.sidenav h2 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 1rem 0 0.6rem; padding: 0; border: 0; }
+.sidenav h2:first-child { margin-top: 0; }
+.sidenav ol { list-style: none; margin: 0 0 0.5rem; padding: 0; }
+.sidenav li { margin: 0; }
+.sidenav a { display: block; padding: 0.3rem 0.6rem; border-radius: 6px; color: var(--ink); text-decoration: none; line-height: 1.35; }
+.sidenav a:hover { background: var(--wash); color: var(--brand); }
+.sidenav a .n { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 0.35rem; }
+.sidenav .tools { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.sidenav .tools button { font: inherit; font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 6px; border: 1px solid var(--line); background: var(--paper); color: var(--muted); cursor: pointer; }
+.sidenav .tools button:hover { color: var(--brand); border-color: var(--brand); }
+section.part { scroll-margin-top: 1rem; }
+section.part > h2.part-title { font-size: 1.9rem; margin-top: 3.5rem; border-bottom: 3px solid var(--brand); }
+section.part > h2.part-title .eyebrow { display: block; font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brand); margin-bottom: 0.4rem; }
+section.flow { scroll-margin-top: 1rem; }
+section.flow > h3 { font-size: 1.3rem; margin-top: 2.5rem; }
+section.flow > h3 .n { color: var(--muted); font-weight: 500; margin-right: 0.5rem; }
+details.dg { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); margin: 1rem 0 1.75rem; overflow: hidden; }
+details.dg > summary { cursor: pointer; list-style: none; padding: 0.7rem 1rem; font-weight: 600; font-size: 0.95rem; background: var(--wash); border-bottom: 1px solid transparent; display: flex; align-items: center; gap: 0.6rem; }
+details.dg > summary::-webkit-details-marker { display: none; }
+details.dg > summary::before { content: "▸"; color: var(--muted); font-size: 0.8rem; transition: transform 120ms ease; }
+details.dg[open] > summary::before { transform: rotate(90deg); }
+details.dg[open] > summary { border-bottom-color: var(--line); }
+.diagram { padding: 1rem 1rem 0.5rem; overflow-x: auto; }
+.diagram .render svg { max-width: 100%; height: auto; }
+.chart { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 1rem; overflow-x: auto; }
+.chart svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+/*
+ * doc.css styles `.label` for call-out captions. Mermaid also uses class="label"
+ * on every node. NOT scoped to .diagram: mermaid.render() measures each label in
+ * a temporary element outside it, and mismatched measuring styles clip text.
+ */
+svg .label, svg .label * { text-transform: none; letter-spacing: normal; font-weight: inherit; color: inherit; margin: 0; display: inline; }
+svg .nodeLabel, svg .edgeLabel, svg .cluster-label { font-size: 14px; }
+.err { background: var(--destructive-subtle); color: var(--destructive); padding: 0.75rem 1rem; border-radius: 6px; white-space: pre-wrap; }
+.caption { padding: 0.85rem 1rem; border-top: 1px solid var(--line); font-size: 0.9rem; }
+.caption p { margin: 0 0 0.6rem; }
+.caption p:last-child { margin-bottom: 0; }
+.cites { margin: 0.6rem 0 0; padding: 0.7rem 1rem; background: var(--wash); border-top: 1px solid var(--line); font-size: 0.8rem; }
+.cites .lbl { display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
+.cites ul { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 2rem; }
+.cites li { margin: 0 0 0.25rem; break-inside: avoid; }
+.cites code { background: var(--paper); }
+.legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; font-size: 0.8rem; color: var(--muted); margin: 0 0 1rem; }
+.legend span::before { content: ""; display: inline-block; width: 0.9rem; height: 0.9rem; border-radius: 3px; vertical-align: -0.15rem; margin-right: 0.4rem; border: 1.5px solid; }
+.legend .m::before { background: var(--primary-subtle); border-color: var(--primary); }
+.legend .s::before { background: oklch(0.955 0.022 320); border-color: oklch(0.52 0.16 320); }
+[data-theme="dark"] .legend .s::before { background: oklch(0.29 0.05 320); border-color: oklch(0.63 0.15 320); }
+.legend .a::before { background: var(--info-subtle); border-color: var(--info); }
+.legend .g::before { background: var(--success-subtle); border-color: var(--success); }
+.legend .w::before { background: var(--warning-subtle); border-color: var(--warning); }
+.legend .r::before { background: var(--destructive-subtle); border-color: var(--destructive); }
+.legend .j::before { background: var(--muted-bg); border-color: var(--muted-foreground); border-style: dashed; border-radius: 999px; }
+.legend .l-off::before { background: var(--muted-bg); border-color: var(--muted-foreground); border-style: dashed; }
+.tells { border: 1px solid var(--line); border-left: 4px solid var(--brand); background: var(--brand-wash); border-radius: 0 10px 10px 0; padding: 1.1rem 1.4rem; margin: 0 0 2rem; }
+.tells h2 { margin: 0 0 0.6rem; padding: 0; border: 0; font-size: 1.15rem; }
+.tells ol { margin: 0; padding-left: 1.3rem; }
+.tells li { margin-bottom: 0.5rem; }
+table.api td:nth-child(1) { font-family: var(--mono); font-size: 0.82rem; white-space: nowrap; }
+table.api tr.grp td { background: var(--wash); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+table.lane td:nth-child(1) { white-space: nowrap; font-weight: 600; }
+table.lane td:nth-child(2) { font-family: var(--mono); font-size: 0.78rem; }
+table.lane code { white-space: nowrap; }
+[data-theme="dark"] table tbody tr:nth-child(even):not(.grp) { background: oklch(0.18 0.02 315); }
+kbd { font-family: var(--mono); font-size: 0.78em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0.05em 0.4em; background: var(--wash); }
+@media print {
+    .topbar, .sidenav { display: none; }
+    .layout { display: block; }
+    details.dg { break-inside: avoid; }
+    details.dg > summary::before { display: none; }
+    .cites ul { columns: 1; }
+    section.part > h2.part-title { break-before: page; }
+    .chart { border: 0; padding: 0; }
+}
+@media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidenav { position: static; max-height: none; }
+    .cites ul { columns: 1; }
+}
+</style>
+</head>
+<body>
+<main class="sheet wide">
+
+<div class="topbar">
+    <div><a href="index.html">Documentation</a> · The product</div>
+    <div><button type="button" class="toggle" id="themeToggle" aria-label="Toggle light and dark theme">Dark theme</button></div>
+</div>
+
+<header class="cover">
+    <p class="eyebrow">The product</p>
+    <h1>Dating Platform</h1>
+    <p class="lede">One document, three layers. What the product is and who it is for; how a member moves through it on the
+    website and in the app, in plain language; and, collapsed underneath each part, how the code actually does it — with
+    the file and line, so every arrow can be checked against the source.</p>
+    <dl>
+        <div><dt>Document</dt><dd>The product — overview, flow and engineering detail</dd></div>
+        <div><dt>Audience</dt><dd>Owners first, then operators, then engineers</dd></div>
+        <div><dt>Derived from</dt><dd>The code at the date of generation, both repositories</dd></div>
+        <div><dt>Print</dt><dd><kbd>Ctrl</kbd>+<kbd>P</kbd> — use the light theme; collapsed sections open themselves</dd></div>
+    </dl>
+</header>
+
+<aside class="tells" id="tells">
+    <h2>What this tells you — the honest notes</h2>
+    <ol>
+        <li><strong>Two clients, one rule book.</strong> The website and the mobile app call the same services, so a limit
+            changed in the console applies to both. The app carries no business rule: it renders what the server decided.</li>
+        <li><strong>The least obvious thing in the product is the token.</strong> A member who signs up in the app is
+            <code>pending</code> and their token cannot swipe, message or report. When their profile crosses half complete the
+            account becomes <code>active</code> — <em>but the token they already hold is not upgraded</em>. The app must sign in
+            again. Part 2, “The app, screen by screen”.</li>
+        <li><strong>There is no proactive photo review.</strong> Uploads are re-encoded (which strips EXIF, including GPS) and
+            stored as <code>pending</code>, and nothing filters pending photos out of the deck. Photo moderation is reactive: it
+            happens when somebody reports. Part 3, round trip C.</li>
+        <li><strong>Seven notification templates are editable text with no code behind them:</strong>
+            <code>likes.waiting</code>, <code>appeal.received</code>, <code>appeal.decided</code>, <code>match.silent_nudge</code>,
+            <code>verification.prompt</code>, <code>verification.approved</code>, <code>verification.rejected</code>. Enforcement
+            records <code>notified_user</code> without sending anything. Part 4, diagram 10.</li>
+        <li><strong>There is no email verification.</strong> Phone verification exists (six digits, ten minutes, five guesses).
+            <code>email_verified_at</code> is a column nothing sets. Part 3, round trip D.</li>
+        <li><strong>Google Play orders record an amount of 0.</strong> The Play API the server asks reports no price;
+            Apple's does. Payments screens will show store revenue from Apple only. Part 3, round trip E.</li>
+        <li><strong>Deleting an account does not cancel a store subscription.</strong> Only the member can, in the App Store or
+            Google Play; the member is told so, and a renewal that still arrives is recorded and ignored. Round trip F.</li>
+        <li><strong>Email and push are queued.</strong> Without a running worker they are never delivered and nothing fails
+            visibly. Part 4, diagram 11.</li>
+    </ol>
+</aside>
+
+<div class="layout">
+
+<nav class="sidenav" aria-label="Contents">
+    <h2>Part 1 · What it is</h2>
+    <ol>
+        <li><a href="#what">What the platform is</a></li>
+        <li><a href="#who">Who uses it</a></li>
+        <li><a href="#modules">What is included</a></li>
+        <li><a href="#built">How it is built</a></li>
+        <li><a href="#decisions">Decisions that shape it</a></li>
+        <li><a href="#launch">Going live · not built</a></li>
+    </ol>
+    <h2>Part 2 · The flow</h2>
+    <ol>
+        <li><a href="#chart">The whole product on one chart</a></li>
+        <li><a href="#app">The app, screen by screen</a></li>
+    </ol>
+    <h2>Part 3 · App ↔ console</h2>
+    <ol>
+        <li><a href="#rt-verification"><span class="n">A</span>Selfie verification</a></li>
+        <li><a href="#rt-report"><span class="n">B</span>Report → enforcement → appeal</a></li>
+        <li><a href="#rt-photo"><span class="n">C</span>Photo upload</a></li>
+        <li><a href="#rt-phone"><span class="n">D</span>Phone verification</a></li>
+        <li><a href="#rt-purchase"><span class="n">E</span>In-app purchase</a></li>
+        <li><a href="#rt-deletion"><span class="n">F</span>Account deletion</a></li>
+        <li><a href="#rt-block"><span class="n">G</span>Block / unmatch</a></li>
+        <li><a href="#rt-geo"><span class="n">H</span>Geographic restriction</a></li>
+    </ol>
+    <h2>Part 4 · Engineering</h2>
+    <ol>
+        <li><a href="#guards"><span class="n">1</span>Audiences and guards</a></li>
+        <li><a href="#lifecycle"><span class="n">2</span>Member lifecycle</a></li>
+        <li><a href="#deck"><span class="n">3</span>Discovery deck</a></li>
+        <li><a href="#swipe"><span class="n">4</span>Swipe → match</a></li>
+        <li><a href="#messaging"><span class="n">5</span>Messaging and safety</a></li>
+        <li><a href="#enforcement"><span class="n">6</span>Report → case → ladder</a></li>
+        <li><a href="#reveal"><span class="n">7</span>Message content reveal</a></li>
+        <li><a href="#payment"><span class="n">8</span>Subscriptions and payment</a></li>
+        <li><a href="#verification"><span class="n">9</span>Verification</a></li>
+        <li><a href="#notifications"><span class="n">10</span>Notifications</a></li>
+        <li><a href="#scheduler"><span class="n">11</span>Scheduler</a></li>
+        <li><a href="#api"><span class="n">12</span>API surface map</a></li>
+    </ol>
+    <h2>View</h2>
+    <div class="tools">
+        <button type="button" id="expandAll">Expand all</button>
+        <button type="button" id="collapseAll">Collapse all</button>
+    </div>
+</nav>
+
+<div class="content">
+
+<!-- ================================================================ PART 1 -->
+<section class="part" id="part1">
+<h2 class="part-title"><span class="eyebrow">Part 1</span>What it is</h2>
+
+<h3 id="what">What the platform is</h3>
+<p>A complete dating product in three parts that share one database and one set of rules:</p>
+<ul>
+    <li><strong>A public website</strong> — the marketing pages, pricing and sign-up a visitor sees first, and a member app that runs in the browser.</li>
+    <li><strong>A mobile app</strong> (React Native / Expo, in its own repository) — the same product on a phone, over a REST API of 41 endpoints that calls the same services the website does.</li>
+    <li><strong>A staff console</strong> — the part that makes the other two safe to operate: who is real, who has been reported, what was decided and why, who paid, and what members are being told.</li>
+</ul>
+<p>The distinguishing feature is that safety is not bolted on. Verification queues, one case per reported member, a graduated enforcement ladder, appeals reviewed by somebody other than the original decider, and an audit trail of every staff action are the core, because they decide whether a dating product survives contact with real users.</p>
+<div class="note">
+    <span class="label">No fixed brand</span>
+    <p>The name, logo, colours, currency, plan names and prices, the profile questions, the interests, the report categories and every message a member receives are <strong>rows in the database</strong>, edited in the console. The screenshots show a demo configuration named “Dating App”.</p>
+</div>
+<figure>
+    <img src="images/admin-dashboard.png" alt="The console dashboard showing sign-ups, matching health and safety figures">
+    <figcaption>The console opens on the numbers that describe a dating product's health, not page views.</figcaption>
+</figure>
+
+<h3 id="who">Who uses it</h3>
+<p>Seven staff roles ship with the product, because the permissions they hold are genuinely different jobs and collapsing them would make the audit trail meaningless.</p>
+<table>
+    <thead><tr><th>Role</th><th>What they do</th><th>Notably cannot</th></tr></thead>
+    <tbody>
+        <tr><td><strong>Super Admin</strong></td><td>Everything, including roles and permissions</td><td>—</td></tr>
+        <tr><td><strong>Admin</strong></td><td>Platform operations: staff, branding, settings, billing, integrations, <em>and where the product is offered</em> (countries, states, cities)</td><td>Read message content, decide appeals, change safety policy</td></tr>
+        <tr><td><strong>T&amp;S Lead</strong></td><td>Owns safety policy: enforcement, appeals, risk weights, report categories and reasons</td><td>Change billing, branding, mail — or the geographic footprint</td></tr>
+        <tr><td><strong>Senior Moderator</strong></td><td>Verification, cases, the full enforcement ladder, the restricted (suspected-minor) queue</td><td>Settings</td></tr>
+        <tr><td><strong>Moderator</strong></td><td>Day-to-day cases and verification</td><td>Decide appeals — so an appeal always has an independent reviewer</td></tr>
+        <tr><td><strong>Support</strong></td><td>Answers members: sees personal details, payments, can give a plan or move a store subscription between accounts</td><td>Enforcement, message content</td></tr>
+        <tr><td><strong>Analyst</strong></td><td>Read-only analytics</td><td>See personal details or revenue</td></tr>
+    </tbody>
+</table>
+<div class="note">
+    <span class="label">Why Admin and T&amp;S Lead are separate</span>
+    <p>One runs the platform, the other owns what counts as a ban. If the same person did both, “who approved this policy change?” would have one answer for every question. The same line puts Locations with Branding and Mail: which countries and cities the product serves is configuration, and the T&amp;S Lead cannot change it.</p>
+</div>
+
+<h3 id="modules">What is included</h3>
+<table>
+    <thead><tr><th>Area</th><th>What it covers</th></tr></thead>
+    <tbody>
+        <tr><td>Dashboard &amp; analytics</td><td>Sign-up funnel, matching health, gender balance by city, safety trends, retention split by verified status</td></tr>
+        <tr><td>Members</td><td>Search and twelve filters, full member record, photos, matches, reports, enforcement history, devices, timeline, billing</td></tr>
+        <tr><td>Photo verification</td><td>Risk-sorted queue with SLA pills, selfie-versus-profile comparison, enumerated rejection reasons, a separate restricted queue for suspected minors</td></tr>
+        <tr><td>Reports &amp; cases</td><td>Reports aggregated into one case per subject, evidence in context, reporter credibility, graduated enforcement decisions</td></tr>
+        <tr><td>Enforcement &amp; appeals</td><td>Warn, feature limit, shadow ban, suspend, permanent ban, device ban — each with a reason code and a member-facing statement; appeals assigned away from the original decider</td></tr>
+        <tr><td>Conversations</td><td>Metadata by default; revealing content needs a permission, a written justification, and is logged</td></tr>
+        <tr><td>Billing</td><td>Payments, subscriptions, plans and gateways — bought on the website (Stripe, Razorpay), bought in the app (App Store, Google Play), or granted by staff</td></tr>
+        <tr><td>Notifications</td><td>Push campaigns, editable templates, delivery logs, renewal reminders, Firebase and SMS setup</td></tr>
+        <tr><td>Masters</td><td>Interests, profile questions, report categories, enforcement reasons; countries, states and cities with a switch on each</td></tr>
+        <tr><td>Administration</td><td>Staff accounts, roles and a permission matrix, an immutable audit log</td></tr>
+        <tr><td>Settings</td><td>Branding and white-labelling, product and safety thresholds, mail, delivery logs, database backup</td></tr>
+        <tr><td>REST API</td><td>41 endpoints for the mobile app, sharing the services of the web member app — see the <a href="api.html">API reference</a></td></tr>
+    </tbody>
+</table>
+<div class="grid-2">
+    <figure><img src="images/member-discover.png" alt="A member browsing profiles one at a time"><figcaption>Discovery on the website, one profile at a time.</figcaption></figure>
+    <figure><img src="images/member-premium.png" alt="The member premium page showing plans"><figcaption>Plans, priced and described from the console.</figcaption></figure>
+</div>
+
+<h3 id="built">How it is built</h3>
+<table>
+    <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+    <tbody>
+        <tr><td>Server</td><td>Laravel 12 on PHP 8.2, MySQL 8</td><td>Ordinary hosting; a real schema with foreign keys</td></tr>
+        <tr><td>Website</td><td>Livewire 3 with Alpine, Tailwind v4 design tokens</td><td>Server-rendered screens that behave like an application; one colour changes the whole product</td></tr>
+        <tr><td>Mobile app</td><td>React Native on Expo (expo-router, react-query, secure store, expo-iap)</td><td>One codebase for iOS and Android; the token lives in the keychain, never in plain storage</td></tr>
+        <tr><td>Auth</td><td>Sessions for staff and web members; Sanctum tokens with abilities for the app</td><td>Staff and members are separate guards and separate tables</td></tr>
+        <tr><td>Money</td><td>Stripe and Razorpay hosted pages on the web; StoreKit and Play Billing in the app with server-side receipt verification</td><td>No card details ever reach this server; a store purchase is fulfilled through the same locked path as a web one</td></tr>
+    </tbody>
+</table>
+<pre><code>dating_app/                          dating_app_mobile/
+  app/Actions/     one job each          src/api/        client, endpoints, error codes
+  app/Services/    the domain            src/auth/       token store, session, the token swap
+  app/Livewire/    one class per screen  src/app/        one file per screen (expo-router)
+  app/Http/        API, webhooks         src/features/   swipe deck, photos, safety sheet
+  routes/          web · admin · api     src/push/       FCM token and deep links
+  tests/           feature + acceptance  docs/           the receipt contract</code></pre>
+<div class="note">
+    <span class="label">The rule behind the layout</span>
+    <p>Anything that changes the state of a member — a ban, a verification decision, a plan, a payment, a swipe — goes through a service or an action, never straight from a screen or from the app. That is why the website, the mobile API, a store notification and an automated rule can all take the same decision and produce the same audit trail.</p>
+</div>
+
+<h3 id="decisions">Decisions that shape the product</h3>
+<ul>
+    <li><strong>Cases, not reports.</strong> Five people reporting one profile produce one case. Staff act once and the decision resolves every report behind it.</li>
+    <li><strong>Message privacy by construction.</strong> Message bodies are hidden at the model level; revealing one needs a permission, a fixed reason, a written justification, and writes two records.</li>
+    <li><strong>Plans are features, not names.</strong> The application asks “does this plan include unlimited likes?”, never “is this member on Gold?”. A member may hold a web plan and a store plan at once; their tier is the best of the two and nothing ever shortens or downgrades an active plan.</li>
+    <li><strong>Geography is a rule, not a filter.</strong> One rule — country shown, state shown, city shown — is applied on every path that accepts a city, and existing members keep a place that has since been hidden.</li>
+    <li><strong>Everything a member reads is editable</strong> in the console; the keys behind it stay in code because routing and risk depend on them.</li>
+    <li><strong>Two user tables, deliberately.</strong> <code>users</code> is staff; <code>app_users</code> is members. A match always stores the lower id first; moderation actions are append-only; every shadow ban carries a review date; an appeal is never assigned to its original decider; a payment is fulfilled exactly once however many times it is confirmed.</li>
+</ul>
+
+<h3 id="launch">Going live, and what is deliberately not built</h3>
+<table>
+    <thead><tr><th>Needed</th><th>Where from</th><th>Without it</th></tr></thead>
+    <tbody>
+        <tr><td>SMTP details</td><td>Your mail provider</td><td>Password resets and plan emails are written to the log</td></tr>
+        <tr><td>Firebase service account</td><td>Firebase console</td><td>No push: matches and messages are not announced</td></tr>
+        <tr><td>Stripe or Razorpay keys + webhook secret</td><td>The gateway's dashboard</td><td>Nobody can buy on the website</td></tr>
+        <tr><td>App Store Connect API key, Play service account, notification URLs, product ids on each plan</td><td>App Store Connect, Play Console; Billing → Plans</td><td>Nobody can buy in the app; <code>platform:preflight</code> says so</td></tr>
+        <tr><td>SMS keys</td><td>Twilio, MSG91, Vonage or Textlocal</td><td>No phone verification (<code>sms_unavailable</code>)</td></tr>
+        <tr><td>Countries, states and cities, with coordinates</td><td><code>platform:import-geography</code>, then Masters → Locations</td><td>Members cannot find their city; the distance filter has nothing to measure</td></tr>
+        <tr><td>Scheduler entry and a queue worker</td><td>Your server</td><td>Nothing expires, warns, sends or delivers on time</td></tr>
+        <tr><td>HTTPS domain</td><td>Your hosting</td><td>Webhooks and store notifications will not arrive</td></tr>
+    </tbody>
+</table>
+<p><strong>Deliberately not built,</strong> stated plainly: face matching and liveness are simulated behind an interface; there is no proactive photo review; there is no email verification; there is no websocket (the app polls a thread every six seconds); message bodies are stored unencrypted behind permission, justification and logging; refunds are issued in the gateway's or store's own dashboard.</p>
+</section>
+
+<!-- ================================================================ PART 2 -->
+<section class="part" id="part2">
+<h2 class="part-title"><span class="eyebrow">Part 2</span>The flow, in plain language</h2>
+
+<section class="flow" id="chart">
+<h3>The whole product on one chart</h3>
+<p>Read top to bottom. The left side is what a member does, on the website or in the app; the purple boxes are what the trust &amp; safety team does when a member verifies, reports someone, or appeals; the blue boxes are the steps that exist only in the app. Every arrow is how the product behaves today.</p>
+<p class="legend">
+    <span class="m">member</span>
+    <span class="a">app only</span>
+    <span class="s">trust &amp; safety team</span>
+    <span class="g">good outcome</span>
+    <span class="w">limit or waiting</span>
+    <span class="r">restriction or refusal</span>
+    <span class="j">jump — continues elsewhere on the chart</span>
+</p>
+<div class="chart" id="bigchart">
+<script type="text/x-mermaid">
+flowchart TD
+  START(["Visitor"]) --> LAUNCH["App: launch<br/>reads the server's config: minimum app version, minimum age,<br/>photo cap, like cap, distance cap · too old an app is stopped here"]:::app
+  LAUNCH --> SIGNUP
+  START --> SIGNUP["Sign up<br/>name · email · password · must be 18+<br/>gender · who you want to meet · city (only a city that is on offer)"]
+  SIGNUP --> LOGIN["Log in"]
+  LOGIN --> PROFILE["Complete your profile<br/>bio · job · education · height · what you are looking for<br/>photo · three interests · city — from the website or the app"]
+  PROFILE --> HALF{"Profile at least half complete?"}
+  HALF -- "not yet" --> PROFILE
+  HALF -- "yes" --> SWAP["App: the account is now active but the app's key is still the limited one —<br/>the app signs in again by itself to get a full key"]:::app
+  SWAP --> HOME
+  HALF -- "yes (website)" --> HOME["Account active<br/>discover · matches · messages"]:::good
+
+  HOME --> VERIFY["Verify who you are (optional, earns a badge)<br/>the app shows a 4-character code<br/>take a selfie holding that code · send it · three attempts in total"]
+  VERIFY --> VQ["Verification queue<br/>a reviewer compares the selfie with the profile photos<br/>within the response-time target"]:::staff
+  VQ --> VDEC{"Reviewer's decision"}
+  VDEC -- "approved" --> BADGE["Verified badge on the profile<br/>members can choose to see verified people only"]:::good
+  VDEC -- "rejected, with a reason" --> VREJ["Told why · can try again while attempts remain"]:::warn
+  VREJ --> VERIFY
+  VDEC -- "might be under 18" --> VMIN["Restricted review queue<br/>senior reviewers only · cannot be approved here, only refused"]:::staff
+
+  HOME --> PHONE["Add a phone number (optional)<br/>a six-digit code by text · ten minutes · five guesses"]
+  HOME --> DISCOVER["Discover people<br/>filtered by age · gender · distance or city<br/>optionally verified people only · never anyone you blocked or who blocked you"]
+  DISCOVER --> SWIPE{"Like or pass?"}
+  SWIPE -- "pass" --> DISCOVER
+  SWIPE -- "like" --> LIMIT{"Free plan: daily likes used up?"}
+  LIMIT -- "yes" --> WAIT["Wait until tomorrow<br/>or go Premium for unlimited likes"]:::warn
+  WAIT --> J4(["see Premium, further down"]):::jump
+  LIMIT -- "no" --> MUTUAL{"Did they like you too?"}
+  MUTUAL -- "not yet" --> DISCOVER
+  MUTUAL -- "yes" --> MATCH["It's a match!<br/>both people get a notification"]:::good
+  MATCH --> CHAT["Chat opens<br/>messages · new-message notifications · the app refreshes every six seconds<br/>links and phone numbers are flagged for the safety team to see"]
+  CHAT --> UNMATCH["Unmatch"] --> CLOSED["Chat closed for both people"]:::warn
+  CHAT --> BLOCK["Block this person"]
+  DISCOVER --> BLOCK
+  BLOCK --> BLOCKED["Chat closed · you disappear from each other's Discover<br/>they are not told"]:::warn
+  CHAT --> REPORT["Report this person<br/>pick a category · optionally point at a message"]
+  DISCOVER --> REPORT
+
+  REPORT --> CASE["Report becomes a case<br/>every report about the same person lands in one case<br/>a response deadline is set by how serious it is"]:::staff
+  CASE --> REVIEW["A moderator claims and reviews the case<br/>can read the reported messages only with a written reason, which is recorded"]:::staff
+  REVIEW --> DECIDE{"Moderator's decision<br/>a graduated ladder, one step at a time"}
+  DECIDE -- "no action, or a warning on the record" --> NOACT["Case closed"]
+  DECIDE -- "temporary restriction, for a set time" --> TEMP["Feature limit · shadow ban · suspension<br/>shadow ban: hidden from everyone's Discover, member not told, must carry a review date<br/>suspension: locked out until it ends"]:::bad
+  DECIDE -- "permanent ban" --> BAN["Account banned permanently<br/>optionally the device too"]:::bad
+  DECIDE -- "not sure" --> ESC["Passed to a senior reviewer"]:::staff
+  ESC --> DECIDE
+
+  TEMP -- "suspension" --> RESTRICTED["The member sees a restricted page — on the website and in the app<br/>which rule was broken and for how long"]:::bad
+  BAN --> RESTRICTED
+  TEMP -- "time runs out" --> EXPIRE["Lifted automatically<br/>account goes back to what it was"]:::good
+  EXPIRE --> J1(["back to Account active"]):::jump
+  RESTRICTED --> APPEAL["Submit an appeal<br/>one per restriction · a short written statement"]
+  APPEAL --> AQ["Appeal reviewed by a different moderator<br/>never the one who made the original decision"]:::staff
+  AQ --> ADEC{"Appeal outcome"}
+  ADEC -- "upheld" --> RESTRICTED
+  ADEC -- "overturned" --> LIFT["Restriction lifted<br/>account goes back to what it was"]:::good
+  LIFT --> J2(["back to Account active"]):::jump
+
+  PENTRY(["From Account active, at any time"]):::jump --> PREMIUM["Premium<br/>website: pay by card on the payment page (Stripe or Razorpay)<br/>app: buy in the App Store or Google Play"]
+  PREMIUM --> PAID{"Payment confirmed — by the gateway,<br/>or by Apple / Google when the app hands over the receipt?"}
+  PAID -- "no" --> PREMIUM
+  PAID -- "yes" --> PERKS["Premium active<br/>unlimited likes · see who already liked you · badge<br/>a store plan renews and ends on the store's calendar"]:::good
+  PERKS --> RENEW["Website plans: reminders 7, 3 and 1 days before the end · renewing early adds to the time left<br/>Store plans: the store renews, refunds or lapses and tells the server"]
+  RENEW --> J3(["back to Account active"]):::jump
+
+  DENTRY(["From Account settings, at any time"]):::jump --> DEACT["Deactivate account (reversible)<br/>or delete it permanently: name, photos and contact details removed,<br/>messages you sent stay with the people you sent them to<br/>a store subscription is NOT cancelled — only you can, in the store"]
+  DEACT --> OUT(["Signed out · account closed"])
+
+  ANNOUNCE["Campaigns and announcements<br/>written and approved by staff · sent to members' phones at the scheduled time"]:::staff
+
+  %% Reading order: invisible links rank the sections top to bottom.
+  BADGE ~~~ DISCOVER
+  VMIN ~~~ DISCOVER
+  VREJ ~~~ DISCOVER
+  PHONE ~~~ DISCOVER
+  BLOCKED ~~~ CASE
+  CLOSED ~~~ CASE
+  J1 ~~~ PENTRY
+  J2 ~~~ PENTRY
+  J3 ~~~ DENTRY
+  OUT ~~~ ANNOUNCE
+</script>
+<div class="render"></div>
+</div>
+</section>
+
+<section class="flow" id="app">
+<h3>The app, screen by screen</h3>
+<p>The mobile app is a lane through the same flow. Every screen below names what it calls, what it shows while waiting, what it shows when the call fails, and which error <code>code</code>s it branches on — it never branches on message text. Paths are in <code>dating_app_mobile/src/</code>.</p>
+<div class="chart" id="applane">
+<script type="text/x-mermaid">
+flowchart LR
+  L["Launch<br/>GET /config"]:::app --> G{"gate"}
+  G -- "too old" --> UPD["Update required"]:::bad
+  G -- "maintenance" --> MNT["Back shortly · countdown"]:::warn
+  G -- "no token" --> SI["Sign in / Join<br/>POST /auth/login · /auth/register"]:::app
+  G -- "token" --> ME["GET /me"]:::app
+  SI --> ME
+  ME -- "restricted / deactivated" --> BLK["Restricted screen · appeal link"]:::bad
+  ME -- "pending" --> ON["Onboarding<br/>photos · about · interests · city<br/>every save re-fetches /me"]:::app
+  ON -- "active — token still limited" --> RE["Silent re-login<br/>swap the token · or ask for the password"]:::warn
+  RE --> TABS
+  ME -- "active" --> TABS["Discover · Matches · Messages · Likes · Profile"]:::app
+  TABS --> THR["Thread<br/>poll every 6 s · optimistic send"]:::app
+  TABS --> PRO["Profile: edit · preferences · verification · phone · blocks · premium · account"]:::app
+  PRO --> DEL["Delete account<br/>password · warning · store subscription stays"]:::bad
+</script>
+<div class="render"></div>
+</div>
+<div class="note">
+    <span class="label">The token-ability step, spelled out</span>
+    <p>Register or sign in while <code>pending</code> and the server issues a token with <code>profile:read</code>, <code>profile:write</code> and <code>verify</code> only. <code>GET /deck</code>, <code>POST /swipes</code>, sending a message and filing a report answer <code>403 forbidden</code> to that token. Onboarding writes re-fetch <code>/me</code> after every save; when <code>account_status</code> flips to <code>active</code> the app signs in again with the credentials it kept in secure storage during onboarding, stores the new token, and discards the credentials. If that fails (password changed elsewhere, offline) it shows a re-authentication modal. The old token keeps its reduced abilities for ever: nothing on the server upgrades a token in place.</p>
+</div>
+<table class="lane">
+    <thead><tr><th>Screen</th><th>Calls</th><th>While waiting</th><th>On failure</th><th>Branches on</th></tr></thead>
+    <tbody>
+        <tr><td>Launch<br><code>app/_layout.tsx</code></td><td>GET /config</td><td>“Connecting…”</td><td>Offline screen with retry; maintenance screen with the server's countdown; update-required screen when the app is older than <code>min_supported_version</code></td><td><code>maintenance</code>, <code>network</code></td></tr>
+        <tr><td>Session boot<br><code>auth/SessionProvider.tsx</code></td><td>GET /me with the stored token</td><td>“Signing in…”</td><td>Signed out on 401; full-screen blockers for a restricted or deactivated account; a rate-limit strip with the <code>Retry-After</code> countdown for any 429, anywhere</td><td><code>unauthenticated</code>, <code>account_restricted</code>, <code>account_deactivated</code>, <code>maintenance</code>, <code>rate_limited</code></td></tr>
+        <tr><td>Sign in / Join<br><code>app/(auth)/</code></td><td>POST /auth/login, /auth/register</td><td>Button spinner</td><td>Field errors under the fields; the under-18 check mirrors <code>min_age</code> from config but the server still decides</td><td><code>validation_failed</code></td></tr>
+        <tr><td>Onboarding photos<br><code>app/onboarding/photos.tsx</code></td><td>POST /me/photos (multipart), PATCH /me/photos/reorder, PATCH …/primary, DELETE …/{uuid}; then GET /me</td><td>Upload spinner on the tile</td><td>“You can have up to N photos” from the server's <code>limit</code>; field errors for a bad file</td><td><code>photo_limit_reached</code>, <code>validation_failed</code></td></tr>
+        <tr><td>Onboarding about · interests<br><code>app/onboarding/about.tsx</code>, <code>interests.tsx</code></td><td>PATCH /me/profile · PUT /me/interests; then GET /me</td><td>Button spinner, completion meter</td><td>Field errors; the cap on interests comes from the server</td><td><code>validation_failed</code></td></tr>
+        <tr><td>Onboarding city<br><code>app/onboarding/city.tsx</code></td><td>GET /countries, /states?country=, /cities?search= (two letters or more, debounced); PATCH /me</td><td>Spinner under the search box</td><td>“No city starts with…”; “showing the first 100, keep typing”; a hidden place is refused by the server with a field error</td><td><code>validation_failed</code></td></tr>
+        <tr><td>Promotion<br><code>auth/SessionProvider.tsx</code></td><td>POST /auth/login again, silently</td><td>—</td><td>Re-authentication modal asking for the password</td><td>any failure of the silent login</td></tr>
+        <tr><td>Discover<br><code>app/(tabs)/discover.tsx</code></td><td>GET /deck, POST /swipes</td><td>“Finding people…”; the next card's photo is prefetched</td><td>The card animates back and the banner says why: the daily like limit (422), a token that cannot swipe (403 — the app re-fetches /me), a 429. Reduce-motion turns off dragging. An empty deck is a real empty state with a link to preferences</td><td><code>validation_failed</code>, <code>forbidden</code>, <code>rate_limited</code></td></tr>
+        <tr><td>Person<br><code>app/person/[uuid].tsx</code></td><td>POST /swipes (from a list), DELETE /matches/{uuid}, GET /conversations to find the thread</td><td>Button spinners</td><td>Banner with the server's reason</td><td><code>validation_failed</code>, <code>rate_limited</code></td></tr>
+        <tr><td>Matches · Messages<br><code>app/(tabs)/matches.tsx</code>, <code>messages.tsx</code></td><td>GET /matches, GET /conversations (cursor pages)</td><td>List spinner; pull to refresh</td><td>Empty states; closed threads simply leave the list</td><td>—</td></tr>
+        <tr><td>Thread<br><code>app/thread/[uuid].tsx</code></td><td>GET /conversations/{uuid}/messages every 6 s while on screen, POST …/messages, POST …/read</td><td>The message appears at once (optimistic)</td><td>A failed send stays on the bubble as “Not sent · tap to retry”; a 403 on read or send means the thread was closed by a block or unmatch — the composer is replaced by “This conversation is closed” and polling stops</td><td><code>forbidden</code></td></tr>
+        <tr><td>Likes<br><code>app/(tabs)/likers.tsx</code></td><td>GET /me/likers</td><td>List spinner</td><td>A free member gets the server's 403 with <code>count</code> and sees “N people liked you” — how many, never who</td><td><code>premium_required</code></td></tr>
+        <tr><td>Report / block<br><code>features/safety/ReportBlockSheet.tsx</code></td><td>POST /reports (category, optional message id, optional block), POST /blocks, DELETE /blocks/{uuid}</td><td>Button spinner</td><td>Field errors; after a block the thread closes and the lists refresh</td><td><code>validation_failed</code></td></tr>
+        <tr><td>Profile edit · preferences<br><code>app/profile/edit.tsx</code>, <code>preferences.tsx</code></td><td>PATCH /me, PATCH /me/profile, PATCH /me/preferences (age range always as a pair)</td><td>Button spinner</td><td>Field errors; “Saved.”</td><td><code>validation_failed</code></td></tr>
+        <tr><td>Verification<br><code>app/profile/verification.tsx</code></td><td>GET /verification, GET /verification/gesture, POST /verification (multipart selfie + code)</td><td>Camera with the code overlaid; “Sent. A reviewer will check it”</td><td>An expired code is a field error and a fresh code is one tap away; after the third attempt the screen says to contact support and offers nothing else</td><td><code>validation_failed</code>, <code>verification_attempts_exhausted</code></td></tr>
+        <tr><td>Phone<br><code>app/profile/phone.tsx</code></td><td>POST /phone/send-code, POST /phone/verify</td><td>“Code sent. It expires at …”</td><td>“Phone verification is not available right now” when no SMS gateway is configured — shown, not retried; a wrong code is a field error</td><td><code>sms_unavailable</code>, <code>validation_failed</code></td></tr>
+        <tr><td>Blocked people<br><code>app/profile/blocks.tsx</code></td><td>GET /blocks, DELETE /blocks/{uuid}</td><td>Row spinner</td><td>Banner</td><td>—</td></tr>
+        <tr><td>Premium<br><code>app/profile/premium.tsx</code></td><td>GET /plans; the store for prices; POST /me/premium/receipt after a purchase or a restore; GET /me</td><td>“Connecting to the store…”; button spinner while the store and the server answer</td><td>A 409 finishes the store transaction and says the purchase belongs to another account; any other failure leaves the transaction open and says “tap Restore purchases to try again”; a plan from the website or from staff is shown and nothing is offered for sale</td><td><code>receipt_owned_elsewhere</code>, <code>store_unavailable</code>, <code>receipt_invalid</code>, <code>product_unknown</code></td></tr>
+        <tr><td>Account<br><code>app/profile/account.tsx</code></td><td>POST /auth/logout-all, DELETE /me (password)</td><td>Button spinner</td><td>A wrong password is a field error; the confirmation warns that deletion is permanent and, for a store plan, that the store keeps billing until the member cancels there</td><td><code>validation_failed</code></td></tr>
+        <tr><td>Push<br><code>push/PushRegistrar.tsx</code></td><td>POST /devices/push-token on launch and on token rotation; DELETE on sign-out</td><td>—</td><td>Best-effort; the next launch tries again. A tap on a notification opens the thread named in the server's link, or Matches</td><td>—</td></tr>
+    </tbody>
+</table>
+<div class="cites"><span class="lbl">Where this lives (dating_app_mobile)</span><ul>
+<li><code>src/app/_layout.tsx:49-66</code> — the gate: config, update, session, blockers</li>
+<li><code>src/app/index.tsx:14-17</code> · <code>src/app/(tabs)/_layout.tsx:14-15</code> — pending members are kept in onboarding</li>
+<li><code>src/auth/SessionProvider.tsx:92-107</code> — the global codes; <code>:159-181</code> — <code>swapTokenIfPromoted()</code>; <code>:186-196</code> — <code>refreshMe()</code></li>
+<li><code>src/api/errors.ts:11-30</code> — every code the app knows; <code>src/api/client.ts</code> — <code>Retry-After</code> parsing</li>
+<li><code>src/push/PushRegistrar.tsx:52-58</code> — device token; <code>:73</code> — rotation; <code>:87-90</code> — removed on sign-out; <code>:119</code> — deep links</li>
+<li><code>src/app/(tabs)/discover.tsx:42-67</code> — the server decides; <code>src/features/discover/SwipeDeck.tsx</code> — the card comes back on refusal</li>
+<li><code>src/app/thread/[uuid].tsx:38-59</code> — polling and the closed state; <code>:74-98</code> — optimistic send</li>
+<li><code>src/app/profile/premium.tsx:58-87</code> — redeem, then finish; <code>src/app/profile/account.tsx:34-47</code> — the deletion warning</li>
+<li><code>app/Http/Controllers/Api/V1/AuthController.php:103-110</code> — <code>abilitiesFor()</code>: what a pending token gets (server)</li>
+</ul></div>
+</section>
+</section>
+
+<!-- ================================================================ PART 3 -->
+<section class="part" id="part3">
+<h2 class="part-title"><span class="eyebrow">Part 3</span>App ↔ console: the round trips</h2>
+<p>Each of these starts with something a member does in the app (or on the website), lands somewhere for staff, and comes back to the member as a status, a refusal or a plan. The engineering detail behind each is in Part 4.</p>
+<p class="legend">
+    <span class="a">app</span>
+    <span class="s">console</span>
+    <span class="g">side effect that fires</span>
+    <span class="w">worth noticing</span>
+    <span class="r">refused / restricted</span>
+    <span class="l-off">not built</span>
+</p>
+
+<section class="flow" id="rt-verification">
+<h3><span class="n">A</span>Selfie verification</h3>
+<details class="dg" open>
+<summary>Code → selfie → queue → decision → status back in the app</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  A1["App: GET /verification/gesture<br/>a 4-character code, cached against the member for 10 minutes"]:::app --> A2["App: camera, code overlaid<br/>POST /verification · multipart · ability:verify · 3 per day"]:::app
+  A2 --> S1["VerificationSubmission::submit()<br/>attempts ≥ 3? → 422 verification_attempts_exhausted<br/>code ≠ the one issued (hash_equals) or expired? → 422"]:::dead
+  A2 --> S2["selfie stored on the PRIVATE disk · code consumed<br/>verifications row · status pending · SLA set<br/>member verification_status = pending"]:::ok
+  S2 --> Q["/admin/verifications — standard queue<br/>sorted by risk · SLA pills"]:::staff
+  Q --> V["Review: the selfie is served only through a signed, short-lived URL,<br/>behind the verifications permission, every view logged as sensitive"]:::staff
+  V --> D{"Decision"}
+  D -- "approve" --> AP["status approved · verified_at<br/>member verification_status = approved"]:::ok
+  D -- "reject, enumerated reason" --> RJ["status rejected · reason recorded<br/>member may retry while attempts remain"]:::dead
+  D -- "might be a minor: escalate" --> RQ["/admin/verifications/restricted<br/>404 (not 403) without restricted_minor_queue<br/>approval is not offered here — reject or escalate only"]:::staff
+  AP --> B["App: GET /verification and GET /me on the next open<br/>badge shown · 'verified only' filters include the member"]:::app
+  RJ --> B2["App: status rejected + the reason + attempts remaining<br/>'Try again' until the cap, then 'contact support'"]:::app
+  N["verification.approved / verification.rejected templates exist<br/>nothing sends them — the member learns on the next open"]:::off
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>The code is what stops a photograph of a photograph, and that only holds because the server remembers what it issued: generated server-side, held ten minutes, compared with a constant-time check, consumed on use. Three attempts in total, counted on the server. Selfies are identity data — private disk, signed URL, permission, sensitive audit log on every view. The app learns the outcome by asking, because no notification is wired to the decision.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/VerificationSubmission.php:30,43</code> — TTL and <code>issueGestureCode()</code>; <code>:63</code> <code>submit()</code>; <code>:73</code> <code>hash_equals</code>; <code>:99</code> code consumed; <code>:113</code> <code>max_attempts</code></li>
+<li><code>app/Http/Controllers/Api/V1/ProfileController.php:234-250</code> — <code>submitVerification()</code>, <code>verification_attempts_exhausted</code> at <code>:246</code>; <code>:253</code> <code>gestureCode()</code>; <code>:219</code> <code>verification()</code></li>
+<li><code>routes/api.php:185-187</code> — <code>ability:verify</code>, <code>throttle:verification</code>; <code>app/Providers/PlatformServiceProvider.php:69</code> — 3 per 1440 minutes</li>
+<li><code>app/Http/Controllers/Admin/VerificationSelfieController.php:27-44</code> — permission, restricted check, sensitive log, private disk</li>
+<li><code>app/Models/Verification.php:105</code> — <code>temporarySignedRoute</code>; <code>:138</code> <code>canBeApproved()</code></li>
+<li><code>app/Livewire/Verifications/Review.php:80,99,129</code> — approve, reject, escalate; <code>app/Actions/Verification/DecideVerification.php:30,64,104</code></li>
+<li><code>dating_app_mobile/src/app/profile/verification.tsx</code> — the app's side</li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="rt-report">
+<h3><span class="n">B</span>Report → case → enforcement → the app → appeal</h3>
+<details class="dg" open>
+<summary>From a tap on “Report” to a lifted or upheld restriction</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  A1["App: report sheet<br/>POST /reports · category · optional message id · optional block<br/>ability:report · 10 per hour"]:::app --> SA["SafetyActions::report()<br/>self-report or same person within 24h → 422<br/>a message id is kept only if the reporter is in that thread and the reported member sent it"]
+  SA --> CA["CaseAggregator::absorb() under a row lock<br/>one open case per reported member · severity from the category<br/>SLA: low 72h · medium 24h · high 8h · critical 1h"]:::staff
+  CA --> Q["/admin/cases · claimed on open"]:::staff
+  Q --> RV["Moderator reviews · reading message bodies needs view_message_content,<br/>a fixed reason and a justification — two immutable records"]:::staff
+  RV --> DB{"Decision bar<br/>warn · feature_limit · shadow_ban · suspend · permanent_ban · escalate"}
+  DB --> AE["ApplyEnforcement::apply() — ONE transaction<br/>moderation_actions row (append-only) · bans row · mirror onto app_users<br/>shadow_ban requires a review date"]:::staff
+  AE --> MI["app_users: account_status + suspended_until / banned_at / shadow_banned_until<br/>previous_account_status kept"]
+  MI --> A2["App: the next request passes appuser.active<br/>suspended or banned → 403 account_restricted with the restriction<br/>the app shows the restricted screen: clause, expiry, appeal link"]:::dead
+  MI --> SB["shadow ban: the app behaves as normal — /me still says active —<br/>the member is simply absent from every deck"]:::warn
+  A2 --> AP["Website /app/restricted: submit an appeal · one per ban · 20+ characters<br/>original_decider_id recorded"]
+  AP --> AQ["/admin/appeals · assigned to anyone but the original decider<br/>decided by anyone but the original decider — refused twice"]:::staff
+  AQ --> AD{"Outcome"}
+  AD -- "upheld" --> A2
+  AD -- "overturned" --> LF["ApplyEnforcement::lift(): a NEW action linked back · mirror recomputed<br/>statusAfterRestrictions(): pending or deactivated survive, otherwise active"]:::ok
+  EX["Scheduler: bans past expires_at → expire() · actor automation<br/>a suspension also self-clears on the member's next request"] --> LF
+  LF --> A3["App: the next /me is active again"]:::app
+  N["appeal.received / appeal.decided templates exist · nothing sends them<br/>enforcement stores notified_user = true and sends nothing"]:::off
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Reports become cases, and cases are what moderators work. Enforcement is one write path for the console and for automation alike; in a single transaction it appends a moderation action, creates the ban row and writes the mirror columns that the API middleware reads on every request — which is how a decision in the console becomes a <code>403</code> in the app within one request. The app does not know it has been shadow-banned, on purpose. The appeal is filed on the website's restricted page (the app links to it); it is routed away from the original decider at assignment and again at decision, and an overturn actually lifts the ban.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Http/Controllers/Api/V1/SafetyController.php:21</code> — <code>report()</code>; <code>app/Services/Members/SafetyActions.php:28,115</code> — <code>report()</code>, <code>evidenceFor()</code></li>
+<li><code>app/Services/Moderation/CaseAggregator.php:26-32</code> — <code>absorb()</code> under <code>lockForUpdate</code>; <code>app/Enums/Severity.php:39</code> — <code>slaHours()</code></li>
+<li><code>app/Livewire/Cases/Show.php:77</code> — claim on open; <code>app/Enums/LadderStep.php:138,101</code> — decision bar, <code>createsBan()</code></li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:38</code> <code>apply()</code> · <code>:209</code> <code>guard()</code> · <code>:247</code> <code>createBan()</code> · <code>:293</code> <code>mirrorOntoMember()</code> · <code>:119</code> <code>lift()</code> · <code>:175</code> <code>expire()</code> · <code>:318</code> <code>statusAfterRestrictions()</code> · <code>:329</code> <code>recomputeMirror()</code>; <code>:69</code> <code>notified_user</code> stored, nothing sent</li>
+<li><code>app/Http/Middleware/EnsureAppUserIsNotBanned.php:24-65</code> — <code>appuser.active</code>: <code>account_restricted</code> at <code>:50</code>, <code>account_deactivated</code> at <code>:65</code>, suspensions self-clear at <code>:34-37</code></li>
+<li><code>app/Http/Resources/Api/V1/MeResource.php:36-40</code> — <code>shadow_banned</code> reported as <code>active</code></li>
+<li><code>app/Livewire/Member/Restricted.php:55-60</code> — appeal with <code>original_decider_id</code>; <code>app/Models/Appeal.php:80</code> — <code>canBeDecidedBy()</code>; <code>app/Livewire/Appeals/Show.php:91,113,146</code></li>
+<li><code>app/Models/ModerationAction.php:47</code> — updates throw</li>
+<li><code>dating_app_mobile/src/ui/blockers.tsx:14</code> — <code>RestrictedScreen</code>; <code>src/auth/SessionProvider.tsx:96-100</code> — the two codes</li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="rt-photo">
+<h3><span class="n">C</span>Photo upload — and the review that does not exist</h3>
+<details class="dg" open>
+<summary>Upload → GD re-encode → stored pending → shown to everyone → moderated only if reported</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  A1["App or website: upload<br/>POST /me/photos · multipart · ability:profile:write (a pending token has it)"]:::app --> S["MemberPhotoStore::store()<br/>over the operator's cap → 422 photo_limit_reached with the limit"]
+  S --> GD["decoded and RE-ENCODED through GD<br/>strips EXIF, including GPS · neutralises hostile files<br/>server-generated uuid filename · thumbnail made"]:::ok
+  GD --> DB["photos row · moderation_status = pending<br/>ProfileCompletion::refresh() — may promote the account"]
+  DB --> DECK["the deck loads photos UNFILTERED<br/>a pending photo is shown to other members immediately"]:::warn
+  DB --> NOQ["No proactive review queue exists<br/>Photo::approved() / pending() scopes exist and nothing reads them for the deck<br/>no console screen approves or rejects a photo"]:::off
+  DECK --> RP["Somebody reports the member (round trip B)<br/>the moderator sees the photos on the member record"]:::staff
+  RP --> ACT["enforcement on the member — not on the photo"]:::staff
+  A2["App: PATCH /me/photos/reorder · PATCH …/primary · DELETE …/{uuid}<br/>403 on any photo that is not yours · every change re-fetches /me"]:::app
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>The security control on a photo is the re-encode: every image is decoded and written out again by GD, which destroys polyglot files and strips metadata including the GPS coordinates phone cameras embed. What does <em>not</em> exist is a review: photos are stored as <code>pending</code> and nothing in the deck or the profile resource filters on that status, so a new photo is visible to other members straight away. Moderation of photos is reactive, through reports, and acts on the member. This is stated here so nobody builds a launch plan on a queue that is not there.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Media/MemberPhotoStore.php:49</code> — <code>store()</code>; <code>:54</code> — the typed limit; <code>:154-163</code> — <code>imagecreatefromstring</code> re-encode, EXIF dropped; <code>:86</code> — <code>moderation_status</code> written as pending</li>
+<li><code>app/Http/Controllers/Api/V1/PhotoController.php:35,51</code> — store, <code>photo_limit_reached</code>; <code>:66,76,85</code> — destroy, primary, reorder; <code>:106</code> <code>ownPhoto()</code></li>
+<li><code>app/Services/Members/DiscoveryDeck.php:133</code> — <code>with(['photos', …])</code>, no status filter; <code>app/Models/Photo.php:50,55</code> — the unused scopes</li>
+<li><code>app/Http/Resources/Api/V1/PhotoResource.php:22-28</code> — <code>moderation_status</code> shown to the owner only</li>
+<li><code>routes/admin.php</code> — no photo review route; <code>app/Livewire/</code> — no photo moderation component</li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="rt-phone">
+<h3><span class="n">D</span>Phone verification</h3>
+<details class="dg" open>
+<summary>A texted code: six digits, ten minutes, five guesses</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart LR
+  A1["App: POST /phone/send-code<br/>4 per 10 minutes"]:::app --> G{"an SMS gateway<br/>configured and on?"}
+  G -- "no" --> X["503 sms_unavailable<br/>the app says so and does not retry"]:::dead
+  G -- "yes" --> C["PhoneVerification::start()<br/>random 6 digits · expires in 10 minutes<br/>one resend a minute · number not taken by another member"]
+  C --> SMS["Twilio · MSG91 · Vonage · Textlocal<br/>sms_logs row"]:::ok
+  SMS --> A2["App: POST /phone/verify {code}<br/>10 per 10 minutes"]:::app
+  A2 --> V{"confirm()"}
+  V -- "expired" --> X2["422 — ask for a new code"]:::dead
+  V -- "5 wrong guesses" --> X3["422 — code exhausted, ask for a new one"]:::dead
+  V -- "right" --> OK["phone verified · phone_verified_at<br/>GET /me shows the number"]:::ok
+  N["Not email: email_verified_at is a column nothing sets<br/>there is no email verification anywhere"]:::off
+</script>
+<div class="render"></div>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Sms/PhoneVerification.php:22,24,27</code> — 10 minutes, 5 attempts, 60-second resend; <code>:83</code> — six random digits; <code>:119-134</code> — expiry and attempts on confirm</li>
+<li><code>app/Http/Controllers/Api/V1/PhoneController.php:17,26</code> — <code>sendCode()</code>, <code>sms_unavailable</code>; <code>:42</code> — <code>verify()</code></li>
+<li><code>routes/api.php:175-177</code> — the two throttles</li>
+<li><code>dating_app_mobile/src/app/profile/phone.tsx:31-36</code> — the app's branches</li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="rt-purchase">
+<h3><span class="n">E</span>In-app purchase — and the notification loop</h3>
+<details class="dg" open>
+<summary>Store → receipt → verify → order → fulfil → plan; then renewals, refunds, grace and holds</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  A1["App: GET /plans → product ids per platform<br/>the store shows its own localised price"]:::app --> A2["App: buy with StoreKit / Play Billing<br/>appAccountToken / obfuscatedAccountId = the member's uuid"]:::app
+  A2 --> A3["App: POST /me/premium/receipt<br/>platform · product_id · the signed transaction (iOS) or purchase token (Android)<br/>ability:profile:write · 10 per hour"]:::app
+  A3 --> V["StorePurchases::redeem() — the store is asked, the client is never trusted<br/>Apple: JWS chain to the pinned root, then the App Store Server API by the transaction's OWN environment<br/>Google: Play Developer API subscriptionsv2, then acknowledge after commit"]
+  V --> R{"verified state"}
+  R -- "unknown · unpaid · expired · for another app" --> X1["422 receipt_invalid"]:::dead
+  R -- "product maps to no plan" --> X2["422 product_unknown"]:::dead
+  R -- "purchased transaction already on another member" --> X3["409 receipt_owned_elsewhere<br/>family-shared transactions are allowed per member"]:::dead
+  R -- "store unreachable or switched off" --> X4["503 store_unavailable · Retry-After 30"]:::dead
+  R -- "entitled" --> O["orders row per store transaction<br/>unique (gateway, payment_ref) · environment sandbox or production recorded<br/>sandbox and TestFlight purchases are honoured on a production server"]:::ok
+  O --> F["Checkout::fulfil() — the SAME locked path as a web payment<br/>→ Subscriptions::grantFromStore(): the store's expiry is the calendar"]:::ok
+  F --> M["refreshMirror(): best tier · latest end across every active row<br/>a store purchase never shortens or downgrades a web or staff plan"]:::ok
+  M --> A4["App: replaces /me from the response, THEN finishes the store transaction<br/>anything but 200 or 409 leaves it open for Restore purchases"]:::app
+  W["Store → POST /webhooks/store/apple (signed JWS) · /google (Pub/Sub OIDC)<br/>gateway_events row · processed_at set only after commit · 500 → the store retries"]:::staff
+  W --> S{"verified state — the notification's own name is only a hint"}
+  S -- "entitled: renewed, recovered, restarted" --> F
+  S -- "expired · revoked · refunded · on hold" --> RV["revokeExternal(): that subscription's rows close · mirror recomputed<br/>another plan from elsewhere carries on"]:::dead
+  S -- "no member matches" --> UN["appAccountToken → the member; else recorded, processed, ignored"]:::warn
+  S -- "member is deleted" --> DL["recorded and ignored — see round trip F"]:::warn
+  ST["Console: Billing → Subscriptions shows source App Store / Google Play,<br/>renews / will not renew, and 'Move to another account' for support"]:::staff
+  GO["Google orders record amount 0 — the Play API reports no price"]:::off
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>A store purchase is one more way an order gets fulfilled, not a second billing system. The app posts an identifier; the server asks Apple or Google; the store's answer decides. Replaying the receipt or a notification changes nothing, and a notification whose fulfilment fails once is finished by the store's retry — the same guarantee the web gateways have, because it is the same code. The contract behind this, with the tests that prove it, is <code>dating_app_mobile/docs/premium-receipt-contract.md</code>.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Http/Controllers/Api/V1/StoreReceiptController.php:28-48</code> — the endpoint and the status per reason</li>
+<li><code>app/Services/Store/StorePurchases.php:50</code> <code>redeem()</code> · <code>:88</code> <code>handleNotification()</code> · <code>:111</code> appAccountToken fallback · <code>:126</code> deleted member · <code>:153</code> <code>apply()</code> · <code>:184</code> <code>assertOwnership()</code> · <code>:214</code> one order per transaction · <code>:250</code> <code>Checkout::fulfil</code></li>
+<li><code>app/Services/Store/AppleStoreDriver.php:51</code> <code>verify()</code> · <code>:30</code> sandbox host · <code>:94</code> <code>readNotification()</code> · <code>:176</code> FAMILY_SHARED · <code>:165</code> grace; <code>app/Services/Store/Jws.php:58,91</code> — chain to the pinned root</li>
+<li><code>app/Services/Store/GoogleStoreDriver.php:60</code> <code>verify()</code> · <code>:110</code> <code>acknowledge()</code> · <code>:177</code> Pub/Sub token · <code>:155</code> test purchases</li>
+<li><code>app/Services/Payments/Checkout.php:166-171</code> — <code>fulfil()</code> under lock; <code>:191</code> — the store branch</li>
+<li><code>app/Services/Billing/Subscriptions.php:116</code> <code>grantFromStore()</code> · <code>:211</code> <code>revokeExternal()</code> · <code>:259</code> <code>reassignExternal()</code> · <code>:314</code> <code>refreshMirror()</code></li>
+<li><code>app/Http/Controllers/StoreWebhookController.php:29-52</code> — 400 / 500 / 2xx; <code>routes/web.php:104</code></li>
+<li><code>app/Livewire/Billing/Subscriptions.php:96-111</code> — move to another account; <code>app/Livewire/Billing/Plans.php:42</code> — product ids</li>
+<li><code>tests/Feature/StoreBillingTest.php</code> — replayed twice, failed once, sandbox on production, Family Sharing, deleted member, never downgrade</li>
+<li><code>dating_app_mobile/src/app/profile/premium.tsx:58-87</code></li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="rt-deletion">
+<h3><span class="n">F</span>Account deletion</h3>
+<details class="dg" open>
+<summary>Pseudonymise and soft-delete; the store keeps billing; the member stays in old cases</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  A1["App: Account → Delete · password · a permanent-deletion warning<br/>and, for a store plan, 'the store keeps charging until YOU cancel it there'<br/>DELETE /me {password}"]:::app --> S["AccountDeletion::delete() — one transaction<br/>wrong password → 422"]
+  S --> M1["active matches ended · conversations closed for the other party (the messages stay)"]
+  M1 --> M2["photo files deleted · photo rows soft-deleted<br/>profile text cleared"]
+  M2 --> M3["store subscription rows closed with a note · audit row store_plan_orphaned<br/>the store itself is NOT told — only the member can cancel"]:::warn
+  M3 --> M4["every token and push token deleted"]
+  M4 --> M5["email → deleted-{uuid}@invalid · name → 'Deleted member'<br/>phone, coordinates cleared · account_status deactivated · audit row (sensitive)"]
+  M5 --> M6["app_users row SOFT-deleted<br/>reports, cases, actions, bans and audit rows keep pointing at a row that exists"]:::ok
+  M6 --> A2["App: signed out · the website's account page says the same"]:::app
+  M6 --> C["Console: the member shows as 'Deleted member' in old cases, subscriptions and logs"]:::staff
+  W["Store renewal still arrives → round trip E: recorded, marked processed, ignored<br/>nothing is granted to a pseudonymised row"]:::warn
+  N["Deactivation is the reversible alternative: everything kept, sign-in refused, API 403 account_deactivated"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Soft-delete and anonymise, never a hard erase: reports this member filed are evidence in cases against other people, and the moderation record is append-only by design. What the member is owed — that nothing identifies them any more — is met by pseudonymising the row and removing everything personal. The one thing the platform cannot do is cancel a subscription the store bills, so the member is told that before they confirm, on both clients.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/AccountDeletion.php:40</code> <code>delete()</code> · <code>:42</code> password · <code>:56</code> matches ended · <code>:61</code> photo files · <code>:81</code> store rows · <code>:100</code> tokens · <code>:104-106</code> pseudonym · <code>:116</code> audit · <code>:124</code> soft-delete</li>
+<li><code>app/Http/Controllers/Api/V1/ProfileController.php:186</code> — <code>DELETE /me</code>; <code>app/Livewire/Member/Account.php:142</code> — the website's mirror; <code>:119</code> — deactivate</li>
+<li><code>app/Services/Store/StorePurchases.php:126</code> — a deleted member's renewal is ignored</li>
+<li><code>resources/views/livewire/member/account.blade.php</code> — the store warning on the website; <code>dating_app_mobile/src/app/profile/account.tsx:34-47</code> — in the app</li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="rt-block">
+<h3><span class="n">G</span>Block and unmatch</h3>
+<details class="dg" open>
+<summary>One service closes the thread; both clients get 403 on send and on read</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart LR
+  B1["App or website: block<br/>POST /blocks"]:::app --> SB["SafetyActions::block()<br/>→ MatchActions::endAllBetween(blocked)"]
+  U1["App or website: unmatch<br/>DELETE /matches/{uuid}"]:::app --> MA["MatchActions::end(unmatched)"]
+  SB --> C["match status set · conversations.status = closed<br/>one transaction, one owner of the pair"]:::ok
+  MA --> C
+  C --> O1["The other party, app or website:<br/>GET …/messages → 403 · POST …/messages → 403<br/>'This conversation is closed' — the same words for a block and an unmatch, so nobody learns who blocked them"]:::dead
+  C --> O2["The thread leaves both lists (open only) ·<br/>after a block, both people leave each other's deck"]
+  O1 --> APP["App: composer replaced by 'This conversation is closed' · polling stops"]:::app
+  N["Staff cannot close a conversation — no such action exists"]:::off
+</script>
+<div class="render"></div>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/MatchActions.php:29,42</code> — <code>end()</code>, <code>closed</code>; <code>:53</code> — <code>endAllBetween()</code>; <code>app/Services/Members/SafetyActions.php:86,98</code> — <code>block()</code></li>
+<li><code>app/Services/Members/MessageSender.php:129-133</code> — <code>assertUsableBy()</code>, the same refusal; <code>:154</code> — <code>isBlockedPair()</code></li>
+<li><code>app/Http/Controllers/Api/V1/MessageController.php:40,59</code> — read and write both call the guard; <code>app/Livewire/Member/Messages.php:62,99</code></li>
+<li><code>app/Services/Members/DiscoveryDeck.php:169</code> — blocks excluded in both directions</li>
+<li><code>dating_app_mobile/src/app/thread/[uuid].tsx:43,59,88</code> — <code>forbidden</code> means closed</li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="rt-geo">
+<h3><span class="n">H</span>Geographic restriction</h3>
+<details class="dg" open>
+<summary>Which places are on offer, who may change that, and what happens to members already there</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  ADM["Console: Masters → Locations<br/>needs edit_general_settings — Super Admin and Admin, like Branding and Mail<br/>every create, rename, hide, show and delete is an audit row"]:::staff --> SW["three switches<br/>country is_active · state is_active · city is_active<br/>(is_focus is only a display hint)"]
+  SW --> RULE["ONE rule: App\Rules\SelectableCity<br/>country shown AND (no state OR state shown) AND city shown<br/>City::selectable() feeds every listing from the same scope"]
+  RULE --> L["GET /countries · /states · /cities?search= (two letters or more, at most 100)<br/>website type-ahead: the same scope, the same cap"]:::app
+  RULE --> W1["API PATCH /me (city_id)"]:::app
+  RULE --> W2["API POST /auth/register (city_id)"]:::app
+  RULE --> W3["website Register"]
+  RULE --> W4["website Profile"]
+  W1 & W2 & W3 & W4 --> REF["a hidden place → 422 validation_failed on city_id<br/>'That city is not available right now.'"]:::dead
+  RULE --> GF["Existing members keep a place that has since been hidden:<br/>the member's current city_id passes the rule unchanged,<br/>so the rest of the profile can still be saved"]:::ok
+  SW --> WARN["hiding the last selectable city shows a plain warning:<br/>nobody can sign up or finish onboarding until one is shown"]:::warn
+  IMP["platform:import-geography — CSV/JSON, upsert by (country, state, name),<br/>coordinates required, never changes is_active on existing rows"]:::staff --> SW
+  T["GeographicRestrictionTest: {country, state, city} × {API save, API register, web Register, web Profile}<br/>plus a scan of the code that fails if a fifth city_id write path appears without the rule"]:::ok
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Until recently this was a dropdown filter: a hidden state vanished from the pickers while all three write paths still accepted its cities. Now a single rule is applied everywhere a city is written, the listings read the same scope, and the city itself has a switch so one city can be turned off without its state. Changing the footprint is platform configuration, so it sits with the Admin, not the T&amp;S Lead. Members already in a hidden place keep it — the documented behaviour for countries, now true for states and cities as well.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Rules/SelectableCity.php:29-46</code> — the rule; <code>:41</code> — the member's current city passes; <code>app/Models/City.php:34</code> — <code>scopeSelectable()</code></li>
+<li><code>app/Http/Controllers/Api/V1/ProfileController.php:46</code> · <code>AuthController.php:35</code> · <code>app/Livewire/Member/Auth/Register.php:71</code> · <code>app/Livewire/Member/Profile.php:219</code> — the four write paths</li>
+<li><code>app/Http/Controllers/Api/V1/GeographyController.php:55-92</code> — the search, cap 100, prefix match; <code>app/Livewire/Member/Concerns/PicksCity.php:31-52</code> — the website's type-ahead</li>
+<li><code>database/migrations/2026_09_26_000001_add_is_active_to_cities.php</code> · <code>2026_09_26_000002_add_name_index_to_cities.php</code></li>
+<li><code>app/Livewire/Settings/Locations.php:310</code> — <code>toggleCityActive()</code>; <code>:454</code> — the warning; <code>routes/admin.php:251-252</code> — <code>permission:edit_general_settings</code>; <code>app/Support/Navigation.php:215</code></li>
+<li><code>app/Console/Commands/ImportGeography.php:54,120,163</code> — the importer</li>
+<li><code>tests/Feature/GeographicRestrictionTest.php</code> · <code>LocationsAccessTest.php</code> · <code>CitySearchTest.php</code> · <code>GeographyImportTest.php</code></li>
+</ul></div>
+</details>
+</section>
+</section>
+
+<!-- ================================================================ PART 4 -->
+<section class="part" id="part4">
+<h2 class="part-title"><span class="eyebrow">Part 4</span>Engineering detail</h2>
+<p>Twelve diagrams derived from the code as it stands. Each is collapsed; open the ones you need, or “Expand all”. Under each is the file and line where that logic lives.</p>
+<p class="legend">
+    <span class="r">blocked / refused / restricted</span>
+    <span class="l-off">not built / no code path</span>
+    <span class="g">side effect that fires</span>
+    <span class="w">worth noticing</span>
+</p>
+
+<section class="flow" id="guards">
+<h3><span class="n">1</span>Three audiences, four guards</h3>
+<details class="dg">
+<summary>Who can be signed in, on what, against which table</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  V["Visitor — no session, no token"] --> PUB["Public routes<br/>/  /safety  /terms  /privacy<br/>/login  /join  /forgot-password  /reset-password<br/>/admin/login  /admin/forgot-password<br/>GET /api/v1/config · plans · interests · countries · states · cities<br/>POST /api/v1/auth/register · login (throttle:auth)"]
+  PUB --> G1["Member — web session<br/>guard member (session) · provider app_users<br/>auth:member + member.active · everything under /app<br/>reset broker app_users → member_password_reset_tokens"]
+  G1 -. "a member session is not a token" .- G2["Member — API token<br/>guard api (sanctum) · provider app_users<br/>auth:sanctum + appuser.active + throttle:api<br/>token abilities issued at register and login"]
+  G2 -. "neither opens anything under /admin" .- G3["Staff — web session<br/>guard web (session) · provider users<br/>auth:web + staff.active + permission:… · everything under /admin<br/>reset broker users → password_reset_tokens"]
+  G1 --> T1[("app_users")]
+  G2 --> T1
+  G3 --> T2[("users")]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Two populations, two tables. Members are <code>app_users</code>, reachable through a browser session on the <code>member</code> guard or a Sanctum token on the <code>api</code> guard. Staff are <code>users</code>, only ever on the <code>web</code> guard. Being signed in on one guard grants nothing on another. The <code>appuser.active</code> and <code>member.active</code> middleware turn a ban into a locked door by reading the mirror columns on <code>app_users</code> on every request; <code>staff.active</code> also runs on Livewire updates so a suspended moderator loses an open tab, not just the next login.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>config/auth.php:49</code> — the guards and providers; <code>:119</code> — the two password brokers</li>
+<li><code>app/Http/Controllers/Auth/PasswordResetController.php:29,35</code> — audience → broker</li>
+<li><code>routes/web.php:42-61</code> — member guest and <code>auth:member</code> groups; <code>:118-119</code> — staff login</li>
+<li><code>routes/api.php:101</code> — <code>auth:sanctum</code>, <code>appuser.active</code>, <code>throttle:api</code></li>
+<li><code>bootstrap/app.php:71-80</code> — middleware aliases; <code>app/Http/Middleware/EnsureStaffIsActive.php:21</code>; <code>app/Providers/AppServiceProvider.php:55</code> — persistent Livewire middleware</li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="lifecycle">
+<h3><span class="n">2</span>Member lifecycle</h3>
+<details class="dg">
+<summary>From visitor to active — from either client</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  V["Visitor"] --> R1["Website: /join<br/>Livewire Member/Auth/Register · city through the type-ahead"]
+  V --> R2["Mobile: POST /api/v1/auth/register<br/>AuthController::register · optional city_id"]
+  R1 --> MA["MemberAccounts::register()"]
+  R2 --> MA
+  MA --> P["app_users row<br/>account_status = pending (column default)<br/>profile + preferences rows created"]
+  P --> TP["Token abilities while pending<br/>profile:read · profile:write · verify<br/>no swipe, no message, no report"]:::warn
+  P --> CL["Completion checklist — 8 items<br/>bio · job · education · height · relationship goal<br/>photo · three interests · city"]
+  subgraph WEB["Web path — /app/profile"]
+    W1["edit fields · pick interests · choose a selectable city"] ~~~ W2
+    W2["upload photo<br/>MemberPhotoStore::store"] --> W3
+    W1 --> W3["ProfileCompletion::refresh()<br/>after every upload, delete and interest save"]
+  end
+  subgraph MOB["Mobile path — /api/v1/me/*"]
+    X1["PATCH /me/profile<br/>refresh() is called"] ~~~ X2
+    X2["PUT /me/interests<br/>refresh() is called"] ~~~ X3
+    X3["POST /me/photos — multipart<br/>through MemberPhotoStore · refresh() is called · needs only profile:write"]:::ok ~~~ X5
+    X5["PATCH /me (city — SelectableCity rule)<br/>refresh() is NOT called — counted on the next write that does"]:::warn
+  end
+  CL --> WEB
+  CL --> MOB
+  W3 --> RF{"refresh(): completion ≥ 50%<br/>and account_status is pending?"}
+  X1 --> RF
+  X2 --> RF
+  X3 --> RF
+  RF -- "yes" --> AC["account_status = active<br/>profile_completed_at set once"]
+  RF -- "no" --> P
+  AC --> TA["Token abilities once active — on the NEXT token issued<br/>profile:read · profile:write · swipe · message · report · verify<br/>the app signs in again to get it"]:::ok
+  AC --> LIVE["Active member"]
+  LIVE -- "self, /app/account or DELETE /me" --> D["deactivated (reversible) · or deleted: pseudonymised + soft-deleted"]:::off
+  LIVE -- "ApplyEnforcement" --> EN["limited · shadow_banned · suspended · banned<br/>expiry, lift or an overturned appeal → statusAfterRestrictions()"]:::dead
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Every account starts <code>pending</code> and promotion to <code>active</code> happens in exactly one place, <code>ProfileCompletion::refresh()</code>, when at least half of the eight checklist items are done. Both clients can fill every item. A token is issued with the abilities of the status at that moment and is never upgraded in place; the app's silent re-login (Part 2) exists for exactly this. Leaving <code>active</code> is either the member's own choice or an enforcement; when an enforcement ends, the account returns to the status it held before.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>database/migrations/2026_02_01_000001_create_app_users_table.php:53</code> — <code>account_status</code> default</li>
+<li><code>app/Services/Members/MemberAccounts.php:25</code> — shared registration; <code>app/Http/Controllers/Api/V1/AuthController.php:23,103-110</code> — register and <code>abilitiesFor()</code></li>
+<li><code>app/Services/Members/ProfileCompletion.php:17,33,40,42</code> — checklist, <code>refresh()</code>, the 50% line, <code>profile_completed_at</code></li>
+<li><code>app/Livewire/Member/Profile.php:175,191</code> — web upload and delete call <code>refresh()</code>; <code>app/Http/Controllers/Api/V1/ProfileController.php:61,129</code> — profile and interests do; <code>:39</code> — <code>PATCH /me</code> does not; <code>app/Http/Controllers/Api/V1/PhotoController.php:35</code></li>
+<li><code>routes/api.php:108-125</code> — the <code>me/*</code> routes</li>
+<li><code>app/Livewire/Member/Account.php:119,142</code> — deactivate, delete; <code>app/Actions/Moderation/ApplyEnforcement.php:318</code> — <code>statusAfterRestrictions()</code>; <code>app/Enums/BanType.php:45</code></li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="deck">
+<h3><span class="n">3</span>Discovery deck</h3>
+<details class="dg">
+<summary>Every exclusion, in the order the query applies them</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  IN["Member opens Discover"] --> C{"Which client?"}
+  C -- "Mobile: GET /api/v1/deck<br/>SwipeController::deck → DiscoveryDeck::for()" --> Q
+  C -- "Website: /app/discover<br/>Discover → DiscoveryDeck::withFallback()" --> Q
+  Q["query() — exclusions in this order"] --> E1["1. not myself"]
+  E1 --> E2["2. account_status = active<br/>pending · limited · shadow_banned · suspended · banned · deactivated are all out"]
+  E2 --> E3["3. not already swiped"]
+  E3 --> E4["4. not blocked by me"]
+  E4 --> E5["5. has not blocked me"]
+  E5 --> E6["6. gender IN preferences.interested_in"]
+  E6 --> E7["7. ageBetween(age_min, age_max) — a birthdate range, so it uses the index"]
+  E7 --> E8["8. show_verified_only? verification_status = approved"]
+  E8 --> SC{"scopeFor()"}
+  SC -- "global_mode" --> ANY["anywhere"]
+  SC -- "has coordinates and max_distance_km" --> RAD["radius: bounding box on the coordinate index, then haversine"]
+  SC -- "no coordinates, has city_id" --> CITY["city_id = mine"]
+  SC -- "neither" --> ANY
+  ANY --> PK
+  CITY --> PK
+  RAD --> PK["pickIds(): random pivot on the primary key, walk the index, wrap — no ORDER BY RAND()"]
+  PK --> HY["hydrate at most 30 rows: photos (unfiltered by moderation status) · profile · city · interests · shuffle()"]
+  HY --> FB{"withFallback() only: empty and scope was not anywhere?"}
+  FB -- "yes" --> WIDE["run again with scope = anywhere · the website says so"]:::warn
+  FB -- "no · or the API's for()" --> DONE["returned"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>The exclusions are the safety rules of the product expressed as SQL. A shadow ban has no code of its own — <code>shadow_banned</code> is simply not <code>active</code>, and this is the only place that takes effect. Blocks are checked in both directions. Geography is one of three scopes, and the radius needs coordinates on both sides — which is why the city importer requires them. The website widens to <em>anywhere</em> when the local area is empty and says so; the mobile API returns the empty deck.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/DiscoveryDeck.php:169</code> — <code>query()</code>; <code>:90</code> — <code>scopeFor()</code>; <code>:205</code> — <code>withinRadius()</code>; <code>:150</code> — <code>pickIds()</code>; <code>:50</code> — <code>for()</code>; <code>:69</code> — <code>withFallback()</code>; <code>:133</code> — photos loaded unfiltered</li>
+<li><code>app/Http/Controllers/Api/V1/SwipeController.php:22-24</code> — API uses <code>for()</code>; <code>app/Livewire/Member/Discover.php:143</code> — website uses <code>withFallback()</code></li>
+<li><code>app/Models/AppUser.php:245</code> — <code>scopeAgeBetween</code>; <code>database/migrations/2026_09_22_000003_add_missing_hot_path_indexes.php</code></li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="swipe">
+<h3><span class="n">4</span>Swipe → match → conversation</h3>
+<details class="dg">
+<summary>One transaction, from a like to an open thread</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  A["Mobile: POST /api/v1/swipes<br/>ability:swipe · throttle:swipe"] --> R
+  B["Website: Discover like / pass"] --> R
+  R["SwipeRecorder::record()"] --> S{"target is me?"}
+  S -- "yes" --> X1["422"]:::dead
+  S -- "no" --> TX["DB::transaction"]
+  TX --> LK["SELECT the member's own row FOR UPDATE"]
+  LK --> DL{"like or superlike, and the plan lacks unlimited_likes?"}
+  DL -- "likes today ≥ matching.daily_like_limit_free" --> X2["422 daily limit reached — nothing written"]:::dead
+  DL -- "under the cap · a pass · or unlimited" --> UP["swipes.updateOrCreate(member, target)<br/>a re-swipe REPLACES the earlier decision — deliberate"]:::warn
+  UP --> PA{"pass?"}
+  PA -- "yes" --> N1["done"]
+  PA -- "no" --> RC{"reciprocated? and no match row yet?"}
+  RC -- "no" --> N1
+  RC -- "yes" --> MR["matches row · lower id first · unique on the pair<br/>both swipes is_match · conversation open · both participants"]
+  MR --> AC["DB::afterCommit → SendMemberPush match.new to both, queued"]:::ok
+  AC --> OUT["is_match = true"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>A match is derived, never asserted. The daily like limit is a product rule, not burst protection, so it lives here — counted inside the transaction behind a lock on the member's own row, so concurrent requests cannot all read the same total and walk past the cap. The app animates the card back on that 422 and shows the reason; it never decides the outcome itself.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/SwipeRecorder.php:26</code> <code>record()</code> · <code>:43</code> lock · <code>:45,135</code> daily limit · <code>:47</code> <code>updateOrCreate</code> · <code>:62-74</code> reciprocity and the match · <code>:110</code> <code>afterCommit</code> push</li>
+<li><code>app/Models/MatchRecord.php:48</code> — canonical ordering; <code>app/Models/AppUser.php:334</code> — <code>hasPremiumFeature('unlimited_likes')</code></li>
+<li><code>routes/api.php:140-143</code> — <code>deck</code> and <code>swipes</code> with <code>ability:swipe</code></li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="messaging">
+<h3><span class="n">5</span>Messaging and safety</h3>
+<details class="dg">
+<summary>Sending a message: the three guards, one service for both clients</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  W["Website: Messages::send()"] --> S
+  A1["Mobile: POST /api/v1/conversations/{uuid}/messages<br/>ability:message · throttle:message"] --> S
+  A2["Mobile: GET …/messages — reads are gated the same way"] --> G
+  S["MessageSender::send()"] --> G["assertUsableBy(conversation, member)"]
+  G --> G1{"1. participant?"}
+  G1 -- "no" --> X["403"]:::dead
+  G1 -- "yes" --> G2{"2. status is open?"}
+  G2 -- "no" --> Y["403 This conversation is closed"]:::dead
+  G2 -- "yes" --> G3{"3. a block in either direction?"}
+  G3 -- "yes" --> Y
+  G3 -- "no" --> OK["messages row · links and contact details scanned on write<br/>counters incremented in SQL · first_message_at · first_reply_at"]
+  OK --> N["DB::afterCommit → SendMemberPush message.new to the other party"]:::ok
+  C["What closes a thread: a block (either direction) · an unmatch (website or API) — both through MatchActions<br/>staff cannot close one"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Three rules, answered in one place for both clients, on read as well as on write. A block gets the same refusal as a closed thread rather than its own, because telling someone they were blocked tells them exactly who to reach another way. The block check is a backstop; closing the thread on block is the primary guard.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/MessageSender.php:23</code> <code>send()</code> · <code>:129</code> <code>assertUsableBy()</code> · <code>:154</code> <code>isBlockedPair()</code> · <code>:102</code> <code>notifyRecipient()</code></li>
+<li><code>app/Http/Controllers/Api/V1/MessageController.php:40,59</code> — read and write call the guard; <code>:18</code> — conversations, open only</li>
+<li><code>app/Services/Members/MatchActions.php:29,53</code>; <code>app/Livewire/Member/Messages.php:62,99</code>; <code>app/Services/Members/ContentScanner.php</code></li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="enforcement">
+<h3><span class="n">6</span>Report → case → enforcement ladder</h3>
+<details class="dg">
+<summary>From a report to a ban, and what is written where</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  R1["Mobile: POST /api/v1/reports<br/>ability:report · throttle:report 10 per hour"] --> SA
+  R2["Website: report modal<br/>HandlesSafety::submitReport"] --> SA
+  SA["SafetyActions::report()"] --> D1{"reporting myself?<br/>same person already reported in 24h?"}
+  D1 -- "yes" --> X1["422"]:::dead
+  D1 -- "no" --> EV["evidenceFor(): a message id is kept only if the reporter is in that conversation<br/>AND its sender is the reported member"]
+  EV --> RP["reports row · severity from the category · reporter credibility snapshotted"]
+  RP --> CA["CaseAggregator::absorb() — the subject's open case, locked"]
+  CA -- "no open case" --> CO["report_cases row · status new · case_number · sla_due_at by severity"]
+  CA -- "one already open" --> CM["merged: severity can only rise · SLA keeps the earlier deadline"]
+  CO --> CL
+  CM --> CL
+  CL["Opened by a moderator → claimed automatically (moderation.auto_claim_on_open)"] --> DB["Decision bar<br/>warn · feature_limit · shadow_ban · suspend · permanent_ban · escalate"]
+  DB --> AE["ApplyEnforcement::apply()"]
+  AE --> GD["guard(): some reasons require a note · temporary steps require a duration ·<br/>shadow_ban requires a review date within enforcement.shadow_ban_max_hours"]
+  GD --> TX["ONE transaction"]
+  TX --> MA["moderation_actions row — APPEND-ONLY · actor_type human or automation"]
+  MA --> CB{"step.createsBan()?"}
+  CB -- "note · warn · escalate: no" --> CS
+  CB -- "feature_limit · shadow_ban · suspend · permanent_ban · device_ban" --> BN["bans row · expires_at · review_due_at · previous_account_status"]
+  BN --> MI["mirror onto app_users in the same transaction<br/>active_ban_id set"]
+  MI --> CS["case status = actioned · notified_user stored — no notification is wired"]
+  AP["Appeal: routed away from the original decider at assignment and at decision<br/>overturn → lift(): a NEW action linked back · recomputeMirror()"]
+  EX["Scheduler: bans past expires_at → expire() · actor automation"] --> AP
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Reports become cases under a row lock, so ten reports in a minute are one item in the queue. Enforcement is one write path for the console and for automation alike; a shadow ban cannot be created without a review date, because it is invisible to the member and nothing but a calendar entry would prompt anyone to revisit it. Actions are append-only at the model level; a lift is a new action linked back, never an edit.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/SafetyActions.php:28,115</code>; <code>app/Services/Moderation/CaseAggregator.php:26,32,61</code>; <code>app/Enums/Severity.php:39</code></li>
+<li><code>app/Livewire/Cases/Show.php:77</code>; <code>app/Enums/LadderStep.php:138,101</code></li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:38,209,247,293,119,175,318,329</code>; <code>:69</code> — <code>notified_user</code>; <code>:271</code> — <code>previous_account_status</code></li>
+<li><code>app/Models/ModerationAction.php:47</code>; <code>app/Livewire/Member/Restricted.php:55</code>; <code>app/Models/Appeal.php:80</code>; <code>app/Livewire/Appeals/Show.php:91,113,146</code>; <code>app/Enums/AppealStatus.php:58</code></li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="reveal">
+<h3><span class="n">7</span>Message content reveal</h3>
+<details class="dg">
+<summary>Why bodies are hidden, and what it takes to read one</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  H["Message model: body is in $hidden<br/>serialising a message never includes its text"]
+  H --> RQ["Staff clicks Reveal — Conversations/Show::reveal()"]
+  RQ --> SV["MessageRevealService::reveal()"]
+  SV --> P{"can view_message_content?"}
+  P -- "no" --> X1["AuthorizationException"]:::dead
+  P -- "yes" --> RS{"reason is one of the fixed set?<br/>case_review · appeal_review · legal_request · safety_escalation"}
+  RS -- "no" --> X2["refused"]:::dead
+  RS -- "yes" --> JS{"justification ≥ 10 characters?"}
+  JS -- "no" --> X2
+  JS -- "yes" --> MS["messagesFor(): the anchored message ± privacy.message_context_window"]
+  MS --> L1["message_access_logs row"]:::ok
+  L1 --> L2["activity_logs row, marked sensitive"]:::ok
+  L2 --> OUT["bodies on screen for privacy.message_reveal_minutes"]
+  OUT --> RL["relock() · or navigation · or the window ending"]
+  RL --> H
+</script>
+<div class="render"></div>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Models/Message.php:31</code> — <code>$hidden</code>; <code>app/Livewire/Conversations/Show.php:73,101</code></li>
+<li><code>app/Services/Messaging/MessageRevealService.php:46</code> <code>reveal()</code> · <code>:144</code> <code>guardReason()</code> · <code>:103,132</code> the two windows; <code>config/platform.php:185</code> — the four reasons</li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="payment">
+<h3><span class="n">8</span>Subscriptions and payment — web and store</h3>
+<details class="dg">
+<summary>Two confirmations, one fulfilment — and now two sources of plans</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  PR["/app/premium · gateways that are on, checkout kind only"] --> ST["POST /app/checkout · Checkout::start() · orders row pending"]
+  ST --> OFF["Stripe hosted Checkout · Razorpay Payment Link"]
+  OFF --> RT["A. return page · Checkout::reconcile() asks the gateway"]
+  OFF --> WH["B. webhook · /webhooks/payments/{gateway} · signature checked"]
+  WH --> HW["handleWebhook(): gateway_events firstOrCreate · processed_at only after commit"]
+  HW --> FUL
+  RT --> FUL
+  IAP["App: POST /me/premium/receipt → StorePurchases::redeem()<br/>Store: /webhooks/store/{apple,google} → handleNotification()<br/>orders row per store transaction · unique (gateway, payment_ref)"] --> FUL
+  FUL["Checkout::fulfil() — ONE transaction · SELECT the order FOR UPDATE · already paid? return as-is"]
+  FUL -- "web" --> SG["Subscriptions::grant()<br/>closes the previous WEB or STAFF row only · early renewal adds to the time left"]
+  FUL -- "store (StoreGrant)" --> SS["Subscriptions::grantFromStore()<br/>closes the previous row of the SAME store subscription only · the store's expiry is the calendar"]
+  SG --> RM["refreshMirror(): is_premium · premium_tier · premium_until<br/>= best tier and latest end across EVERY active row<br/>nothing shortens or downgrades an active plan"]:::ok
+  SS --> RM
+  RM --> EM["DB::afterCommit → billing.plan_started email (first plan only)"]:::ok
+  SCH["Scheduler: expireDue() → lapsed rows expired · mirror recomputed · billing.expired email only if no plan is left"] --> RM
+  RV["Store says expired / revoked / on hold → revokeExternal(): that subscription's rows only"]:::dead --> RM
+  MV["Support: Billing → Subscriptions → Move to another account → reassignExternal()"]:::warn --> RM
+  FAIL["fulfilment throws → 500 · processed_at stays null → the retry does the work (web and store alike)"]:::warn
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>A payment may be confirmed several times — return page, webhook, webhook retry, store notification redelivery — and the member must end up with exactly one subscription per transaction. Everything converges on <code>fulfil()</code>, which re-reads the order under a row lock and does nothing if it is already paid. Plans from different sources coexist: a grant supersedes only rows of its own family, and the mirror on <code>app_users</code> is recomputed from all active rows in one place, so a member with a web Gold plan until December who buys store Plus keeps Gold until December.</p>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Livewire/Member/Premium.php:34</code>; <code>app/Http/Controllers/Member/CheckoutController.php:29,83,111</code></li>
+<li><code>app/Services/Payments/Checkout.php:40</code> checkout gateways only · <code>:63</code> <code>start()</code> · <code>:120</code> <code>reconcile()</code> · <code>:166-171</code> <code>fulfil()</code> lock and already-paid · <code>:191</code> store branch · <code>:207</code> early renewal · <code>:250-303</code> <code>handleWebhook()</code></li>
+<li><code>app/Services/Billing/Subscriptions.php:52</code> <code>grant()</code> · <code>:116</code> <code>grantFromStore()</code> · <code>:211</code> <code>revokeExternal()</code> · <code>:259</code> <code>reassignExternal()</code> · <code>:314</code> <code>refreshMirror()</code> · <code>:358</code> <code>expireDue()</code> · <code>:440</code> <code>announceStart()</code></li>
+<li><code>app/Services/Store/StorePurchases.php:50,88,214</code>; <code>app/Http/Controllers/WebhookController.php:30</code>; <code>app/Http/Controllers/StoreWebhookController.php:29</code></li>
+<li><code>app/Services/Payments/StripeDriver.php:161</code> — 300-second window; <code>app/Services/Payments/RazorpayDriver.php:132</code>; <code>bootstrap/app.php:46</code> — <code>webhooks/*</code> exempt from CSRF</li>
+<li><code>database/migrations/2026_09_22_000001_add_processed_at_to_gateway_events.php</code> · <code>2026_09_25_000001_add_store_billing.php</code></li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="verification">
+<h3><span class="n">9</span>Verification</h3>
+<details class="dg">
+<summary>A code the server remembers, a photo the server keeps private</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  W["Website: /app/verification"] --> IS
+  A["Mobile: GET /api/v1/verification/gesture"] --> IS
+  IS["VerificationSubmission::issueGestureCode() — 4 characters · 10 minutes · asking again replaces it"]
+  IS --> SB["submit: website Verification::submit or POST /api/v1/verification · ability:verify · 3 per day"]
+  SB --> VS["VerificationSubmission::submit()"]
+  VS --> AT{"attempts ≥ verification.max_attempts (3)?"}
+  AT -- "yes" --> X1["refused — contact support"]:::dead
+  AT -- "no" --> CC{"code matches the outstanding one? hash_equals"}
+  CC -- "no · or expired" --> X2["422"]:::dead
+  CC -- "yes" --> DSK["selfie on the private verifications disk · code consumed"]
+  DSK --> VR["verifications row pending · queue standard · sla_due_at · member verification_status pending"]
+  VR --> Q["/admin/verifications"]
+  Q --> RV["Review — signed, short-lived selfie URL · permission · every view logged"]
+  RV --> D{"Decision"}
+  D -- "approve" --> AP["approved · verified_at"]:::ok
+  D -- "reject, enumerated reason" --> RJ["rejected · may retry within the cap"]:::dead
+  D -- "escalate" --> ES["escalated · queue restricted_minor · 404 without restricted_minor_queue · reject or escalate only"]:::warn
+</script>
+<div class="render"></div>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/VerificationSubmission.php:30,43,63,73,99,113</code>; <code>app/Livewire/Member/Verification.php:34,62</code>; <code>app/Http/Controllers/Api/V1/ProfileController.php:234,253</code></li>
+<li><code>routes/api.php:185-187</code>; <code>app/Providers/PlatformServiceProvider.php:69</code>; <code>routes/admin.php:68-82</code></li>
+<li><code>app/Http/Controllers/Admin/VerificationSelfieController.php:27-44</code>; <code>app/Models/Verification.php:105,138</code>; <code>app/Livewire/Verifications/Review.php:80,99,129</code>; <code>app/Actions/Verification/DecideVerification.php:30,64,104</code></li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="notifications">
+<h3><span class="n">10</span>Notifications</h3>
+<details class="dg">
+<summary>What fires today, and what is only a template</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  H1["SENT BY CODE"]
+  N1["match.new — push · SwipeRecorder afterCommit"]:::ok
+  N2["message.new — push · MessageSender afterCommit"]:::ok
+  N3["billing.plan_started — email · Subscriptions::announceStart (first plan, web or store)"]:::ok
+  N4["billing.renewal_push days 7, 3, 1 · billing.renewal_email day 3 · hourly"]:::ok
+  N5["billing.expired — email · expireDue() and revokeExternal(), only when no plan is left"]:::ok
+  N6["push campaigns — operator-authored · SendCampaigns batch"]:::ok
+  H2["TEMPLATE EXISTS · NOTHING SENDS IT"]
+  U1["appeal.received · appeal.decided"]:::off
+  U2["verification.approved · verification.rejected · verification.prompt"]:::off
+  U3["likes.waiting · match.silent_nudge"]:::off
+  U4["profile.incomplete — the key appears only as a risk factor"]:::off
+  U5["enforcement — ApplyEnforcement stores notified_user = true and sends nothing"]:::off
+  H3["DELIVERY"]
+  E1["email: email_logs written as queued → TemplatedMail (ShouldQueue) → RecordEmailOutcome settles the row"]
+  P1["push: SendMemberPush re-reads the member · skips suspended, banned, deactivated — NOT shadow-banned<br/>→ FcmSender, FCM HTTP v1 to the device token the app registered"]
+  WK["needs a queue worker — without one nothing above is delivered and nothing fails visibly"]:::warn
+  H1 ~~~ N1 ~~~ N2 ~~~ N3 ~~~ N4 ~~~ N5 ~~~ N6 ~~~ H2 ~~~ U1 ~~~ U2 ~~~ U3 ~~~ U4 ~~~ U5 ~~~ H3 ~~~ E1 ~~~ P1 ~~~ WK
+</script>
+<div class="render"></div>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>app/Services/Members/SwipeRecorder.php:110</code> · <code>app/Services/Members/MessageSender.php:102</code>; <code>app/Services/Billing/Subscriptions.php:440</code> — <code>announceStart()</code></li>
+<li><code>app/Console/Commands/SendRenewalReminders.php:30-31</code>; <code>app/Console/Commands/SendCampaigns.php:53,95</code></li>
+<li><code>database/seeders/NotificationTemplateSeeder.php:97-160</code> — every template key; the unwired ones are referenced nowhere in <code>app/</code></li>
+<li><code>app/Actions/Moderation/ApplyEnforcement.php:69</code>; <code>app/Services/Notifications/MemberNotifier.php:34,58</code>; <code>app/Notifications/TemplatedMail.php:25</code>; <code>app/Listeners/RecordEmailOutcome.php:36</code>; <code>app/Jobs/SendMemberPush.php:39</code>; <code>app/Services/Push/FcmSender.php</code></li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="scheduler">
+<h3><span class="n">11</span>Scheduler</h3>
+<details class="dg">
+<summary>One cron entry, three commands, and what happens without them</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart LR
+  CRON["cron, every minute · php artisan schedule:run"] --> T1
+  CRON --> T2
+  CRON --> T3
+  T1["platform:run-due-tasks · every 5 minutes"] --> B1["bans past expires_at → ApplyEnforcement::expire()"]
+  T1 --> S1["Subscriptions::expireDue() · mirror recomputed from what remains"]
+  T2["platform:send-renewal-reminders · hourly"] --> R1["push at 7, 3, 1 days · email at 3 · recorded once"]
+  T3["platform:send-campaigns · every 5 minutes"] --> C1["approved campaigns whose time has come · claimed · batched"]
+  MW["No scheduler? suspensions self-clear on the member's next request;<br/>shadow bans, feature limits, lapsed plans, reminders and campaigns wait"]:::warn
+  QW["Queue worker — a separate process — runs the email, push and campaign jobs"]:::warn
+</script>
+<div class="render"></div>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>routes/console.php:25,33,39</code>; <code>app/Console/Commands/RunDueTasks.php:35,41</code>; <code>app/Actions/Moderation/ApplyEnforcement.php:175</code></li>
+<li><code>app/Http/Middleware/EnsureAppUserIsNotBanned.php:34-37</code> · <code>app/Http/Middleware/EnsureMemberCanUseApp.php:38-41</code> — suspensions self-clear; <code>README.md</code> — the scheduler and the queue worker</li>
+</ul></div>
+</details>
+</section>
+
+<section class="flow" id="api">
+<h3><span class="n">12</span>API surface map</h3>
+<details class="dg">
+<summary>The middleware stack every authenticated call passes through</summary>
+<div class="diagram">
+<script type="text/x-mermaid">
+flowchart TD
+  REQ["request to /api/v1/…"] --> MM["maintenance mode on? → 503 maintenance, Retry-After 600"]:::warn
+  MM --> PUBQ{"public route?"}
+  PUBQ -- "yes" --> PUB["config · plans · interests · countries · states · cities<br/>auth/register · auth/login (throttle:auth)"]
+  PUBQ -- "no" --> M1["auth:sanctum — valid token → the app_users row"]
+  M1 --> M2["appuser.active — clears an expired suspension · 403 for suspended, banned, deactivated"]
+  M2 --> M3["throttle:api — 90 per minute per member"]
+  M3 --> AB{"route requires an ability?"}
+  AB -- "swipe · message · report · verify · profile:write" --> M4["token must carry it — a pending token lacks swipe, message and report"]:::warn
+  AB -- "no" --> M5
+  M4 --> M5["route-specific throttle, if any: deck · swipe · message · report · verification · receipt · phone"]
+  M5 --> CT["controller → the same services the website uses → a Resource, never a bare model"]
+</script>
+<div class="render"></div>
+</div>
+<div class="caption">
+<p>Forty-one endpoints, eight public. Everything else passes the same gates before a route-specific ability or throttle is considered. Responses always go through a Resource — that is where risk scores, internal notes and shadow-ban state would otherwise leak. The machine-readable version of this table, with every schema and error code, is <a href="api.html">the API reference</a> (<code>docs/openapi.yaml</code>), and a test fails if a route is added without appearing there.</p>
+</div>
+</details>
+<details class="dg">
+<summary>All 41 endpoints</summary>
+<div class="caption">
+<table class="api">
+<thead><tr><th>Endpoint</th><th>Auth</th><th>Ability</th><th>Throttle</th><th>Handler</th></tr></thead>
+<tbody>
+<tr class="grp"><td colspan="5">Public — 8</td></tr>
+<tr><td>GET /api/v1/config</td><td>none</td><td>—</td><td>—</td><td>routes/api.php:44</td></tr>
+<tr><td>GET /api/v1/plans</td><td>none</td><td>—</td><td>—</td><td>routes/api.php:62 — plans on sale with App Store / Google Play product ids</td></tr>
+<tr><td>GET /api/v1/interests</td><td>none</td><td>—</td><td>—</td><td>routes/api.php:75</td></tr>
+<tr><td>GET /api/v1/countries</td><td>none</td><td>—</td><td>—</td><td>GeographyController::countries:25</td></tr>
+<tr><td>GET /api/v1/states</td><td>none</td><td>—</td><td>—</td><td>GeographyController::states:33</td></tr>
+<tr><td>GET /api/v1/cities</td><td>none</td><td>—</td><td>—</td><td>GeographyController::cities:55 — ?search= two letters or more, ≤ 100 rows, meta.truncated</td></tr>
+<tr><td>POST /api/v1/auth/register</td><td>none</td><td>—</td><td>auth · 8/min per IP, 5/min per IP+email</td><td>AuthController::register:23 — optional city_id through SelectableCity</td></tr>
+<tr><td>POST /api/v1/auth/login</td><td>none</td><td>—</td><td>auth</td><td>AuthController::login:48</td></tr>
+<tr class="grp"><td colspan="5">Session — 2 · all rows below: auth:sanctum + appuser.active + throttle:api 90/min</td></tr>
+<tr><td>POST /api/v1/auth/logout</td><td>token</td><td>—</td><td>api</td><td>AuthController::logout:79</td></tr>
+<tr><td>POST /api/v1/auth/logout-all</td><td>token</td><td>—</td><td>api</td><td>AuthController::logoutAll:86</td></tr>
+<tr class="grp"><td colspan="5">Me — 6</td></tr>
+<tr><td>GET /api/v1/me</td><td>token</td><td>—</td><td>api</td><td>ProfileController::me:30 — premium_source and auto_renewing included</td></tr>
+<tr><td>PATCH /api/v1/me</td><td>token</td><td>—</td><td>api</td><td>ProfileController::update:39 — city through SelectableCity (current city kept); does not refresh completion</td></tr>
+<tr><td>DELETE /api/v1/me</td><td>token</td><td>—</td><td>api</td><td>ProfileController::destroy:186 → AccountDeletion — password; soft-delete + anonymise; store plan not cancelled</td></tr>
+<tr><td>PATCH /api/v1/me/profile</td><td>token</td><td>—</td><td>api</td><td>ProfileController::updateProfile:61 — refreshes completion</td></tr>
+<tr><td>PATCH /api/v1/me/preferences</td><td>token</td><td>—</td><td>api</td><td>ProfileController::updatePreferences:94 — validates the merged age pair</td></tr>
+<tr><td>PUT /api/v1/me/interests</td><td>token</td><td>—</td><td>api</td><td>ProfileController::syncInterests:129 — refreshes completion</td></tr>
+<tr class="grp"><td colspan="5">Photos — 4 · ability:profile:write, so a pending token can use them</td></tr>
+<tr><td>POST /api/v1/me/photos</td><td>token</td><td>profile:write</td><td>api</td><td>PhotoController::store:35 → MemberPhotoStore; 422 <code>photo_limit_reached</code>; refreshes completion</td></tr>
+<tr><td>PATCH /api/v1/me/photos/reorder</td><td>token</td><td>profile:write</td><td>api</td><td>PhotoController::reorder:85 — full list, atomic, 403 on any foreign uuid</td></tr>
+<tr><td>PATCH /api/v1/me/photos/{uuid}/primary</td><td>token</td><td>profile:write</td><td>api</td><td>PhotoController::primary:76</td></tr>
+<tr><td>DELETE /api/v1/me/photos/{uuid}</td><td>token</td><td>profile:write</td><td>api</td><td>PhotoController::destroy:66 — soft; refreshes completion</td></tr>
+<tr class="grp"><td colspan="5">Discovery — 2</td></tr>
+<tr><td>GET /api/v1/deck</td><td>token</td><td>swipe</td><td>deck · 60/min</td><td>SwipeController::deck:22 → DiscoveryDeck::for()</td></tr>
+<tr><td>POST /api/v1/swipes</td><td>token</td><td>swipe</td><td>swipe · 120/min, halved under 24h</td><td>SwipeController::store:32 → SwipeRecorder</td></tr>
+<tr class="grp"><td colspan="5">Matches and likes — 3</td></tr>
+<tr><td>GET /api/v1/matches</td><td>token</td><td>—</td><td>api</td><td>ProfileController::matches:197</td></tr>
+<tr><td>DELETE /api/v1/matches/{uuid}</td><td>token</td><td>—</td><td>api</td><td>ProfileController::unmatch:212 → MatchActions::end</td></tr>
+<tr><td>GET /api/v1/me/likers</td><td>token</td><td>—</td><td>api</td><td>ProfileController::likers:154 — 403 <code>premium_required</code> with the count unless the plan has <code>see_likers</code></td></tr>
+<tr class="grp"><td colspan="5">Premium — 1 (plus GET /plans above)</td></tr>
+<tr><td>POST /api/v1/me/premium/receipt</td><td>token</td><td>profile:write</td><td>receipt · 10/hour</td><td>StoreReceiptController::store:28 → StorePurchases::redeem → Checkout::fulfil; 422 <code>product_unknown</code> / <code>receipt_invalid</code>, 409 <code>receipt_owned_elsewhere</code>, 503 <code>store_unavailable</code></td></tr>
+<tr class="grp"><td colspan="5">Conversations — 4</td></tr>
+<tr><td>GET /api/v1/conversations</td><td>token</td><td>—</td><td>api</td><td>MessageController::conversations:18 — open only</td></tr>
+<tr><td>GET /api/v1/conversations/{uuid}/messages</td><td>token</td><td>—</td><td>api</td><td>MessageController::index:35 — assertUsableBy</td></tr>
+<tr><td>POST /api/v1/conversations/{uuid}/messages</td><td>token</td><td>message</td><td>message · 30/min, halved under 24h</td><td>MessageController::store:55 → MessageSender</td></tr>
+<tr><td>POST /api/v1/conversations/{uuid}/read</td><td>token</td><td>—</td><td>api</td><td>MessageController::markRead:78</td></tr>
+<tr class="grp"><td colspan="5">Safety — 4</td></tr>
+<tr><td>POST /api/v1/reports</td><td>token</td><td>report</td><td>report · 10 per 60 min</td><td>SafetyController::report:21 → SafetyActions</td></tr>
+<tr><td>GET /api/v1/blocks</td><td>token</td><td>—</td><td>api</td><td>SafetyController::blocks:46</td></tr>
+<tr><td>POST /api/v1/blocks</td><td>token</td><td>—</td><td>api</td><td>SafetyController::block:58 → closes the thread</td></tr>
+<tr><td>DELETE /api/v1/blocks/{uuid}</td><td>token</td><td>—</td><td>api</td><td>SafetyController::unblock:71</td></tr>
+<tr class="grp"><td colspan="5">Phone — 2</td></tr>
+<tr><td>POST /api/v1/phone/send-code</td><td>token</td><td>—</td><td>4 per 10 min</td><td>PhoneController::sendCode:17 — 503 <code>sms_unavailable</code> without a gateway</td></tr>
+<tr><td>POST /api/v1/phone/verify</td><td>token</td><td>—</td><td>10 per 10 min</td><td>PhoneController::verify:42</td></tr>
+<tr class="grp"><td colspan="5">Devices — 2 · no ability on purpose: an account under review must still be reachable</td></tr>
+<tr><td>POST /api/v1/devices/push-token</td><td>token</td><td>—</td><td>api</td><td>DeviceController::storePushToken:23</td></tr>
+<tr><td>DELETE /api/v1/devices/push-token</td><td>token</td><td>—</td><td>api</td><td>DeviceController::deletePushToken:56</td></tr>
+<tr class="grp"><td colspan="5">Verification — 3</td></tr>
+<tr><td>GET /api/v1/verification</td><td>token</td><td>—</td><td>api</td><td>ProfileController::verification:219</td></tr>
+<tr><td>GET /api/v1/verification/gesture</td><td>token</td><td>—</td><td>api</td><td>ProfileController::gestureCode:253 — server-issued, 10 min</td></tr>
+<tr><td>POST /api/v1/verification</td><td>token</td><td>verify</td><td>verification · 3 per day</td><td>ProfileController::submitVerification:234</td></tr>
+</tbody>
+</table>
+</div>
+<div class="cites"><span class="lbl">Where this lives</span><ul>
+<li><code>routes/api.php:37-190</code> — every route, its middleware and ability; <code>app/Http/Middleware/RespectMaintenanceMode.php:23-36</code></li>
+<li><code>app/Providers/PlatformServiceProvider.php:46-77</code> — the throttle buckets, <code>receipt</code> at <code>:71</code>; <code>:48-57</code> — halving for accounts under 24 hours</li>
+<li><code>app/Http/Controllers/Api/V1/AuthController.php:103-110</code> — abilities by status; <code>app/Http/Resources/Api/V1/MeResource.php:36-50</code></li>
+<li><code>docs/openapi.yaml</code> · <code>tests/Feature/OpenApiSpecTest.php</code> — the spec, and the test that keeps it honest</li>
+</ul></div>
+</details>
+</section>
+</section>
+
+<footer class="doc-end">
+    <p>The product · Derived from the code on the date of generation, not from a plan. Companions:
+    <a href="user-manual.html">User manual</a> for operators and the <a href="api.html">API reference</a> for tools. Diagrams
+    render with a vendored copy of Mermaid in <code>assets/</code>, so this file works offline and from <code>file://</code>.</p>
+</footer>
+
+</div><!-- .content -->
+</div><!-- .layout -->
+</main>
+
+<script src="assets/mermaid.min.js"></script>
+<script>
+(function () {
+    var PALETTES = {
+        light: { bg: '#ffffff', node: '#fdf2f6', text: '#2a2030', border: '#d9b6c5', line: '#7d737f', cluster: '#faf7fa',
+                 staff: '#f3e8f6', staffB: '#8f3aa1', app: '#e8f0fb', appB: '#2f6bbf', good: '#eef7f2', goodB: '#1c7a54',
+                 warn: '#fdf6e7', warnB: '#9a6a12', bad: '#fdeceb', badB: '#b4262c', off: '#8a8290', offBg: '#f1eef2' },
+        dark:  { bg: '#221c25', node: '#3a2530', text: '#eeeaf0', border: '#8a4a63', line: '#b7aeba', cluster: '#1e181f',
+                 staff: '#35283d', staffB: '#c48ad2', app: '#22303f', appB: '#7fb0ea', good: '#1f3b30', goodB: '#6fd3a3',
+                 warn: '#3f3420', warnB: '#e8c46a', bad: '#4a2326', badB: '#f08a86', off: '#a69ea8', offBg: '#2a242d' }
+    };
+    function theme() { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
+    function classDefs(p) {
+        return '\nclassDef staff fill:' + p.staff + ',stroke:' + p.staffB + ',color:' + p.text
+             + '\nclassDef app fill:' + p.app + ',stroke:' + p.appB + ',color:' + p.text
+             + '\nclassDef good fill:' + p.good + ',stroke:' + p.goodB + ',color:' + p.text
+             + '\nclassDef ok fill:' + p.good + ',stroke:' + p.goodB + ',color:' + p.goodB
+             + '\nclassDef warn fill:' + p.warn + ',stroke:' + p.warnB + ',color:' + p.text
+             + '\nclassDef bad fill:' + p.bad + ',stroke:' + p.badB + ',color:' + p.text + ',stroke-width:2px'
+             + '\nclassDef dead fill:' + p.bad + ',stroke:' + p.badB + ',color:' + p.badB + ',stroke-width:2px'
+             + '\nclassDef off fill:' + p.offBg + ',stroke:' + p.off + ',color:' + p.off + ',stroke-dasharray:5 4'
+             + '\nclassDef jump fill:' + p.cluster + ',stroke:' + p.line + ',color:' + p.text + ',stroke-dasharray:4 3\n';
+    }
+    var renderRun = 0;
+    async function renderAll() {
+        var p = PALETTES[theme()], run = ++renderRun;
+        mermaid.initialize({
+            startOnLoad: false, theme: 'base', securityLevel: 'loose',
+            flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis', padding: 10, nodeSpacing: 28, rankSpacing: 48 },
+            themeVariables: { background: p.bg, primaryColor: p.node, primaryTextColor: p.text, primaryBorderColor: p.border,
+                secondaryColor: p.node, tertiaryColor: p.cluster, lineColor: p.line, textColor: p.text, nodeTextColor: p.text,
+                edgeLabelBackground: p.bg, fontFamily: '"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif', fontSize: '14px' }
+        });
+        var blocks = document.querySelectorAll('.chart, .diagram');
+        for (var i = 0; i < blocks.length; i++) {
+            if (run !== renderRun) return;
+            var el = blocks[i];
+            var src = el.querySelector('script[type="text/x-mermaid"]').textContent.trim() + classDefs(p);
+            var target = el.querySelector('.render');
+            try {
+                var out = await mermaid.render('mmd-' + run + '-' + i, src);
+                if (run === renderRun) target.innerHTML = out.svg;
+            } catch (e) {
+                target.innerHTML = '<pre class="err">Diagram failed to render: ' + String(e && e.message ? e.message : e) + '</pre>';
+                if (window.console) console.error(e);
+            }
+        }
+    }
+    function applyTheme(name) {
+        document.documentElement.setAttribute('data-theme', name);
+        document.getElementById('themeToggle').textContent = name === 'dark' ? 'Light theme' : 'Dark theme';
+        try { localStorage.setItem('flow_theme', name); } catch (e) {}
+    }
+    var initial = 'light';
+    try { initial = localStorage.getItem('flow_theme') || initial; } catch (e) {}
+    if (initial !== 'dark' && initial !== 'light') initial = 'light';
+    applyTheme(initial);
+    document.getElementById('themeToggle').addEventListener('click', function () { applyTheme(theme() === 'dark' ? 'light' : 'dark'); renderAll(); });
+    document.getElementById('expandAll').addEventListener('click', function () { document.querySelectorAll('details.dg').forEach(function (d) { d.open = true; }); });
+    document.getElementById('collapseAll').addEventListener('click', function () { document.querySelectorAll('details.dg').forEach(function (d) { d.open = false; }); });
+    window.addEventListener('beforeprint', function () { document.querySelectorAll('details.dg').forEach(function (d) { d.open = true; }); });
+    if (window.mermaid) { renderAll(); } else {
+        document.querySelectorAll('.render').forEach(function (t) {
+            t.innerHTML = '<pre class="err">assets/mermaid.min.js did not load. Open this file from the docs/ folder so the relative path resolves.</pre>';
+        });
+    }
+})();
+</script>
+</body>
+</html>

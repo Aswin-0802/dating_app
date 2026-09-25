@@ -11,16 +11,21 @@ Laravel 12 · Livewire 3 · Tailwind v4 · MySQL · Sanctum
 
 ## Documentation
 
-Two written documents live in [`docs/`](docs/) and open in a browser:
+Three documents live in [`docs/`](docs/) and open in a browser, offline, from
+the folder:
 
 | Document | For | Covers |
 |---|---|---|
-| [Project overview](docs/project-overview.html) | Owners and engineers | What the product is, how it is built, the decisions behind it, and what is deliberately not included |
+| [The product](docs/product.html) | Owners, then operators, then engineers | What it is; the whole flow on one chart with the mobile app as a lane; every app-to-console round trip; and, collapsed underneath, twelve engineering diagrams cited to file and line |
 | [User manual](docs/user-manual.html) | The people running it | Every console screen with screenshots, plus a go-live checklist and common questions |
+| [API reference](docs/api.html) | Tools and app developers | Every `/api/v1` endpoint from [`docs/openapi.yaml`](docs/openapi.yaml), which `OpenApiSpecTest` keeps in step with the routes |
 
-Both are written to be printed: open one and press Ctrl+P → Save as PDF. The
-screenshots come from the running product with seeded data, and are regenerated
-rather than drawn.
+All are written to be printed: open one and press Ctrl+P → Save as PDF.
+`node scripts/docs-screenshots.mjs` re-takes the screenshots from the running
+product with seeded data; `node scripts/docs-verify.mjs` opens every page from
+`file://` and checks that diagrams, images and printing work. After editing
+`docs/openapi.yaml`, run `php artisan platform:embed-openapi` so the offline
+viewer picks it up (the test fails otherwise).
 
 ---
 

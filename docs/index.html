@@ -4,28 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dating Platform — Documentation</title>
-<meta name="description" content="The project overview and user manual.">
+<meta name="description" content="The product document, the user manual and the API reference.">
 <link rel="stylesheet" href="assets/doc.css">
 <style>
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1.5rem; margin: 2.5rem 0; }
-
-    .card {
-        display: block;
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        padding: 1.75rem;
-        text-decoration: none;
-        color: inherit;
-        background: var(--paper);
-        transition: border-color .15s, transform .15s;
-    }
-
+    .card { display: block; border: 1px solid var(--line); border-radius: 12px; padding: 1.75rem; text-decoration: none; color: inherit; background: var(--paper); transition: border-color .15s, transform .15s; }
     .card:hover { border-color: var(--brand); transform: translateY(-2px); }
-
     .card h3 { margin: 0 0 0.5rem; font-size: 1.25rem; }
-
     .card p { color: var(--muted); font-size: 0.94rem; margin: 0; }
-
     .card .eyebrow { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand); font-weight: 700; }
 </style>
 </head>
@@ -35,45 +21,43 @@
 <header class="cover">
     <p class="eyebrow">Documentation</p>
     <h1>Dating Platform</h1>
-    <p class="lede">A dating platform with a trust &amp; safety console at its centre. Four documents: what it is and how it is built, how to run it, how it behaves, and the whole flow on one page.</p>
+    <p class="lede">A dating platform with a trust &amp; safety console at its centre, a website and a mobile app. Three
+    documents: one for what the product is and how it behaves, one for the people running the console, and one for tools.</p>
 </header>
 
 <div class="cards">
-    <a class="card" href="project-overview.html">
-        <p class="eyebrow">For owners and engineers</p>
-        <h3>Project overview</h3>
-        <p>What the product does, how it is built, the decisions behind it, what it takes to go live, and what is
-        deliberately not included.</p>
+    <a class="card" href="product.html">
+        <p class="eyebrow">For owners, then operators, then engineers</p>
+        <h3>The product</h3>
+        <p>What it is and who it is for; the whole flow on one chart, in plain language, with the mobile app as a lane
+        through it; every round trip from the app to the console and back; and, collapsed underneath, twelve engineering
+        diagrams with the file and line each arrow comes from.</p>
     </a>
 
     <a class="card" href="user-manual.html">
         <p class="eyebrow">For the people running it</p>
         <h3>User manual</h3>
-        <p>Every screen, step by step, with screenshots: verification, cases, enforcement, billing, notifications, masters
-        and settings — plus a go-live checklist.</p>
+        <p>Every console screen, step by step, with screenshots: verification, cases, enforcement, billing including the
+        app stores, notifications, masters and locations, settings — plus a go-live checklist.</p>
     </a>
 
-    <a class="card" href="flow-chart.html">
-        <p class="eyebrow">For anyone</p>
-        <h3>Flow chart</h3>
-        <p>The whole product on one page, in plain language: what a member does from sign-up to chat and premium, and
-        what the trust &amp; safety team does when someone is reported.</p>
-    </a>
-
-    <a class="card" href="application-flow.html">
-        <p class="eyebrow">For engineers and reviewers</p>
-        <h3>Application flow</h3>
-        <p>Twelve diagrams derived from the code: guards, the member lifecycle, discovery, matching, messaging, enforcement,
-        payments, verification, notifications, the scheduler and the API surface — each with the file and line it comes from.</p>
+    <a class="card" href="api.html">
+        <p class="eyebrow">For tools and app developers</p>
+        <h3>API reference</h3>
+        <p>Every <code>/api/v1</code> endpoint with its authentication, token ability, parameters, request and response
+        schemas, error codes and throttle bucket — rendered from <code>openapi.yaml</code>, which a test keeps in step
+        with the routes.</p>
     </a>
 </div>
 
-<h2 style="border:0;margin-top:1rem">Printing</h2>
-<p>All four documents are written for the screen and for paper. Open one and print it (<strong>Ctrl+P</strong>), choosing
-"Save as PDF" — sections start on fresh pages and screenshots are kept whole.</p>
+<h2 style="border:0;margin-top:1rem">Offline and on paper</h2>
+<p>Everything here works from the <code>docs/</code> folder with no server: the diagram renderer, the API viewer and the
+YAML parser are vendored in <code>assets/</code>. Open a document and print it (<strong>Ctrl+P</strong>, “Save as PDF”):
+collapsed sections open themselves for printing, sections start on fresh pages and screenshots are kept whole.</p>
 
 <footer class="doc-end">
-    <p>The repository's <code>README.md</code> covers installation and development.</p>
+    <p>The repository's <code>README.md</code> covers installation and development; <code>scripts/docs-screenshots.mjs</code>
+    re-takes the screenshots and <code>scripts/docs-verify.mjs</code> checks every page renders and prints.</p>
 </footer>
 
 </main>

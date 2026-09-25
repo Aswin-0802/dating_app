@@ -19,8 +19,9 @@
     <dl>
         <div><dt>Document</dt><dd>User manual</dd></div>
         <div><dt>Audience</dt><dd>Admins, moderators, support</dd></div>
-        <div><dt>Companion</dt><dd><a href="project-overview.html">Project overview</a></dd></div>
-        <div><dt>Reading time</dt><dd>About 40 minutes</dd></div>
+        <div><dt>Companions</dt><dd><a href="product.html">The product</a> · <a href="api.html">API reference</a></dd></div>
+        <div><dt>Revised</dt><dd>26 September 2026 — screenshots re-taken from the running product</dd></div>
+        <div><dt>Reading time</dt><dd>About 45 minutes</dd></div>
     </dl>
 </header>
 
@@ -349,6 +350,29 @@ said.</p>
     <figcaption>Billing → Subscriptions. "Ending this week" is the list worth checking every Monday.</figcaption>
 </figure>
 
+<p>The <strong>How</strong> column says where a plan came from: <em>Paid online</em> (Stripe or Razorpay), <em>App Store</em>,
+<em>Google Play</em>, or <em>Given by staff</em>. A store plan also shows whether it <em>renews</em> or <em>will not renew</em> —
+that is the store's own word, refreshed every time the store tells us something. A member can hold plans from more than one
+source at once; the tier they actually get is the best of them and the end date the latest, and nothing you or a store does
+ever shortens or downgrades a plan that is still running.</p>
+
+<h4>Moving a store subscription to another account</h4>
+
+<p>Somebody signed up twice, or redeemed their App Store purchase on the wrong login. The store keeps billing the same Apple ID
+or Google account whatever we do, so the fix is to move the subscription to the right member here rather than editing
+anything by hand.</p>
+
+<figure>
+    <img src="images/admin-billing-subscriptions-move.png" alt="The subscriptions screen with the move-to-another-account form open under an App Store subscription">
+    <figcaption>Moving a store subscription: the target member's email and a note that stays on the record.</figcaption>
+</figure>
+
+<ol class="steps">
+    <li>Find the store subscription (filter <strong>How</strong> to App Store or Google Play) and press <strong>Move to another account</strong>.</li>
+    <li>Type the email of the member who should have it, and why — the note stays on the record.</li>
+    <li>Move. Every row and order for that store subscription follows, both members' plans are recalculated, and the next renewal lands on the new owner. Needs <code>grant_plans</code>; it is written to the audit log as a sensitive action.</li>
+</ol>
+
 <h3>Giving somebody a plan</h3>
 
 <figure>
@@ -370,9 +394,52 @@ of its badge and the "Most popular" highlight. A plan members are on can be hidd
 for.</p>
 
 <figure>
-    <img src="images/admin-billing-gateways.png" alt="The payment gateways screen showing Stripe and Razorpay cards with webhook addresses">
-    <figcaption>Billing → Payment gateways. The webhook address to register is shown on each card.</figcaption>
+    <img src="images/admin-billing-plan-form.png" alt="The plan form with prices, App Store and Google Play product ids, and features">
+    <figcaption>The plan form. The four product id fields are what the mobile app sells through the stores.</figcaption>
 </figure>
+
+<h4>Selling in the mobile app</h4>
+
+<p>Apple and Google require that a subscription bought inside an app is bought through their store, so the app never sends
+anyone to Stripe or Razorpay. Instead each plan carries the <strong>product identifiers</strong> you created in App Store
+Connect and Google Play Console — one for monthly, one for yearly, per store. Prices are set in the stores, in each member's
+own currency; the prices here are for the website. Leave a field blank if the plan is not sold in that store for that period.
+One product id can belong to one plan and one period only; the form refuses a duplicate.</p>
+
+<div class="warn">
+    <span class="label">Put every plan in the same Apple subscription group</span>
+    <p>Apple only treats one plan as an upgrade or downgrade of another when both products sit in the <em>same</em>
+    subscription group, ranked (Gold above Plus). In separate groups a member can buy both and pay twice. Google needs one
+    product per period with a single base plan each. Nothing on this server can detect either mistake; test it with a sandbox
+    purchase before launch.</p>
+</div>
+
+<figure>
+    <img src="images/admin-billing-gateways.png" alt="The payment gateways screen showing Stripe, Razorpay, App Store and Google Play cards">
+    <figcaption>Billing → Payment gateways. The web gateways show their webhook address; the store cards show their notification address.</figcaption>
+</figure>
+
+<figure>
+    <img src="images/admin-billing-gateways-store.png" alt="The App Store gateway card opened for configuration, showing the notification address and the key fields">
+    <figcaption>The App Store card, configuring. The private key is pasted whole; it is stored encrypted and never shown again.</figcaption>
+</figure>
+
+<p><strong>App Store</strong> needs an App Store Connect API key with the <em>In-App Purchase</em> role — issuer id, key id
+and the <code>.p8</code> file pasted whole — plus the app's bundle id and Apple id. Then, in App Store Connect → App
+Information → App Store Server Notifications, set the card's notification address as the <em>Version 2</em> URL for
+production <em>and</em> sandbox. <strong>Google Play</strong> needs a service account with access to the app in Play Console
+(the JSON key pasted whole) and the package name; then, in Play Console → Monetisation setup, a real-time developer
+notifications topic with a <em>push</em> subscription to the card's address, authenticated with a service account. Without
+the notification address a renewal or refund is only noticed by the expiry job.</p>
+
+<div class="note">
+    <span class="label">Test mode means nothing for a store</span>
+    <p>The same key serves Apple's sandbox and production. A TestFlight or sandbox purchase is honoured on this server whatever
+    the test-mode switch says — the transaction itself says which environment it came from, and the Payments screen shows it.
+    <code>php artisan platform:preflight</code> proves the store credentials and warns when no plan has a product id.</p>
+</div>
+
+<h4>Taking card payments on the website</h4>
 
 <ol class="steps">
     <li>Press <strong>Configure</strong> on Stripe or Razorpay and paste the keys. They are stored encrypted and never shown again.</li>
@@ -449,14 +516,37 @@ and no deployment.</p>
         <tr><td>Profile questions</td><td>Prompts, education, "looking for", drinking, smoking, children</td><td>Prompts and education accept new entries; the others can only be reworded, reordered or hidden</td></tr>
         <tr><td>Report categories</td><td>What members choose when reporting, and how urgent each one is</td><td>Safety categories are always available and always Critical</td></tr>
         <tr><td>Enforcement reasons</td><td>The reason staff pick, and the message the member receives</td><td>Reasons the system records itself cannot be switched off</td></tr>
-        <tr><td>Locations</td><td>Countries, states and cities</td><td>A place with members in it can be hidden, not deleted</td></tr>
+        <tr><td>Locations</td><td>Countries, states and cities — each with its own switch</td><td>A place with members in it can be hidden, not deleted. Needs <code>edit_general_settings</code>, like Branding and Mail</td></tr>
     </tbody>
 </table>
 
 <figure>
-    <img src="images/admin-masters-locations.png" alt="The locations screen with countries, states and cities">
-    <figcaption>Masters → Locations. India ships with all its states and union territories.</figcaption>
+    <img src="images/admin-masters-locations.png" alt="The locations screen with countries, states and cities, each with a show or hide switch">
+    <figcaption>Masters → Locations. Countries on the left, states in the middle, cities on the right; every level can be hidden.</figcaption>
 </figure>
+
+<h3>Where the product is offered</h3>
+
+<p>Hiding a country, a state or a single city removes it from sign-up and from every city search on the website and in the
+app — and, since September 2026, from every place a city can be <em>saved</em>: a member cannot pick a hidden city through the
+app either. Members already in a hidden place keep it and can still save the rest of their profile without being made to move.
+Because this decides where the product is available, it is platform configuration: Super Admins and Admins can change it, the
+T&amp;S Lead cannot, and every change is an audit row.</p>
+
+<ol class="steps">
+    <li>Pick the country on the left. Hidden countries are marked; edit one to show or hide it.</li>
+    <li>Use <strong>Hide at sign-up</strong> / <strong>Show at sign-up</strong> on a state or on a single city. Hiding a city leaves its state alone.</li>
+    <li>Watch for the red banner: if your change leaves <em>no</em> selectable city anywhere, nobody can sign up or finish onboarding until one is shown.</li>
+    <li>Cities need a latitude and longitude — the distance filter measures from them. <strong>Featured</strong> is only a display hint and grants nothing.</li>
+</ol>
+
+<div class="note">
+    <span class="label">Loading real cities</span>
+    <p>Sixty-one hand-entered cities are not a launch. The importer <code>php artisan platform:import-geography places.csv</code>
+    loads countries, states and cities with coordinates from a CSV or JSON file, matches what is already there so it can be
+    re-run safely, and never changes a switch you have set. Try <code>--dry-run</code> first. The file format is in the
+    command's help.</p>
+</div>
 
 <figure>
     <img src="images/admin-masters-reasons.png" alt="The enforcement reasons screen">
@@ -532,10 +622,12 @@ someone's powers is visible afterwards.</p>
         <tr><td>6</td><td>Upload the Firebase key, turn on push, send a test</td><td>Notifications → Push notifications</td></tr>
         <tr><td>7</td><td>Add gateway keys, register the webhook, buy a plan with a test card</td><td>Billing → Payment gateways</td></tr>
         <tr><td>8</td><td>Set your real prices and what each plan unlocks</td><td>Billing → Plans</td></tr>
-        <tr><td>9</td><td>Add the countries, states and cities you are launching in; hide the rest</td><td>Masters → Locations</td></tr>
-        <tr><td>10</td><td>Create real staff accounts and remove the demo ones</td><td>Administration → Staff</td></tr>
-        <tr><td>11</td><td>Ask your host to run the scheduler every minute</td><td>Your server</td></tr>
-        <tr><td>12</td><td>Make one real payment with live keys, then refund it</td><td>Billing → Payments</td></tr>
+        <tr><td>9</td><td>Import the countries, states and cities you are launching in (with coordinates); hide the rest</td><td><code>platform:import-geography</code>, then Masters → Locations</td></tr>
+        <tr><td>10</td><td>Create the store products, put every plan in one Apple subscription group, enter the product ids on each plan, add the store keys and notification addresses, and buy once in the sandbox</td><td>App Store Connect, Play Console, Billing → Plans, Billing → Payment gateways</td></tr>
+        <tr><td>11</td><td>Create real staff accounts and remove the demo ones</td><td>Administration → Staff</td></tr>
+        <tr><td>12</td><td>Ask your host to run the scheduler every minute and keep a queue worker running</td><td>Your server</td></tr>
+        <tr><td>13</td><td>Run <code>php artisan platform:preflight</code> and fix everything it lists</td><td>Your server</td></tr>
+        <tr><td>14</td><td>Make one real payment with live keys, then refund it</td><td>Billing → Payments</td></tr>
     </tbody>
 </table>
 
@@ -568,6 +660,16 @@ decision, so the record explains itself later.</p>
 <h4>A campaign was approved but nothing went out.</h4>
 <p>Check that push is set up, and that the scheduler is running. A campaign waits for the server, not for the browser.</p>
 
+<h4>A member deleted their account but the store keeps charging them.</h4>
+<p>That is expected, and the member was warned before confirming: only they can cancel an App Store or Google Play subscription,
+in their phone's subscription settings. We cannot do it for them. Their old plan rows are closed here and any renewal that
+still arrives is recorded and ignored.</p>
+
+<h4>A member says their city is not in the list.</h4>
+<p>The picker is a search: they need to type the first two letters. If the city really is missing, add it under Masters →
+Locations with its coordinates, or import a proper dataset. If it is there but hidden, its state or country may be hidden too —
+all three must be shown for it to be offered.</p>
+
 <h4>Can I undo something?</h4>
 <p>Enforcement decisions are never deleted; they are reversed by a later action that references them. Masters entries can be
 hidden. A payment can only be refunded in the gateway's own dashboard — then remove the plan from the member's page.</p>
@@ -577,8 +679,9 @@ hidden. A payment can only be refunded in the gateway's own dashboard — then r
 not have it by default.</p>
 
 <footer class="doc-end">
-    <p>User manual · Screenshots are of the running product with demo data. Your own installation will show your
-    branding, your plans and your members. See the <a href="project-overview.html">Project overview</a> for how it is built.</p>
+    <p>User manual · Screenshots are of the running product with demo data, re-taken with <code>scripts/docs-screenshots.mjs</code>.
+    Your own installation will show your branding, your plans and your members. See <a href="product.html">The product</a>
+    for what it is and how it behaves, and the <a href="api.html">API reference</a> for the mobile API.</p>
 </footer>
 
 </main>
