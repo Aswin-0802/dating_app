@@ -21,7 +21,22 @@ class City extends Model
             'latitude' => 'float',
             'longitude' => 'float',
             'is_focus' => 'boolean',
+            'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Cities a member may choose right now: the city is shown, its country is
+     * shown, and its state (where it has one) is shown. Listings and
+     * App\Rules\SelectableCity both read this, so a hidden place is hidden
+     * everywhere or nowhere.
+     */
+    public function scopeSelectable(Builder $query): Builder
+    {
+        return $query
+            ->where('cities.is_active', true)
+            ->whereHas('country', fn (Builder $c) => $c->where('is_active', true))
+            ->where(fn (Builder $q) => $q->whereNull('state_id')->orWhereHas('state', fn (Builder $s) => $s->where('is_active', true)));
     }
 
     public function state(): BelongsTo

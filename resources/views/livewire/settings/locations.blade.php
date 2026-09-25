@@ -1,6 +1,16 @@
 <div class="space-y-4 md:space-y-6">
     @include('livewire.masters.partials.tabs', ['active' => 'admin.masters.locations'])
 
+    @if ($selectableCount === 0)
+        <div class="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive-subtle px-4 py-3 text-sm text-destructive-subtle-foreground">
+            <x-ui.icon name="warning" size="sm" class="mt-0.5 shrink-0" />
+            <div>
+                <p class="font-medium">No city can be chosen right now.</p>
+                <p class="mt-0.5">Every city is hidden, or sits in a hidden state or country. Nobody can sign up on the website or finish onboarding in the app until at least one is shown.</p>
+            </div>
+        </div>
+    @endif
+
     <div class="grid gap-4 md:gap-6 lg:grid-cols-[300px_1fr]">
         {{-- ---- countries -------------------------------------------------- --}}
         <x-ui.card title="Countries" :description="$countries->count().' in the list'">
@@ -139,12 +149,15 @@
                             </thead>
                             <tbody class="divide-y divide-border">
                                 @foreach ($cities as $city)
-                                    <tr wire:key="city-{{ $city->id }}">
+                                    <tr wire:key="city-{{ $city->id }}" @class(['opacity-60' => ! $city->is_active])>
                                         <td class="py-2 pr-3">
                                             {{ $city->name }}
                                             @if ($city->is_focus)
                                                 <x-ui.badge size="sm" variant="primary" class="ml-1">Featured</x-ui.badge>
                                             @endif
+                                            @unless ($city->is_active)
+                                                <x-ui.badge size="sm" variant="muted" class="ml-1">Hidden</x-ui.badge>
+                                            @endunless
                                         </td>
                                         <td class="py-2 pr-3 text-muted-foreground">{{ $city->state?->name ?? '—' }}</td>
                                         <td class="py-2 pr-3 text-muted-foreground">{{ $city->timezone }}</td>
@@ -152,6 +165,7 @@
                                         <td class="py-2 text-right">
                                             @if ($canEdit)
                                                 <x-ui.button size="xs" variant="ghost" wire:click="editCity({{ $city->id }})">Edit</x-ui.button>
+                                                <x-ui.button size="xs" variant="ghost" wire:click="toggleCityActive({{ $city->id }})">{{ $city->is_active ? 'Hide at sign-up' : 'Show at sign-up' }}</x-ui.button>
                                                 <x-ui.button size="xs" variant="ghost" class="text-destructive" wire:click="deleteCity({{ $city->id }})" wire:confirm="Delete {{ $city->name }}?">Delete</x-ui.button>
                                             @endif
                                         </td>
@@ -221,7 +235,8 @@
             @endif
 
             <x-ui.select label="Time zone" wire:model="cityTimezone" :selected="$cityTimezone" :options="array_combine($timezones, $timezones)" :error="$errors->first('cityTimezone')" />
-            <x-ui.toggle label="Featured city" description="Featured cities are listed first and shown on dashboards." wire:model="cityFocus" :checked="$cityFocus" />
+            <x-ui.toggle label="Show at sign-up" description="A hidden city stays on existing profiles but cannot be chosen by new members. Its state and country are unaffected." wire:model="cityActive" :checked="$cityActive" />
+            <x-ui.toggle label="Featured city" description="Featured cities are listed first and shown on dashboards. This is a display hint, not a permission." wire:model="cityFocus" :checked="$cityFocus" />
             <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
                 <x-ui.button variant="ghost" wire:click="closeForms">Cancel</x-ui.button>
                 <x-ui.button type="submit">Save city</x-ui.button>

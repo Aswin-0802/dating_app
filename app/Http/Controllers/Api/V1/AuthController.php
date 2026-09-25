@@ -9,6 +9,7 @@ use App\Enums\Gender;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\MeResource;
 use App\Models\AppUser;
+use App\Rules\SelectableCity;
 use App\Services\Members\MemberAccounts;
 use App\Support\ProfileOptions;
 use Illuminate\Http\JsonResponse;
@@ -30,6 +31,8 @@ class AuthController extends Controller
             'birthdate' => ['required', 'date', 'before:'.now()->subYears(18)->toDateString()],
             'gender' => ['required', 'string', 'in:'.implode(',', array_column(Gender::cases(), 'value'))],
             'interested_in' => ['required', 'array', 'min:1'],
+            // Optional here — onboarding asks again — but never a hidden place.
+            'city_id' => ['sometimes', 'nullable', 'integer', new SelectableCity],
         ], [
             'birthdate.before' => 'You must be at least 18 to use this service.',
         ]);

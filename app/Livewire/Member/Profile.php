@@ -9,6 +9,7 @@ use App\Livewire\Member\Concerns\InteractsWithMember;
 use App\Models\City;
 use App\Models\Interest;
 use App\Models\Photo;
+use App\Rules\SelectableCity;
 use App\Services\Media\MemberPhotoStore;
 use App\Services\Members\ContentScanner;
 use App\Services\Members\ProfileCompletion;
@@ -156,8 +157,7 @@ class Profile extends Component
          * a hidden state drop out of the list.
          */
         return City::query()
-            ->whereHas('country', fn ($q) => $q->where('is_active', true))
-            ->where(fn ($q) => $q->whereNull('state_id')->orWhereHas('state', fn ($s) => $s->where('is_active', true)))
+            ->selectable()
             ->with(['country:id,name', 'state:id,name'])
             ->orderBy('name')
             ->get(['id', 'name', 'country_id', 'state_id'])
@@ -234,7 +234,8 @@ class Profile extends Component
             'smoking' => ['required', Rule::in($allowed('smoking', $profile?->smoking))],
             'children' => ['required', Rule::in($allowed('children', $profile?->children))],
             'languages' => ['nullable', 'string', 'max:200'],
-            'city_id' => ['required', 'exists:cities,id'],
+            // A member already in a hidden place keeps it and can still save.
+            'city_id' => ['required', 'integer', new SelectableCity(keep: $this->member()->city_id)],
             'prompts' => ['array', 'max:3'],
             'prompts.*.q' => ['nullable', Rule::in($promptKeys)],
             'prompts.*.a' => ['nullable', 'string', 'max:160'],

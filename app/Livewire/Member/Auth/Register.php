@@ -7,6 +7,7 @@ namespace App\Livewire\Member\Auth;
 use App\Enums\Gender;
 use App\Models\City;
 use App\Models\Country;
+use App\Rules\SelectableCity;
 use App\Services\Members\MemberAccounts;
 use App\Support\ProfileOptions;
 use Illuminate\Contracts\View\View;
@@ -61,8 +62,7 @@ class Register extends Component
          * a hidden state drop out of the list.
          */
         return City::query()
-            ->whereHas('country', fn ($q) => $q->where('is_active', true))
-            ->where(fn ($q) => $q->whereNull('state_id')->orWhereHas('state', fn ($s) => $s->where('is_active', true)))
+            ->selectable()
             ->with(['country:id,name', 'state:id,name'])
             ->orderBy('name')
             ->get(['id', 'name', 'country_id', 'state_id'])
@@ -90,7 +90,7 @@ class Register extends Component
             'gender' => ['required', Rule::enum(Gender::class)],
             'interested_in' => ['required', 'array', 'min:1'],
             'interested_in.*' => [Rule::enum(Gender::class)],
-            'city_id' => ['required', Rule::exists('cities', 'id')->whereIn('country_id', Country::query()->where('is_active', true)->pluck('id')->all())],
+            'city_id' => ['required', 'integer', new SelectableCity],
             'terms' => ['accepted'],
         ], $this->messages());
 

@@ -96,9 +96,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
     Route::get('cities', fn () => response()->json([
         'data' => City::query()
+            ->selectable()
             ->when(request('country'), fn ($q, $iso) => $q->whereHas('country', fn ($c) => $c->where('iso2', $iso)))
             ->when(request('state'), fn ($q, $state) => $q->where('state_id', $state))
-            ->where(fn ($q) => $q->whereNull('state_id')->orWhereHas('state', fn ($st) => $st->where('is_active', true)))
             ->with('state:id,name')
             ->orderBy('name')
             ->limit(500)

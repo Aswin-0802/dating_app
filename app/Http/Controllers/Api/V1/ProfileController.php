@@ -12,6 +12,7 @@ use App\Http\Resources\Api\V1\VerificationResource;
 use App\Models\City;
 use App\Models\Interest;
 use App\Models\MatchRecord;
+use App\Rules\SelectableCity;
 use App\Services\Members\AccountDeletion;
 use App\Services\Members\ContentScanner;
 use App\Services\Members\Likers;
@@ -40,7 +41,9 @@ class ProfileController extends Controller
         $data = $request->validate([
             'display_name' => ['sometimes', 'string', 'min:2', 'max:60', ProfileOptions::NAME_RULE],
             'pronouns' => ['sometimes', 'nullable', 'string', 'max:30'],
-            'city_id' => ['sometimes', 'nullable', 'exists:cities,id'],
+            // The member's current city passes even if it has since been
+            // hidden: they are not forced to move to save the rest.
+            'city_id' => ['sometimes', 'nullable', 'integer', new SelectableCity(keep: $request->user()->city_id)],
         ]);
 
         $member = $request->user();

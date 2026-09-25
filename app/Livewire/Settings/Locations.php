@@ -77,6 +77,8 @@ class Locations extends Component
 
     public bool $cityFocus = false;
 
+    public bool $cityActive = true;
+
     public function mount(): void
     {
         $this->country ??= Country::query()->orderBy('name')->value('id');
@@ -111,6 +113,7 @@ class Locations extends Component
             ->groupBy('city_id')->selectRaw('city_id, COUNT(*) c')->pluck('c', 'city_id');
 
         return view('livewire.settings.locations', [
+            'selectableCount' => City::query()->selectable()->count(),
             'countries' => $countries,
             'selected' => $selected,
             'states' => $states,
@@ -188,11 +191,18 @@ class Locations extends Component
             'is_active' => $this->countryActive,
         ]);
 
-        $logger->log(module: 'settings', action: $this->editingCountryId ? 'country_updated' : 'country_created', description: "Saved country {$country->name}");
+        $logger->log(
+            module: 'settings',
+            action: $this->editingCountryId ? 'country_updated' : 'country_created',
+            subject: $country,
+            description: "Saved country {$country->name}".($country->is_active ? '' : ' (hidden at sign-up)'),
+            new: ['is_active' => $country->is_active],
+        );
 
         $this->countryFormOpen = false;
         $this->country = $country->id;
         session()->flash('status', "{$country->name} saved.");
+        $this->warnIfNothingSelectable();
     }
 
     public function deleteCountry(int $id, ActivityLogger $logger): void
@@ -210,6 +220,7 @@ class Locations extends Component
         $logger->log(module: 'settings', action: 'country_deleted', description: "Deleted country {$country->name}");
         $this->country = Country::query()->orderBy('name')->value('id');
         session()->flash('status', "{$country->name} deleted.");
+        $this->warnIfNothingSelectable();
     }
 
     // ---- cities ---------------------------------------------------------------
@@ -224,6 +235,7 @@ class Locations extends Component
         $this->cityLatitude = $this->cityLongitude = null;
         $this->cityTimezone = 'UTC';
         $this->cityFocus = false;
+        $this->cityActive = true;
         $this->cityStateId = $this->state;
         $this->cityFormOpen = true;
     }
@@ -239,6 +251,7 @@ class Locations extends Component
         $this->cityLongitude = $city->longitude !== null ? (string) $city->longitude : null;
         $this->cityTimezone = (string) $city->timezone;
         $this->cityFocus = (bool) $city->is_focus;
+        $this->cityActive = (bool) $city->is_active;
         $this->cityStateId = $city->state_id;
         $this->cityFormOpen = true;
     }
@@ -253,6 +266,7 @@ class Locations extends Component
             'cityLongitude' => ['nullable', 'numeric', 'between:-180,180'],
             'cityTimezone' => ['required', 'timezone:all'],
             'cityFocus' => ['boolean'],
+            'cityActive' => ['boolean'],
             // Required only where the country actually has states, so
             // Singapore does not need an imaginary one.
             'cityStateId' => [
@@ -273,12 +287,43 @@ class Locations extends Component
             'longitude' => $this->cityLongitude !== null && $this->cityLongitude !== '' ? (float) $this->cityLongitude : null,
             'timezone' => $this->cityTimezone,
             'is_focus' => $this->cityFocus,
+            'is_active' => $this->cityActive,
         ]);
 
-        $logger->log(module: 'settings', action: $this->editingCityId ? 'city_updated' : 'city_created', description: "Saved city {$city->name}");
+        $logger->log(
+            module: 'settings',
+            action: $this->editingCityId ? 'city_updated' : 'city_created',
+            subject: $city,
+            description: "Saved city {$city->name}".($city->is_active ? '' : ' (hidden at sign-up)'),
+            new: ['is_active' => $city->is_active, 'is_focus' => $city->is_focus],
+        );
 
         $this->cityFormOpen = false;
         session()->flash('status', "{$city->name} saved.");
+        $this->warnIfNothingSelectable();
+    }
+
+    /**
+     * One city off without touching its state. Members already there keep
+     * it; nobody new can choose it.
+     */
+    public function toggleCityActive(int $id, ActivityLogger $logger): void
+    {
+        $this->authorize('edit_general_settings');
+        $city = City::query()->findOrFail($id);
+        $city->update(['is_active' => ! $city->is_active]);
+
+        $logger->log(
+            module: 'settings',
+            action: $city->is_active ? 'city_shown' : 'city_hidden',
+            subject: $city,
+            description: ($city->is_active ? 'Showed' : 'Hid')." city {$city->name}",
+        );
+
+        session()->flash('status', $city->is_active
+            ? "{$city->name} is back at sign-up."
+            : "{$city->name} is hidden. Members already there keep it.");
+        $this->warnIfNothingSelectable();
     }
 
     public function deleteCity(int $id, ActivityLogger $logger): void
@@ -295,6 +340,7 @@ class Locations extends Component
         $city->delete();
         $logger->log(module: 'settings', action: 'city_deleted', description: "Deleted city {$city->name}");
         session()->flash('status', "{$city->name} deleted.");
+        $this->warnIfNothingSelectable();
     }
 
     // ---- states ---------------------------------------------------------------
@@ -357,6 +403,7 @@ class Locations extends Component
 
         $this->stateFormOpen = false;
         session()->flash('status', "{$state->name} saved.");
+        $this->warnIfNothingSelectable();
     }
 
     public function deleteState(int $id, ActivityLogger $logger): void
@@ -396,6 +443,19 @@ class Locations extends Component
         session()->flash('status', $state->is_active
             ? "{$state->name} is back at sign-up."
             : "{$state->name} is hidden. Members already there keep it.");
+        $this->warnIfNothingSelectable();
+    }
+
+    /**
+     * Said plainly, right after the change that did it: with no selectable
+     * city, nobody can sign up on the website or finish onboarding in the
+     * app, and the only symptom elsewhere is an empty dropdown.
+     */
+    private function warnIfNothingSelectable(): void
+    {
+        if (City::query()->selectable()->doesntExist()) {
+            session()->flash('error', 'No city can be chosen any more: every city is hidden, or sits in a hidden state or country. Nobody can sign up or finish onboarding until one is shown.');
+        }
     }
 
     public function closeForms(): void
