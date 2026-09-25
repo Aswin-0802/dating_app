@@ -12,6 +12,7 @@ use App\Models\PaymentLog;
 use App\Models\Plan;
 use App\Services\Audit\ActivityLogger;
 use App\Services\Billing\Subscriptions;
+use App\Services\Store\StoreGrant;
 use App\Support\Currency;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +41,7 @@ final class Checkout
     {
         $currency ??= Currency::code();
 
-        return PaymentGateway::query()->active()->orderBy('sort_order')->get()
+        return PaymentGateway::query()->active()->checkout()->orderBy('sort_order')->get()
             ->filter(function (PaymentGateway $gateway) use ($currency): bool {
                 $driver = $this->driverFor($gateway);
 
@@ -157,10 +158,14 @@ final class Checkout
      * Locked and re-checked inside the transaction: the return page and the
      * webhook routinely land within the same second, and without this a member
      * would get two subscriptions for one payment.
+     *
+     * Store purchases come through here too, with a StoreGrant: the same lock,
+     * the same once-only rule, but the store's expiry as the calendar instead
+     * of the period arithmetic below.
      */
-    public function fulfil(Order $order, ?string $paymentRef = null, array $raw = []): Order
+    public function fulfil(Order $order, ?string $paymentRef = null, array $raw = [], ?StoreGrant $store = null): Order
     {
-        return DB::transaction(function () use ($order, $paymentRef, $raw): Order {
+        return DB::transaction(function () use ($order, $paymentRef, $raw, $store): Order {
             $fresh = Order::query()->whereKey($order->id)->lockForUpdate()->first();
 
             if ($fresh === null || $fresh->isPaid()) {
@@ -178,7 +183,27 @@ final class Checkout
             $member = $fresh->appUser;
             $plan = $fresh->purpose === 'plan' ? Plan::query()->where('slug', $fresh->reference)->first() : null;
 
-            if ($member !== null && $plan !== null) {
+            if ($member !== null && $plan !== null && $store !== null) {
+                // The store already did the date arithmetic; its expiry is
+                // authoritative, and early renewal was accounted for there.
+                $transaction = $store->transaction;
+
+                $subscription = $this->subscriptions->grantFromStore(
+                    member: $member,
+                    plan: $store->plan,
+                    endsAt: $transaction->expiresAt,
+                    store: $fresh->gateway,
+                    externalRef: $transaction->originalTransactionId,
+                    billingPeriod: $store->billingPeriod,
+                    autoRenewing: $transaction->autoRenewing,
+                    amount: $transaction->amount,
+                    currency: $transaction->currency,
+                    environment: $transaction->environment,
+                    note: $transaction->isFamilyShared() ? 'Family Sharing' : null,
+                );
+
+                $fresh->forceFill(['subscription_id' => $subscription->id])->save();
+            } elseif ($member !== null && $plan !== null) {
                 $current = $this->subscriptions->currentFor($member);
 
                 // Renewing early adds to what is left rather than throwing it
@@ -303,7 +328,7 @@ final class Checkout
         foreach ($gateway->credentialFields() as $field) {
             // The webhook secret is only needed once the site is public, so a
             // gateway is usable for testing without it.
-            if ($field !== 'webhook_secret' && empty($credentials[$field])) {
+            if (! in_array($field, $gateway->optionalCredentialFields(), true) && empty($credentials[$field])) {
                 return false;
             }
         }
