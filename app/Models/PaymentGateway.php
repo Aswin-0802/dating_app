@@ -33,6 +33,18 @@ class PaymentGateway extends Model
         return $query->where('is_active', true);
     }
 
+    /** Gateways that take money on the website, as opposed to the app stores. */
+    public function scopeCheckout(Builder $query): Builder
+    {
+        return $query->where('kind', 'checkout');
+    }
+
+    /** An app store: it verifies purchases the store already charged, and is never a way to pay on the web. */
+    public function isStore(): bool
+    {
+        return $this->kind === 'store';
+    }
+
     /** The fields this provider needs, so the form is not a free-text blob. */
     public function credentialFields(): array
     {
@@ -41,8 +53,37 @@ class PaymentGateway extends Model
             'razorpay' => ['key_id', 'key_secret', 'webhook_secret'],
             'payu' => ['merchant_key', 'merchant_salt'],
             'paypal' => ['client_id', 'client_secret'],
+            // App Store Server API key (issuer id, key id, the .p8) plus what
+            // identifies the app in a signed transaction.
+            'apple' => ['issuer_id', 'key_id', 'private_key', 'bundle_id', 'app_apple_id'],
+            // A service account with access to the app in Play Console, and
+            // optionally the account Pub/Sub pushes with, to pin notifications.
+            'google' => ['package_name', 'service_account_json', 'pubsub_service_account'],
             default => ['api_key', 'api_secret'],
         };
+    }
+
+    /**
+     * Credentials a gateway works without. A web gateway is usable for
+     * testing before its webhook secret exists; Google Play works without the
+     * Pub/Sub account pin (the token's issuer and audience are still checked).
+     *
+     * @return array<int, string>
+     */
+    public function optionalCredentialFields(): array
+    {
+        return ['webhook_secret', 'pubsub_service_account'];
+    }
+
+    /**
+     * Credentials that are whole files — a .p8 key, a service-account JSON —
+     * and need a textarea rather than a single line.
+     *
+     * @return array<int, string>
+     */
+    public function multilineCredentialFields(): array
+    {
+        return ['private_key', 'service_account_json'];
     }
 
     /**
@@ -65,7 +106,13 @@ class PaymentGateway extends Model
 
     public function isConfigured(): bool
     {
-        return ! in_array(false, $this->credentialStatus(), true);
+        foreach ($this->credentialStatus() as $field => $set) {
+            if (! $set && ! in_array($field, $this->optionalCredentialFields(), true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -73,6 +120,8 @@ class PaymentGateway extends Model
      */
     public function hasConfigurationWarning(): bool
     {
-        return $this->is_active && ($this->is_test_mode || ! $this->isConfigured());
+        // A store's key serves sandbox and production alike, so test mode is
+        // not a warning there: the transaction's own environment decides.
+        return $this->is_active && ((! $this->isStore() && $this->is_test_mode) || ! $this->isConfigured());
     }
 }

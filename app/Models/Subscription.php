@@ -21,6 +21,7 @@ class Subscription extends Model
             'ended_at' => 'datetime',
             'amount' => 'decimal:2',
             'reminders_sent' => 'array',
+            'auto_renewing' => 'boolean',
         ];
     }
 
@@ -48,6 +49,22 @@ class Subscription extends Model
     public function scopeLapsed(Builder $query): Builder
     {
         return $query->active()->whereNotNull('ends_at')->where('ends_at', '<=', now());
+    }
+
+    /** Bought through an app store, which keeps billing on its own calendar. */
+    public function isFromStore(): bool
+    {
+        return in_array($this->source, ['apple', 'google'], true);
+    }
+
+    public function sourceLabel(): string
+    {
+        return match ($this->source) {
+            'payment' => 'Paid online',
+            'apple' => 'App Store',
+            'google' => 'Google Play',
+            default => 'Given by staff',
+        };
     }
 
     public function isOpenEnded(): bool

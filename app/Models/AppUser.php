@@ -8,6 +8,7 @@ use App\Enums\AccountStatus;
 use App\Enums\Gender;
 use App\Enums\RiskBand;
 use App\Enums\VerificationStatus;
+use App\Services\Billing\Subscriptions;
 use App\Support\Masters;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -311,6 +312,22 @@ class AppUser extends Authenticatable
         }
 
         return Masters::plan($this->premium_tier);
+    }
+
+    /**
+     * The subscription row behind the member's current tier, when they are
+     * premium: best plan first, then the one that lasts longest. Where the
+     * plan came from and whether it renews are read from it.
+     */
+    public function entitlingSubscription(): ?Subscription
+    {
+        if (! $this->is_premium) {
+            return null;
+        }
+
+        $active = $this->subscriptions()->active()->get();
+
+        return $active->isEmpty() ? null : app(Subscriptions::class)->entitling($active);
     }
 
     /** Whether the member's plan includes a Plan::FEATURES key. */

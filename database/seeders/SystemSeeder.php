@@ -58,12 +58,16 @@ class SystemSeeder extends Seeder
         ];
     }
 
-    /** @return array<int, array{0: string, 1: string, 2: string}> */
+    /** @return array<int, array{0: string, 1: string, 2: string, 3: string}> slug, name, currencies, kind */
     private const PAYMENT_GATEWAYS = [
-        ['stripe', 'Stripe', 'USD,INR,EUR,GBP'],
-        ['razorpay', 'Razorpay', 'INR'],
-        ['payu', 'PayU', 'INR,USD'],
-        ['paypal', 'PayPal', 'USD,INR,EUR,GBP'],
+        ['stripe', 'Stripe', 'USD,INR,EUR,GBP', 'checkout'],
+        ['razorpay', 'Razorpay', 'INR', 'checkout'],
+        ['payu', 'PayU', 'INR,USD', 'checkout'],
+        ['paypal', 'PayPal', 'USD,INR,EUR,GBP', 'checkout'],
+        // App stores: they verify purchases the store already charged in the
+        // member's own currency, and are never offered on the website.
+        ['apple', 'App Store', '', 'store'],
+        ['google', 'Google Play', '', 'store'],
     ];
 
     /** @return array<int, array{0: string, 1: string}> */
@@ -108,13 +112,14 @@ class SystemSeeder extends Seeder
             );
         }
 
-        foreach (self::PAYMENT_GATEWAYS as $index => [$slug, $name, $currencies]) {
+        foreach (self::PAYMENT_GATEWAYS as $index => [$slug, $name, $currencies, $kind]) {
             PaymentGateway::query()->updateOrCreate(
                 ['slug' => $slug],
                 [
                     'name' => $name,
                     'supported_currencies' => $currencies,
                     'sort_order' => $index,
+                    'kind' => $kind,
                 ],
             );
         }

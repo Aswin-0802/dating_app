@@ -48,6 +48,58 @@ class Plan extends Model
         return in_array($key, $this->features ?? [], true);
     }
 
+    /**
+     * How "good" a plan is when a member holds two at once: the pricier
+     * plan wins the mirror. Never shorten, never downgrade.
+     */
+    public function rank(): float
+    {
+        return (float) $this->monthly_price;
+    }
+
+    /** The store column for a store and period, e.g. apple_product_id_yearly. */
+    public static function storeColumn(string $store, string $period): string
+    {
+        return "{$store}_product_id_{$period}";
+    }
+
+    /**
+     * The plan and period a store product identifier maps to, or null when
+     * nothing is mapped — the API answers `product_unknown` for that.
+     *
+     * @return array{plan: Plan, period: string}|null
+     */
+    public static function forStoreProduct(string $store, string $productId): ?array
+    {
+        if ($productId === '' || ! in_array($store, ['apple', 'google'], true)) {
+            return null;
+        }
+
+        foreach (['monthly', 'yearly'] as $period) {
+            $plan = static::query()->where(self::storeColumn($store, $period), $productId)->first();
+
+            if ($plan !== null) {
+                return ['plan' => $plan, 'period' => $period];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Store product identifiers for the mobile app, by platform. A period
+     * with no product is omitted.
+     *
+     * @return array{ios: array<string, string>, android: array<string, string>}
+     */
+    public function storeProducts(): array
+    {
+        return [
+            'ios' => array_filter(['monthly' => $this->apple_product_id_monthly, 'yearly' => $this->apple_product_id_yearly]),
+            'android' => array_filter(['monthly' => $this->google_product_id_monthly, 'yearly' => $this->google_product_id_yearly]),
+        ];
+    }
+
     /** @return array<int, string> the feature and perk lines for a pricing card */
     public function benefitLines(): array
     {
