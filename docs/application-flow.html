@@ -1234,6 +1234,8 @@ and shadow-ban state would otherwise leak, and <code>MeResource</code> maps <cod
 <tr><td>GET /api/v1/matches</td><td>token</td><td>—</td><td>api</td><td>ProfileController::matches:194</td></tr>
 <tr><td>DELETE /api/v1/matches/{uuid}</td><td>token</td><td>—</td><td>api</td><td>ProfileController::unmatch:209 → MatchActions::end</td></tr>
 <tr><td>GET /api/v1/me/likers</td><td>token</td><td>—</td><td>api</td><td>ProfileController::likers:151 → Likers (shared with the website) — 403 <code>premium_required</code> with the count unless the plan has <code>see_likers</code></td></tr>
+<tr><td>GET /api/v1/plans</td><td>none</td><td>—</td><td>api</td><td>routes/api.php — plans on sale with their App Store / Google Play product ids (Plan::storeProducts)</td></tr>
+<tr><td>POST /api/v1/me/premium/receipt</td><td>token</td><td>profile:write</td><td>receipt</td><td>StoreReceiptController::store → StorePurchases::redeem — the server asks the store, then Checkout::fulfil; 422 <code>product_unknown</code> / <code>receipt_invalid</code>, 409 <code>receipt_owned_elsewhere</code>, 503 <code>store_unavailable</code></td></tr>
 
 <tr class="grp"><td colspan="5">Conversations — 4</td></tr>
 <tr><td>GET /api/v1/conversations</td><td>token</td><td>—</td><td>api</td><td>MessageController::conversations:18 — open only</td></tr>

@@ -244,8 +244,25 @@ Plans are bought or given:
   signature-checked — and fulfilment is locked so a return page plus two webhook
   retries still produce one subscription. Renewing early extends the time left
   rather than replacing it.
+- **In the mobile app** (App Store / Google Play): the app buys through the
+  store, then posts the store's transaction to `POST /api/v1/me/premium/receipt`.
+  The server asks Apple or Google itself — the client's blob is never trusted —
+  and the store's expiry is the plan's end date. Renewals, refunds and lapses
+  arrive as store notifications at `webhooks/store/{apple,google}`, recorded in
+  `gateway_events` and fulfilled through the same locked `Checkout::fulfil()`,
+  so a notification delivered twice, or one whose fulfilment fails once, still
+  produces exactly one subscription. Sandbox and TestFlight purchases are
+  honoured whatever the test-mode switch says. Set the product ids on each plan
+  under Billing → Subscription plans and the keys under System → Payment
+  gateways. Design and rules: `dating_app_mobile/docs/premium-receipt-contract.md`.
 - **By hand** (Users → a member → Give plan): for bank transfers and goodwill,
   with a note and an end date. Needs `edit_users`.
+
+A member can hold plans from more than one source at once (a web plan until
+December and a store plan renewing monthly). Nothing ever shortens or
+downgrades an active plan: the member's tier is the best of their active
+plans and the end date the latest, and staff can move a store subscription to
+another account from Billing → Subscriptions.
 
 Both write the same subscription history, shown on the member's Billing tab and
 in their own "Your payments" list. Real payments write to the payment log.
@@ -332,9 +349,9 @@ Things worth knowing:
   often carry GPS coordinates.
 - **When a member's city runs out of people, the web deck widens** to people
   further away and says so. The mobile API keeps its city-only deck.
-- **There is no card checkout.** Premium shows the plans and sends upgrades to
-  the store apps or support. The payment gateway settings under System hold
-  credentials, but nothing charges through them yet.
+- **Deleting an account does not cancel a store subscription.** Only the
+  member can, in the App Store or Google Play; they are told so on the deletion
+  screen, and a renewal that still arrives is recorded and ignored.
 
 ### The console
 
@@ -354,10 +371,10 @@ Things worth knowing:
 
 ### The API
 
-39 endpoints under `/api/v1`, authenticated with Sanctum bearer tokens. Auth,
+41 endpoints under `/api/v1`, authenticated with Sanctum bearer tokens. Auth,
 profile and photos, discovery deck, swipes, matches and who-liked-you,
 conversations, messages, reports, blocks, verification, push devices, phone
-verification and account deletion. Every list endpoint is cursor-paginated, and
+verification, account deletion, and in-app purchase (plans and receipts). Every list endpoint is cursor-paginated, and
 every endpoint calls the same services as the website, so the two cannot drift.
 
 ---
