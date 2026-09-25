@@ -129,7 +129,7 @@ class GeographicRestrictionTest extends TestCase
         $city->update(['is_active' => false]);
 
         $this->getJson('/api/v1/cities')->assertOk()->assertJsonMissing(['name' => $city->name])->assertJsonFragment(['name' => $visible->name]);
-        $this->assertNotContains($city->name, collect(Livewire::test(Register::class)->instance()->cities())->flatten()->all());
+        $this->assertSame([], Livewire::test(Register::class)->set('citySearch', 'Towns')->instance()->cityResults());
 
         $city->update(['is_active' => true]);
         $state->update(['is_active' => false]);

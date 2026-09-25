@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Member\Auth;
 
 use App\Enums\Gender;
-use App\Models\City;
-use App\Models\Country;
+use App\Livewire\Member\Concerns\PicksCity;
 use App\Rules\SelectableCity;
 use App\Services\Members\MemberAccounts;
 use App\Support\ProfileOptions;
@@ -14,7 +13,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 /**
@@ -24,6 +22,8 @@ use Livewire\Component;
  */
 class Register extends Component
 {
+    use PicksCity;
+
     public int $step = 1;
 
     public string $display_name = '';
@@ -49,28 +49,6 @@ class Register extends Component
             'genders' => collect(Gender::cases())->mapWithKeys(fn (Gender $g): array => [$g->value => $g->label()])->all(),
             'minAge' => $this->minAge(),
         ])->layout('components.layouts.member-auth', ['title' => 'Join']);
-    }
-
-    /** @return array<string, array<int, string>> "country · state" => [city id => name] */
-    #[Computed(persist: true)]
-    public function cities(): array
-    {
-        /*
-         * Grouped "Country · State" rather than a second dropdown: a cascade
-         * means an extra tap and a chance to get stuck, while the optgroup
-         * puts the same information in front of the member for free. Cities in
-         * a hidden state drop out of the list.
-         */
-        return City::query()
-            ->selectable()
-            ->with(['country:id,name', 'state:id,name'])
-            ->orderBy('name')
-            ->get(['id', 'name', 'country_id', 'state_id'])
-            ->groupBy(fn (City $city): string => ($city->country?->name ?? 'Other')
-                .($city->state === null ? '' : ' · '.$city->state->name))
-            ->sortKeys()
-            ->map(fn ($group) => $group->pluck('name', 'id')->all())
-            ->all();
     }
 
     public function next(): void

@@ -114,7 +114,7 @@
                 <div class="space-y-4">
                     <div class="grid gap-4 sm:grid-cols-2">
                         <x-ui.input label="First name" wire:model="display_name" :error="$errors->first('display_name')" />
-                        <x-ui.select label="City" wire:model="city_id" :selected="$city_id" :grouped="$this->cities" :error="$errors->first('city_id')" />
+                        @include('livewire.member.partials.city-picker', ['error' => $errors->first('city_id')])
                     </div>
 
                     <div x-data="{ count: @js(mb_strlen($bio)) }">

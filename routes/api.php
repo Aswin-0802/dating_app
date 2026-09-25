@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\GeographyController;
 use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\PhoneController;
 use App\Http\Controllers\Api\V1\PhotoController;
@@ -11,11 +12,8 @@ use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SafetyController;
 use App\Http\Controllers\Api\V1\StoreReceiptController;
 use App\Http\Controllers\Api\V1\SwipeController;
-use App\Models\City;
-use App\Models\Country;
 use App\Models\Interest;
 use App\Models\Plan;
-use App\Models\State;
 use App\Services\Media\MemberPhotoStore;
 use Illuminate\Support\Facades\Route;
 
@@ -79,38 +77,12 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->get(['slug', 'name', 'category']),
     ]))->name('interests');
 
-    Route::get('countries', fn () => response()->json([
-        'data' => Country::query()->where('is_active', true)->orderBy('name')
-            ->get(['iso2', 'name', 'dial_code']),
-    ]))->name('countries');
-
-    // ?country=IN lists that country's states; hidden ones are left out so the
-    // apps offer exactly what sign-up accepts.
-    Route::get('states', fn () => response()->json([
-        'data' => State::query()
-            ->where('is_active', true)
-            ->when(request('country'), fn ($q, $iso) => $q->whereHas('country', fn ($c) => $c->where('iso2', $iso)))
-            ->orderBy('sort_order')->orderBy('name')
-            ->get(['id', 'name', 'code', 'country_id']),
-    ]))->name('states');
-
-    Route::get('cities', fn () => response()->json([
-        'data' => City::query()
-            ->selectable()
-            ->when(request('country'), fn ($q, $iso) => $q->whereHas('country', fn ($c) => $c->where('iso2', $iso)))
-            ->when(request('state'), fn ($q, $state) => $q->where('state_id', $state))
-            ->with('state:id,name')
-            ->orderBy('name')
-            ->limit(500)
-            ->get(['id', 'name', 'country_id', 'state_id'])
-            ->map(fn (City $city): array => [
-                'id' => $city->id,
-                'name' => $city->name,
-                'country_id' => $city->country_id,
-                'state' => $city->state?->name,
-                'state_id' => $city->state_id,
-            ]),
-    ]))->name('cities');
+    // Countries, states and a city type-ahead: see GeographyController. The
+    // city search replaces a capped list, which silently left members in an
+    // unlisted city unable to sign up.
+    Route::get('countries', [GeographyController::class, 'countries'])->name('countries');
+    Route::get('states', [GeographyController::class, 'states'])->name('states');
+    Route::get('cities', [GeographyController::class, 'cities'])->name('cities');
 
     Route::prefix('auth')->name('auth.')->group(function (): void {
         // Keyed on IP and email together, so credential stuffing across many

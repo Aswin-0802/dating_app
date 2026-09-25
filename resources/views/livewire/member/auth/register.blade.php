@@ -54,13 +54,7 @@
                 @error('interested_in') <p class="mt-1.5 text-xs text-destructive">{{ $message }}</p> @enderror
             </div>
 
-            <x-ui.select
-                label="City"
-                placeholder="Choose your city"
-                wire:model="city_id"
-                :grouped="$this->cities"
-                :error="$errors->first('city_id')"
-            />
+            @include('livewire.member.partials.city-picker', ['error' => $errors->first('city_id')])
 
             <label class="flex cursor-pointer items-start gap-3 text-sm">
                 <input type="checkbox" wire:model="terms" class="mt-0.5 size-4 accent-[var(--primary)]">

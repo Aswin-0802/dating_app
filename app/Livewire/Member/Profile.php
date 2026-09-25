@@ -6,6 +6,7 @@ namespace App\Livewire\Member;
 
 use App\Enums\Gender;
 use App\Livewire\Member\Concerns\InteractsWithMember;
+use App\Livewire\Member\Concerns\PicksCity;
 use App\Models\City;
 use App\Models\Interest;
 use App\Models\Photo;
@@ -29,6 +30,7 @@ use RuntimeException;
 class Profile extends Component
 {
     use InteractsWithMember;
+    use PicksCity;
     use WithFileUploads;
 
     /** @var array<int, TemporaryUploadedFile> */
@@ -91,6 +93,7 @@ class Profile extends Component
 
         $this->display_name = $me->display_name;
         $this->city_id = $me->city_id;
+        $this->cityLabel = $this->cityLabelFor($me->city?->load(['state:id,name', 'country:id,name']));
         $this->bio = (string) $profile?->bio;
         $this->job_title = (string) $profile?->job_title;
         $this->company = (string) $profile?->company;
@@ -142,28 +145,6 @@ class Profile extends Component
             ->where(fn ($q) => $q->where('is_active', true)->orWhereIn('id', $this->interestIds))
             ->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'category'])
             ->groupBy('category')
-            ->map(fn ($group) => $group->pluck('name', 'id')->all())
-            ->all();
-    }
-
-    /** @return array<string, array<int, string>> */
-    #[Computed(persist: true)]
-    public function cities(): array
-    {
-        /*
-         * Grouped "Country · State" rather than a second dropdown: a cascade
-         * means an extra tap and a chance to get stuck, while the optgroup
-         * puts the same information in front of the member for free. Cities in
-         * a hidden state drop out of the list.
-         */
-        return City::query()
-            ->selectable()
-            ->with(['country:id,name', 'state:id,name'])
-            ->orderBy('name')
-            ->get(['id', 'name', 'country_id', 'state_id'])
-            ->groupBy(fn (City $city): string => ($city->country?->name ?? 'Other')
-                .($city->state === null ? '' : ' · '.$city->state->name))
-            ->sortKeys()
             ->map(fn ($group) => $group->pluck('name', 'id')->all())
             ->all();
     }

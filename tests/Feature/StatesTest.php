@@ -136,25 +136,24 @@ class StatesTest extends TestCase
         $this->assertDatabaseHas('cities', ['name' => 'Coimbatore', 'state_id' => $tamilNadu->id]);
     }
 
-    public function test_members_pick_a_city_grouped_by_state(): void
+    public function test_members_find_a_city_by_typing_and_see_its_state(): void
     {
-        $groups = Livewire::test(Register::class)->instance()->cities();
+        $labels = collect(Livewire::test(Register::class)->set('citySearch', 'Mum')->instance()->cityResults())->pluck('label')->all();
 
-        $this->assertArrayHasKey('India · Maharashtra', $groups);
-        $this->assertContains('Mumbai', $groups['India · Maharashtra']);
+        $this->assertContains('Mumbai, Maharashtra', $labels);
 
-        // A country with no states keeps its plain heading.
-        $this->assertArrayHasKey('Singapore', $groups);
+        // A country with no states shows the country instead.
+        $labels = collect(Livewire::test(Register::class)->set('citySearch', 'Sing')->instance()->cityResults())->pluck('label')->all();
+        $this->assertContains('Singapore, Singapore', $labels);
     }
 
     public function test_a_city_in_a_hidden_state_is_not_offered_at_sign_up(): void
     {
         State::query()->where('name', 'Maharashtra')->update(['is_active' => false]);
 
-        $groups = Livewire::test(Register::class)->instance()->cities();
+        $labels = collect(Livewire::test(Register::class)->set('citySearch', 'Mum')->instance()->cityResults())->pluck('label')->all();
 
-        $this->assertArrayNotHasKey('India · Maharashtra', $groups);
-        $this->assertNotContains('Mumbai', collect($groups)->flatten()->all());
+        $this->assertNotContains('Mumbai, Maharashtra', $labels);
     }
 
     public function test_the_admin_can_filter_members_by_state(): void
