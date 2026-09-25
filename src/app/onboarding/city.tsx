@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../api';
 import { isApiError } from '../../api/errors';
@@ -7,8 +7,12 @@ import { OnboardingFooter } from '../../features/onboarding/OnboardingFooter';
 import { Banner, Body, Button, Gap, Label, Loading, RadioGroup, Screen, TextField, Title } from '../../ui';
 
 /**
- * Country → state → city, each list from the API. The city is what Discover
- * falls back to for members with no coordinates, and it is a checklist item.
+ * Country → state → city, with the city found by typing.
+ *
+ * The API never hands over a full city list: /cities is a search (two
+ * letters or more, capped at 100) so a member in a city far down the
+ * alphabet is found rather than silently cut off. The city is what Discover
+ * falls back to for members with no coordinates, and a checklist item.
  */
 export default function OnboardingCity() {
   const me = useMe();
@@ -17,25 +21,28 @@ export default function OnboardingCity() {
   const [country, setCountry] = useState<string | null>(me.city?.country ?? null);
   const [stateId, setStateId] = useState<number | null>(null);
   const [cityId, setCityId] = useState<number | null>(null);
-  const [filter, setFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [debounced, setDebounced] = useState('');
   const [busy, setBusy] = useState(false);
   const [banner, setBanner] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
+
+  // Type-ahead: wait for the member to pause before asking the server.
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(search.trim()), 300);
+    return () => clearTimeout(id);
+  }, [search]);
 
   const countries = useQuery({ queryKey: ['countries'], queryFn: () => api.countries(), staleTime: Infinity });
   const states = useQuery({ queryKey: ['states', country], queryFn: () => api.states(country!), enabled: !!country, staleTime: Infinity });
   const cities = useQuery({
-    queryKey: ['cities', country, stateId],
-    queryFn: () => api.cities({ country: country ?? undefined, state: stateId ?? undefined }),
-    enabled: !!country,
-    staleTime: Infinity,
+    queryKey: ['cities', country, stateId, debounced],
+    queryFn: () => api.cities({ country: country ?? undefined, state: stateId ?? undefined, search: debounced }),
+    enabled: !!country && debounced.length >= 2,
+    staleTime: 60_000,
   });
 
   const hasStates = (states.data?.data.length ?? 0) > 0;
-
-  const cityOptions = (cities.data?.data ?? [])
-    .filter((c) => !filter || c.name.toLowerCase().includes(filter.toLowerCase()))
-    .slice(0, 60)
-    .map((c) => ({ value: String(c.id), label: c.state ? `${c.name}, ${c.state}` : c.name }));
+  const cityOptions = (cities.data?.data ?? []).map((c) => ({ value: String(c.id), label: c.state ? `${c.name}, ${c.state}` : c.name }));
 
   async function save() {
     if (!cityId) return;
@@ -68,6 +75,7 @@ export default function OnboardingCity() {
           setCountry(v);
           setStateId(null);
           setCityId(null);
+          setSearch('');
         }}
       />
       {country && hasStates ? (
@@ -80,6 +88,7 @@ export default function OnboardingCity() {
             onChange={(v) => {
               setStateId(Number(v));
               setCityId(null);
+              setSearch('');
             }}
           />
         </>
@@ -88,8 +97,15 @@ export default function OnboardingCity() {
         <>
           <Gap />
           <Label>City</Label>
-          <TextField placeholder="Search cities" value={filter} onChangeText={setFilter} />
-          {cities.isLoading ? <Loading /> : <RadioGroup options={cityOptions} value={cityId ? String(cityId) : null} onChange={(v) => setCityId(Number(v))} />}
+          <TextField placeholder="Start typing your city" value={search} onChangeText={setSearch} autoCorrect={false} autoCapitalize="words" />
+          {debounced.length > 0 && debounced.length < 2 ? <Body muted>Type at least two letters.</Body> : null}
+          {cities.isLoading ? <Loading /> : null}
+          {cities.isError ? <Banner tone="danger">{isApiError(cities.error) ? cities.error.message : 'Could not search cities.'}</Banner> : null}
+          {cities.data && cityOptions.length === 0 ? (
+            <Body muted>No city starts with “{debounced}”. Check the spelling, or tell support if your city is missing.</Body>
+          ) : null}
+          {cityOptions.length > 0 ? <RadioGroup options={cityOptions} value={cityId ? String(cityId) : null} onChange={(v) => setCityId(Number(v))} /> : null}
+          {cities.data?.meta.truncated ? <Body muted>Showing the first {cities.data.meta.limit}. Keep typing to narrow it down.</Body> : null}
         </>
       ) : null}
       <Gap size="lg" />

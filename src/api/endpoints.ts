@@ -36,8 +36,9 @@ export function makeApi(client: ApiClient) {
     interests: () => client.get<{ data: Interest[] }>('interests', { anonymous: true }),
     countries: () => client.get<{ data: Country[] }>('countries', { anonymous: true }),
     states: (country: string) => client.get<{ data: State[] }>('states', { anonymous: true, query: { country } }),
-    cities: (params: { country?: string; state?: number }) =>
-      client.get<{ data: City[] }>('cities', { anonymous: true, query: params }),
+    /** A type-ahead, not a list: `search` is two letters or more and at most 100 rows come back. */
+    cities: (params: { country?: string; state?: number; search: string }) =>
+      client.get<{ data: City[]; meta: { limit: number; truncated: boolean } }>('cities', { anonymous: true, query: params }),
 
     // ---- auth -----------------------------------------------------------
     register: (body: {
