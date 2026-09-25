@@ -8,6 +8,7 @@ use App\Http\Controllers\Member\CheckoutController;
 use App\Http\Controllers\Member\PushTokenController;
 use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Site\MemberSessionController;
+use App\Http\Controllers\StoreWebhookController;
 use App\Http\Controllers\WebhookController;
 use App\Livewire\Member;
 use Illuminate\Support\Facades\Route;
@@ -93,6 +94,16 @@ Route::middleware(['auth:member', 'member.active'])
  */
 Route::post('webhooks/payments/{gateway}', WebhookController::class)
     ->name('webhooks.payments');
+
+/*
+ * App store notifications: App Store Server Notifications V2 (a signed JWS)
+ * and Google Play real-time developer notifications (Pub/Sub push with an
+ * OIDC token). Verified by the store driver; a bad signature is a 400 that
+ * is never retried, a thrown error is a 500 that is.
+ */
+Route::post('webhooks/store/{store}', StoreWebhookController::class)
+    ->whereIn('store', ['apple', 'google'])
+    ->name('webhooks.store');
 
 /*
  * The Firebase service worker must live at the root of the site, or it cannot

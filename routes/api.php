@@ -9,10 +9,12 @@ use App\Http\Controllers\Api\V1\PhoneController;
 use App\Http\Controllers\Api\V1\PhotoController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SafetyController;
+use App\Http\Controllers\Api\V1\StoreReceiptController;
 use App\Http\Controllers\Api\V1\SwipeController;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\Interest;
+use App\Models\Plan;
 use App\Models\State;
 use App\Services\Media\MemberPhotoStore;
 use Illuminate\Support\Facades\Route;
@@ -53,6 +55,24 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             'support_email' => platform_setting('brand.support_email'),
         ]);
     })->name('config');
+
+    /*
+     * Plans on sale, with the store product identifiers the app asks StoreKit
+     * and Play Billing for. Prices come from the stores, in the member's own
+     * currency; the website's prices are for the website.
+     */
+    Route::get('plans', fn () => response()->json([
+        'data' => Plan::query()->where('is_active', true)->orderBy('sort_order')->orderBy('monthly_price')->get()
+            ->map(fn (Plan $plan): array => [
+                'slug' => $plan->slug,
+                'name' => $plan->name,
+                'tagline' => $plan->tagline,
+                'features' => $plan->features ?? [],
+                'perks' => $plan->perks ?? [],
+                'is_featured' => (bool) $plan->is_featured,
+                'products' => $plan->storeProducts(),
+            ])->values(),
+    ]))->name('plans');
 
     Route::get('interests', fn () => response()->json([
         'data' => Interest::query()->where('is_active', true)->orderBy('category')->orderBy('sort_order')->orderBy('name')
@@ -135,6 +155,14 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // Premium-gated in the controller, not here: a free member gets the
         // count with the refusal, which is the upsell.
         Route::get('me/likers', [ProfileController::class, 'likers'])->name('me.likers');
+
+        /*
+         * "I bought Premium in the app store." The token is an identifier;
+         * the server asks the store, and what the store says is what the
+         * member gets. Posting the same transaction twice changes nothing.
+         */
+        Route::post('me/premium/receipt', [StoreReceiptController::class, 'store'])
+            ->middleware(['ability:profile:write', 'throttle:receipt'])->name('me.premium.receipt');
 
         // ---- discovery ----
         Route::get('deck', [SwipeController::class, 'deck'])

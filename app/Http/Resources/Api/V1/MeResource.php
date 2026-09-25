@@ -18,6 +18,8 @@ class MeResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $entitlement = $this->entitlingSubscription();
+
         return [
             'id' => $this->uuid,
             'display_name' => $this->display_name,
@@ -41,6 +43,11 @@ class MeResource extends JsonResource
             'is_premium' => (bool) $this->is_premium,
             'premium_tier' => $this->premium_tier,
             'premium_until' => $this->premium_until?->toIso8601String(),
+            // Where the plan came from decides where it is managed: a store
+            // plan in the store's own subscription settings, a web plan on the
+            // website. null when the member is on the free plan.
+            'premium_source' => $entitlement?->source,
+            'auto_renewing' => $entitlement?->auto_renewing,
 
             'profile_completion' => $this->profile_completion,
             'city' => $this->whenLoaded('city', fn (): ?array => $this->city ? [

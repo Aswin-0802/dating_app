@@ -67,6 +67,8 @@ class PlatformServiceProvider extends ServiceProvider
         $limiter('message', 30, 1, halveForNewAccounts: true);
         $limiter('report', 10, 60);
         $limiter('verification', 3, 1440);
+        // Each receipt costs a round trip to Apple or Google.
+        $limiter('receipt', 10, 60);
 
         // Keyed on IP AND email together: credential stuffing across many
         // accounts from one address would otherwise get a fresh budget each time.
