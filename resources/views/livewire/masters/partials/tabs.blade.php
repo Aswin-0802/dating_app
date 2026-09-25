@@ -4,8 +4,13 @@
         'admin.masters.profile-options' => 'Profile questions',
         'admin.masters.report-categories' => 'Report categories',
         'admin.masters.reasons' => 'Enforcement reasons',
-        'admin.masters.locations' => 'Locations',
     ];
+
+    // Locations is platform configuration (edit_general_settings), not master
+    // data: a tab that leads to a 403 is worse than no tab.
+    if (auth()->user()?->can('edit_general_settings')) {
+        $tabs['admin.masters.locations'] = 'Locations';
+    }
 @endphp
 
 <nav class="flex flex-wrap gap-1" aria-label="Masters">

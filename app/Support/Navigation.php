@@ -211,7 +211,8 @@ final class Navigation
                             ['label' => 'Profile questions', 'route' => 'admin.masters.profile-options', 'permission' => 'settings'],
                             ['label' => 'Report categories', 'route' => 'admin.masters.report-categories', 'permission' => 'settings'],
                             ['label' => 'Enforcement reasons', 'route' => 'admin.masters.reasons', 'permission' => 'settings'],
-                            ['label' => 'Locations', 'route' => 'admin.masters.locations', 'permission' => 'settings'],
+                            // Where the product is offered is configuration, like Branding and Mail.
+                            ['label' => 'Locations', 'route' => 'admin.masters.locations', 'permission' => 'edit_general_settings'],
                         ],
                     ],
                     [

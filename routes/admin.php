@@ -240,8 +240,16 @@ Route::middleware(['auth:web', 'auth.session', 'staff.active'])->group(function 
         Route::get('report-categories', Masters\ReportCategories::class)->name('report-categories');
         Route::get('reasons', Masters\Reasons::class)->name('reasons');
 
-        // Countries, states and cities are master data like the rest.
-        Route::get('locations', Settings\Locations::class)->name('locations');
+        /*
+         * Countries, states and cities decide where the product is offered,
+         * which is platform configuration, not master data. Like Branding
+         * and Mail it needs edit_general_settings on top of `settings`, so
+         * the T&S Lead (who holds `settings` for the safety screens) cannot
+         * change the footprint. Super Admin and Admin can: adding a city is
+         * routine growth work, not a single-account job.
+         */
+        Route::get('locations', Settings\Locations::class)
+            ->middleware('permission:edit_general_settings')->name('locations');
     });
 
     Route::middleware('permission:settings')->prefix('settings')->name('settings.')->group(function (): void {
