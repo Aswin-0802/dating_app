@@ -67,8 +67,8 @@ class PhotoSeeder extends Seeder
          * worth flagging. ringCount() keeps the planted rings to a quarter of
          * the population at any scale.
          */
-        $faceRings = $this->buildRings($faker, $userIds, $this->ringCount(self::FACE_RINGS, count($userIds), 6), 2, 6);
-        $hashRings = $this->buildRings($faker, $userIds, $this->ringCount(self::HASH_RINGS, count($userIds), 5), 2, 5);
+        $faceRings = $this->buildGenderedRings($faker, $genders, $this->ringCount(self::FACE_RINGS, count($userIds), 6), 2, 6);
+        $hashRings = $this->buildGenderedRings($faker, $genders, $this->ringCount(self::HASH_RINGS, count($userIds), 5), 2, 5);
 
         $faceByUser = $this->indexRings($faceRings, fn (int $ring): string => hash('sha256', "face-ring-{$ring}"));
         $hashByUser = $this->indexRings($hashRings, fn (int $ring): string => substr(md5("hash-ring-{$ring}"), 0, 16));
@@ -108,7 +108,9 @@ class PhotoSeeder extends Seeder
                         ? (int) sprintf('%u', crc32($ringKey))
                         : ($nextPortrait[$gender] = ($nextPortrait[$gender] ?? -1) + 1);
 
-                    $file = $stock->pick($ringKey !== null ? 'any' : $gender, $index) ?? $file;
+                    // A ring is one gender (see buildGenderedRings), so the
+                    // shared portrait at least matches every name on it.
+                    $file = $stock->pick($gender, $index) ?? $file;
                 } elseif ($generator !== null) {
                     // A ring member is given the SAME pool image, so the four
                     // accounts genuinely look identical on screen.
@@ -180,6 +182,30 @@ class PhotoSeeder extends Seeder
     private function ringCount(int $ceiling, int $population, int $maxPerRing): int
     {
         return max(3, min($ceiling, (int) floor($population * 0.25 / $maxPerRing)));
+    }
+
+    /**
+     * Rings drawn from one gender at a time, so the portrait four accounts
+     * share can match the names on them. Half the rings are men, half women;
+     * members of other genders are never in a ring.
+     *
+     * @param  array<int, string>  $genders  userId => gender
+     * @return array<int, array<int, int>>
+     */
+    private function buildGenderedRings($faker, array $genders, int $ringCount, int $min, int $max): array
+    {
+        $rings = [];
+
+        foreach (['woman', 'man'] as $slot => $gender) {
+            $pool = array_keys(array_filter($genders, fn (string $g): bool => $g === $gender));
+            $share = $slot === 0 ? (int) ceil($ringCount / 2) : (int) floor($ringCount / 2);
+
+            foreach ($this->buildRings($faker, $pool, $share, $min, $max) as $members) {
+                $rings[] = $members;
+            }
+        }
+
+        return $rings;
     }
 
     /**
