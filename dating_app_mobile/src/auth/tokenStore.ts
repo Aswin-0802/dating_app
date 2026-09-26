@@ -1,11 +1,25 @@
-import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
+import * as ExpoSecureStore from 'expo-secure-store';
 
 /**
  * The bearer token lives in the device keychain / keystore, never in
  * AsyncStorage. So does the one other secret the app keeps, briefly: the
  * password of a member who is still `pending`, held only until the server
  * promotes them and the token is swapped, then deleted (see session.ts).
+ *
+ * expo-secure-store has no web implementation. The web target exists only
+ * for development and the documentation screenshots, so there it falls back
+ * to sessionStorage — cleared when the tab closes, never shared across tabs.
  */
+const SecureStore =
+  Platform.OS === 'web'
+    ? {
+        getItemAsync: async (key: string) => globalThis.sessionStorage?.getItem(key) ?? null,
+        setItemAsync: async (key: string, value: string) => void globalThis.sessionStorage?.setItem(key, value),
+        deleteItemAsync: async (key: string) => void globalThis.sessionStorage?.removeItem(key),
+      }
+    : ExpoSecureStore;
+
 const TOKEN = 'auth_token';
 const PENDING_PASSWORD = 'pending_password';
 const PENDING_EMAIL = 'pending_email';
