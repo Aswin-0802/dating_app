@@ -116,6 +116,36 @@ CSV;
         $this->assertSame('IN', Country::query()->firstOrFail()->iso2);
     }
 
+    public function test_attribution_lines_are_skipped_and_the_country_filter_holds(): void
+    {
+        $csv = '# Data from GeoNames.org, CC BY 4.0
+# generated for the test
+'.self::CSV;
+
+        $this->artisan('platform:import-geography', ['file' => $this->file($csv), '--country' => ['in']])->assertSuccessful();
+
+        $this->assertSame(1, Country::query()->count(), 'EXPECTED only India with --country=IN.');
+        $this->assertSame('IN', Country::query()->firstOrFail()->iso2);
+        $this->assertSame(4, City::query()->count());
+        $this->assertFalse(City::query()->where('name', 'Singapore')->exists());
+    }
+
+    public function test_the_committed_geonames_csv_imports_india_with_chennai_selectable(): void
+    {
+        $this->artisan('platform:import-geography', ['file' => base_path('database/data/geonames-cities.csv'), '--country' => ['IN']])->assertSuccessful();
+
+        $this->assertSame(1, Country::query()->count());
+        $this->assertGreaterThan(1000, City::query()->count(), 'EXPECTED every Indian city with population 15,000+.');
+
+        foreach (['Chennai', 'Coimbatore', 'Madurai'] as $name) {
+            $city = City::query()->where('name', $name)->first();
+            $this->assertNotNull($city, "EXPECTED {$name} in the import.");
+            $this->assertSame('Tamil Nadu', $city->state?->name);
+            $this->assertNotNull($city->latitude);
+            $this->assertTrue(City::query()->selectable()->whereKey($city->id)->exists(), "EXPECTED {$name} to be selectable.");
+        }
+    }
+
     public function test_a_bad_file_fails_plainly(): void
     {
         $this->artisan('platform:import-geography', ['file' => '/nowhere/places.csv'])->assertFailed();

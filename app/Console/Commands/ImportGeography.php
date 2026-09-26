@@ -22,6 +22,8 @@ use Illuminate\Support\Str;
  * without a usable latitude and longitude is skipped and reported, not
  * inserted half-done.
  *
+ * Lines starting with # (attribution, notes) are skipped.
+ *
  * File shape (CSV header, or the same keys on JSON objects):
  *   country_iso2, country_name, state_name, state_code, city_name,
  *   latitude, longitude, timezone, dial_code
@@ -32,6 +34,7 @@ class ImportGeography extends Command
 {
     protected $signature = 'platform:import-geography
         {file : Path to a .csv or .json file}
+        {--country=* : Only import rows for these ISO2 codes, e.g. --country=IN}
         {--dry-run : Report what would change without writing}
         {--update-coordinates : Overwrite latitude/longitude/timezone on cities that already exist (default: fill only where missing)}';
 
@@ -67,6 +70,12 @@ class ImportGeography extends Command
             $this->error($e->getMessage());
 
             return self::FAILURE;
+        }
+
+        $only = array_map('strtoupper', (array) $this->option('country'));
+
+        if ($only !== []) {
+            $rows = array_values(array_filter($rows, fn (array $row): bool => in_array(strtoupper(trim((string) ($row['country_iso2'] ?? ''))), $only, true)));
         }
 
         $dry = (bool) $this->option('dry-run');
@@ -293,7 +302,10 @@ class ImportGeography extends Command
             throw new \RuntimeException("Could not open {$path}.");
         }
 
-        $header = fgetcsv($handle);
+        // Comment lines (the GeoNames attribution) sit above the header.
+        do {
+            $header = fgetcsv($handle);
+        } while (is_array($header) && isset($header[0]) && str_starts_with((string) $header[0], '#'));
 
         if (! is_array($header)) {
             throw new \RuntimeException('The CSV file has no header line.');
