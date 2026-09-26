@@ -87,9 +87,20 @@ class AppUserSeeder extends Seeder
         $faker = fake();
         $faker->seed(config('platform.seed.faker_seed', 20260917));
 
-        $cities = City::query()->with('country')->get();
-        $focusCities = $cities->where('is_focus', true)->values();
-        $otherCities = $cities->where('is_focus', false)->values();
+        /*
+         * A country profile (platform.seed.profile, set by e.g. IndiaDemoSeeder)
+         * narrows the cities to one region and supplies local names and phone
+         * numbers; without one, every city in the table is fair game.
+         */
+        $profile = config('platform.seed.profile');
+        $cities = ($profile !== null ? $profile::cities() : City::query())->with('country')->get();
+        $focusCities = $profile !== null
+            ? $cities->whereIn('name', array_keys($profile::FOCUS))->values()
+            : $cities->where('is_focus', true)->values();
+        $otherCities = $profile !== null
+            ? $cities->whereNotIn('name', array_keys($profile::FOCUS))->values()
+            : $cities->where('is_focus', false)->values();
+        $focusWeights = $profile !== null ? $profile::FOCUS : [];
         $interestIds = Interest::query()->pluck('id')->all();
 
         $password = Hash::make('password');
@@ -114,9 +125,14 @@ class AppUserSeeder extends Seeder
 
             // 70% of members live in the 12 focus cities, so per-city screens
             // have enough volume per row to be worth reading.
-            $city = $faker->boolean(70) && $focusCities->isNotEmpty()
-                ? $focusCities[$faker->numberBetween(0, $focusCities->count() - 1)]
-                : $otherCities[$faker->numberBetween(0, max(0, $otherCities->count() - 1))];
+            if ($focusWeights !== [] && $focusCities->isNotEmpty() && ($faker->boolean(85) || $otherCities->isEmpty())) {
+                $pick = $this->weighted($faker, array_intersect_key($focusWeights, $focusCities->keyBy('name')->all()));
+                $city = $focusCities->firstWhere('name', $pick) ?? $focusCities->first();
+            } else {
+                $city = $faker->boolean(70) && $focusCities->isNotEmpty()
+                    ? $focusCities[$faker->numberBetween(0, $focusCities->count() - 1)]
+                    : ($otherCities->isEmpty() ? $focusCities->first() : $otherCities[$faker->numberBetween(0, $otherCities->count() - 1)]);
+            }
 
             $gender = $this->genderFor($faker, $city->name);
             $age = $this->age($faker);
@@ -127,7 +143,7 @@ class AppUserSeeder extends Seeder
             $status = $statuses[$i - 1];
 
             $firstName = $this->firstNameFor($faker, $gender);
-            $displayName = $firstName.' '.$faker->lastName();
+            $displayName = $firstName.' '.($profile !== null ? $faker->randomElement($profile::LAST_NAMES) : $faker->lastName());
 
             $milestones = $this->milestones($faker, $createdAt, $isVerified);
 
@@ -138,8 +154,8 @@ class AppUserSeeder extends Seeder
             $users[] = [
                 'uuid' => $faker->uuid(),
                 'display_name' => $displayName,
-                'email' => strtolower(str($firstName)->slug().'.'.$i.'@'.$faker->safeEmailDomain()),
-                'phone' => $faker->boolean(72) ? '+'.$faker->numerify('###########') : null,
+                'email' => strtolower(str($firstName)->slug().'.'.$i.'@'.($profile !== null ? $faker->randomElement($profile::EMAIL_DOMAINS) : $faker->safeEmailDomain())),
+                'phone' => $faker->boolean(72) ? ($profile !== null ? $profile::phone($faker) : '+'.$faker->numerify('###########')) : null,
                 'password' => $password,
                 'email_verified_at' => $createdAt,
                 'phone_verified_at' => $faker->boolean(60) ? $createdAt : null,
@@ -155,7 +171,7 @@ class AppUserSeeder extends Seeder
                 'is_premium' => $isPremium,
                 'premium_tier' => $isPremium ? ($faker->boolean(70) ? 'plus' : 'gold') : null,
                 'premium_until' => $isPremium ? $now->copy()->addDays($faker->numberBetween(1, 330)) : null,
-                'signup_source' => $this->weighted($faker, ['ios' => 46, 'android' => 47, 'web' => 7]),
+                'signup_source' => $this->weighted($faker, $profile !== null ? $profile::SIGNUP_SOURCES : ['ios' => 46, 'android' => 47, 'web' => 7]),
                 'profile_completion' => $this->completion($faker),
                 'profile_completed_at' => $milestones['profile_completed_at'],
                 'verified_at' => $isVerified ? $milestones['verified_at'] : null,
@@ -250,7 +266,8 @@ class AppUserSeeder extends Seeder
 
     private function genderFor($faker, string $cityName): string
     {
-        $skew = self::CITY_SKEW[$cityName] ?? null;
+        $profile = config('platform.seed.profile');
+        $skew = ($profile !== null ? $profile::CITY_SKEW : self::CITY_SKEW)[$cityName] ?? null;
 
         if ($skew !== null) {
             // Skewed cities still get a small non-binary/other tail.
@@ -487,6 +504,14 @@ class AppUserSeeder extends Seeder
 
     private function firstNameFor($faker, string $gender): string
     {
+        if (($profile = config('platform.seed.profile')) !== null) {
+            return $faker->randomElement(match ($gender) {
+                Gender::Woman->value => $profile::FIRST_NAMES_WOMEN,
+                Gender::Man->value => $profile::FIRST_NAMES_MEN,
+                default => $profile::FIRST_NAMES_ANY,
+            });
+        }
+
         return match ($gender) {
             Gender::Woman->value => $faker->firstNameFemale(),
             Gender::Man->value => $faker->firstNameMale(),

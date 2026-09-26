@@ -55,7 +55,8 @@ class DemoDataSeeder extends Seeder
             return;
         }
 
-        $members = self::SCALES[config('platform.seed.scale', 'tiny')] ?? self::SCALES['demo'];
+        // A country seeder may name the population directly (platform.seed.members).
+        $members = (int) (config('platform.seed.members') ?: (self::SCALES[config('platform.seed.scale', 'tiny')] ?? self::SCALES['demo']));
 
         // Everything downstream sizes itself relative to the reference dataset,
         // so the population stays the only number that has to be set.
