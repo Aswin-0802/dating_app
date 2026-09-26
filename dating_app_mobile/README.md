@@ -15,7 +15,7 @@ npx expo start
 Before a device is involved, the API layer can be checked from Node:
 
 ```
-npm run apicheck -- http://localhost/Aswin/dating_app/public/api/v1 jakayla.1@example.com password
+npm run apicheck -- http://127.0.0.1:8000/api/v1 revathi.49@outlook.com password
 ```
 
 It logs in, reads `/config`, `/me`, the deck and the conversations, and provokes each error code the app branches on.

@@ -39,6 +39,9 @@ Notifications.setNotificationHandler({
 
 export function PushRegistrar() {
   useEffect(() => {
+    // Push is a phone feature; expo-notifications has no web implementation.
+    if (Platform.OS === 'web') return;
+
     let cancelled = false;
 
     async function register(tokenOverride?: string) {

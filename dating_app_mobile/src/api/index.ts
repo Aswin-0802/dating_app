@@ -10,7 +10,7 @@ import { tokenStore } from '../auth/tokenStore';
  * Base URL comes from EXPO_PUBLIC_API_URL (see .env.example). On a physical
  * device that must be the machine's LAN address, not localhost.
  */
-export const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2/Aswin/dating_app/public/api/v1').replace(/\/+$/, '');
+export const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:8000/api/v1').replace(/\/+$/, '');
 
 export const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 

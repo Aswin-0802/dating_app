@@ -129,7 +129,7 @@ export default function Thread() {
             ) : (
               <Bubble
                 mine={item.is_mine}
-                body={item.removed ? null : item.body}
+                body={item.removed ? null : item.type === 'text' || item.body ? item.body : mediaLabel(item.type)}
                 at={item.sent_at}
                 removed={item.removed}
                 onLongPress={!item.is_mine ? () => setSheet({ messageId: item.id }) : undefined}
@@ -204,6 +204,20 @@ function Bubble({
       ) : null}
     </Pressable>
   );
+}
+
+/** What a bubble says for a message that is not text; the API sends media as a type, not a body. */
+function mediaLabel(type: Message['type']): string {
+  switch (type) {
+    case 'image':
+      return 'Photo';
+    case 'gif':
+      return 'GIF';
+    case 'voice':
+      return 'Voice message';
+    default:
+      return '';
+  }
 }
 
 const styles = StyleSheet.create({

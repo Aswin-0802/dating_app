@@ -11,7 +11,7 @@ import { ApiClient } from '../src/api/client';
 import { makeApi } from '../src/api/endpoints';
 import { isApiError } from '../src/api/errors';
 
-const [baseUrl = 'http://localhost/Aswin/dating_app/public/api/v1', email = 'jakayla.1@example.com', password = 'password'] = process.argv.slice(2);
+const [baseUrl = 'http://127.0.0.1:8000/api/v1', email = 'revathi.49@outlook.com', password = 'password'] = process.argv.slice(2);
 
 let token: string | null = null;
 const client = new ApiClient({ baseUrl, getToken: async () => token });
