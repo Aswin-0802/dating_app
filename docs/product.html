@@ -37,6 +37,9 @@ body { background: var(--background); color: var(--foreground); }
 [data-theme="dark"] pre { background: oklch(0.12 0.02 315); }
 [data-theme="dark"] .pill { border-color: var(--primary); }
 .sheet.wide { max-width: 96rem; }
+.phones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0; }
+.phones img { max-width: 260px; width: 100%; margin: 0 auto; display: block; border-radius: 18px; border: 1px solid var(--line); }
+@media (max-width: 720px) { .phones { grid-template-columns: 1fr; } }
 .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--muted); }
 .topbar a { color: var(--brand); text-decoration: none; }
 .toggle { font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0.35rem 0.8rem; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); cursor: pointer; }
@@ -232,7 +235,7 @@ kbd { font-family: var(--mono); font-size: 0.78em; border: 1px solid var(--line)
 <p>A complete dating product in three parts that share one database and one set of rules:</p>
 <ul>
     <li><strong>A public website</strong> — the marketing pages, pricing and sign-up a visitor sees first, and a member app that runs in the browser.</li>
-    <li><strong>A mobile app</strong> (React Native / Expo, in its own repository) — the same product on a phone, over a REST API of 41 endpoints that calls the same services the website does.</li>
+    <li><strong>A mobile app</strong> (React Native / Expo, in <code>dating_app_mobile/</code>) — the same product on a phone, over a REST API of 41 endpoints that calls the same services the website does.</li>
     <li><strong>A staff console</strong> — the part that makes the other two safe to operate: who is real, who has been reported, what was decided and why, who paid, and what members are being told.</li>
 </ul>
 <p>The distinguishing feature is that safety is not bolted on. Verification queues, one case per reported member, a graduated enforcement ladder, appeals reviewed by somebody other than the original decider, and an audit trail of every staff action are the core, because they decide whether a dating product survives contact with real users.</p>
@@ -444,6 +447,12 @@ flowchart TD
 <section class="flow" id="app">
 <h3>The app, screen by screen</h3>
 <p>The mobile app is a lane through the same flow. Every screen below names what it calls, what it shows while waiting, what it shows when the call fails, and which error <code>code</code>s it branches on — it never branches on message text. Paths are in <code>dating_app_mobile/src/</code>.</p>
+<div class="phones">
+    <figure><img src="images/app-sign-in.png" alt="The app's sign-in screen"><figcaption>Sign in. A new member registers and goes through onboarding instead.</figcaption></figure>
+    <figure><img src="images/app-discover.png" alt="Discover in the app, one profile at a time"><figcaption>Discover: one Chennai profile at a time, from <code>GET /discover</code>.</figcaption></figure>
+    <figure><img src="images/app-thread.png" alt="A conversation in the app"><figcaption>A conversation, polled through <code>GET /conversations/{id}/messages</code>.</figcaption></figure>
+</div>
+<p style="color:var(--muted);font-size:.85rem">Taken from the Expo web build at a phone size with the India demo data (<code>node scripts/app-screenshots.mjs</code>); the phone renders the same screens.</p>
 <div class="chart" id="applane">
 <script type="text/x-mermaid">
 flowchart LR

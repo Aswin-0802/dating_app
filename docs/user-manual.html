@@ -177,7 +177,7 @@ role — worth reading before you hand an account to somebody, because the role 
 
 <ol class="steps">
     <li>Type a name or email into the search box, or press <strong>Ctrl+K</strong> from anywhere.</li>
-    <li>Use the filters for a group rather than a person: everyone unverified in Mumbai, everyone reported this week, everyone on a paid plan.</li>
+    <li>Use the filters for a group rather than a person: everyone unverified in Chennai, everyone reported this week, everyone on a paid plan.</li>
     <li><strong>Export CSV</strong> takes whatever the filters currently show. Exports that include email addresses are recorded in the audit log.</li>
 </ol>
 
@@ -540,12 +540,38 @@ T&amp;S Lead cannot, and every change is an audit row.</p>
     <li>Cities need a latitude and longitude — the distance filter measures from them. <strong>Featured</strong> is only a display hint and grants nothing.</li>
 </ol>
 
+<h3 id="footprint">What is switched on: India, Tamil Nadu</h3>
+
+<p>This copy is set up for India with Tamil Nadu as the launch state. Every Indian city with 15,000 or more people is
+loaded with its coordinates (3,739 cities, from the GeoNames dataset), all 35 states and union territories are in the
+list, and <strong>only Tamil Nadu is shown at sign-up</strong> — its 496 cities are what a new member can choose from. No
+other country is loaded. Prices are in rupees.</p>
+
+<table>
+    <thead><tr><th>You want to</th><th>Do this</th></tr></thead>
+    <tbody>
+        <tr><td>Open another Tamil Nadu town</td><td>Masters → Locations → India → Tamil Nadu. Every town of 15,000+ is already there; press <strong>Show at sign-up</strong> on a hidden one, or <strong>Add city</strong> with its latitude and longitude for a smaller place.</td></tr>
+        <tr><td>Open another state</td><td>Masters → Locations → India → the state → <strong>Show at sign-up</strong>. Its cities are already loaded and shown, so members there can sign up straight away. Hide single cities if you want a narrower footprint.</td></tr>
+        <tr><td>Open another country, a few cities</td><td>Masters → Locations → <strong>Add country</strong> (name, two-letter code, dial code), then its states if it has any, then each city with coordinates.</td></tr>
+        <tr><td>Open another country, every city</td><td>Ask a developer to run the importer for that country (below), then show it in Masters → Locations.</td></tr>
+        <tr><td>Close a place</td><td><strong>Hide at sign-up</strong> on the city, state or country. Members already there keep it; nobody new can choose it.</td></tr>
+    </tbody>
+</table>
+
 <div class="note">
-    <span class="label">Loading real cities</span>
-    <p>Sixty-one hand-entered cities are not a launch. The importer <code>php artisan platform:import-geography places.csv</code>
-    loads countries, states and cities with coordinates from a CSV or JSON file, matches what is already there so it can be
-    re-run safely, and never changes a switch you have set. Try <code>--dry-run</code> first. The file format is in the
-    command's help.</p>
+    <span class="label">Loading a whole country (developer)</span>
+    <p>The dataset committed with the code, <code>database/data/geonames-cities.csv</code>, holds every city of 15,000+
+    people for 24 countries. One command loads a country from it, safely — it matches what is already there, so running it
+    twice adds nothing, and it never changes a switch set in the console:</p>
+    <pre><code>php artisan platform:import-geography database/data/geonames-cities.csv --country=LK --dry-run
+php artisan platform:import-geography database/data/geonames-cities.csv --country=LK</code></pre>
+    <p>A country not in the file: <code>php artisan platform:convert-geonames --fetch --country=XX</code> refreshes the dataset
+    from GeoNames. Any CSV in the same nine-column format (country code and name, state name and code, city, latitude,
+    longitude, time zone, dial code) imports the same way; the command's help documents it. The README's
+    <em>Adding a country, state or city</em> section has the full developer-side steps, including a launch set-up like
+    India's for another country.</p>
+    <p>City data: <a href="https://www.geonames.org/">GeoNames</a>, licensed
+    <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. The attribution stays in the first line of the file.</p>
 </div>
 
 <figure>
@@ -609,6 +635,27 @@ someone's powers is visible afterwards.</p>
 <!-- ------------------------------------------------------------------ -->
 <h2 id="golive">13. Going live</h2>
 
+<h3>Setting up on a new machine</h3>
+
+<p>The README in the code folder is the install guide; the short version for Windows with XAMPP is:</p>
+
+<ol class="steps">
+    <li>Install XAMPP, Composer, Node.js and Git. Start MySQL in the XAMPP control panel.</li>
+    <li>Get the code: <code>git clone https://github.com/Aswin-0802/dating_app.git</code> into <code>C:\xampp\htdocs</code>, then copy <code>.env.example</code> to <code>.env</code>.</li>
+    <li>Create two databases, <code>dating_app</code> and <code>dating_app_testing</code>, in phpMyAdmin or from the command line.</li>
+    <li>Run <code>composer setup</code>, then <code>composer dev</code>, and open <code>http://localhost:8000/admin/login</code>.</li>
+    <li>Sign in as <code>admin@demo.test</code> with the password <code>password</code>. Every demo staff and member account uses that password; the README lists them.</li>
+    <li>For the mobile app: in <code>dating_app_mobile</code>, copy <code>.env.example</code> to <code>.env</code>, set the API address, run <code>npm install</code> and <code>npx expo start</code>.</li>
+</ol>
+
+<p><code>composer setup</code> builds the India set-up with 80 demo members in Tamil Nadu. The same database is also kept as a
+backup file, <code>database/backups/dating_app_india.sql</code>, which can be loaded into MySQL directly when you want the
+data without running the seeding (member photos are files rather than rows, so a restored copy shows initials instead of
+pictures). For a production database run <code>php artisan platform:seed-country india --fresh --no-demo</code>, which loads
+the geography and reference data with no demo accounts.</p>
+
+<h3>The checklist</h3>
+
 <p>Work down this list. Anything left undone is something members will notice.</p>
 
 <table>
@@ -622,7 +669,7 @@ someone's powers is visible afterwards.</p>
         <tr><td>6</td><td>Upload the Firebase key, turn on push, send a test</td><td>Notifications → Push notifications</td></tr>
         <tr><td>7</td><td>Add gateway keys, register the webhook, buy a plan with a test card</td><td>Billing → Payment gateways</td></tr>
         <tr><td>8</td><td>Set your real prices and what each plan unlocks</td><td>Billing → Plans</td></tr>
-        <tr><td>9</td><td>Import the countries, states and cities you are launching in (with coordinates); hide the rest</td><td><code>platform:import-geography</code>, then Masters → Locations</td></tr>
+        <tr><td>9</td><td>Check where you are launching: Tamil Nadu is shown, every other state and country is hidden. Show more, or narrow it, as in <a href="#footprint">Masters → Locations</a></td><td>Masters → Locations</td></tr>
         <tr><td>10</td><td>Create the store products, put every plan in one Apple subscription group, enter the product ids on each plan, add the store keys and notification addresses, and buy once in the sandbox</td><td>App Store Connect, Play Console, Billing → Plans, Billing → Payment gateways</td></tr>
         <tr><td>11</td><td>Create real staff accounts and remove the demo ones</td><td>Administration → Staff</td></tr>
         <tr><td>12</td><td>Ask your host to run the scheduler every minute and keep a queue worker running</td><td>Your server</td></tr>

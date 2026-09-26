@@ -9,7 +9,7 @@
  * page renders but no dialog opens and the two dialog screenshots come out
  * empty. Needs Playwright with Chromium (npx playwright install chromium)
  * and the demo accounts from the seeders: admin@demo.test / password for the
- * console, jakayla.1@example.com / password for the member app. Writes PNGs
+ * console, revathi.49@outlook.com / password for the member app. Writes PNGs
  * into docs/images/, overwriting the existing ones, at a fixed 1440×900
  * viewport so the pictures in the manual stay consistent between runs.
  */
@@ -40,7 +40,7 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, dev
 page.setDefaultTimeout(30_000);
 
 async function shot(name, { fullPage = false } = {}) {
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => undefined);
   await page.waitForTimeout(400); // Livewire settles, charts draw
   await page.screenshot({ path: path.join(out, `${name}.png`), fullPage });
   console.log('  ✓', name);
@@ -48,7 +48,9 @@ async function shot(name, { fullPage = false } = {}) {
 
 async function go(url) {
   await page.goto(`${base}${url}`);
-  await page.waitForLoadState('networkidle');
+  // A page that keeps a request open (polling, a slow search) should not end
+  // the run; settle for the load event plus a pause.
+  await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => page.waitForTimeout(2_000));
 }
 
 async function login(url, email, password) {
@@ -158,7 +160,7 @@ console.log('Member app');
 await page.context().clearCookies();
 await go('/');
 await shot('site-home');
-await login('/login', 'jakayla.1@example.com', 'password');
+await login('/login', 'revathi.49@outlook.com', 'password');
 for (const [name, url] of Object.entries({
   'member-discover': '/app/discover',
   'member-matches': '/app/matches',

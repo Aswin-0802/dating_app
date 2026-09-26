@@ -1,95 +1,202 @@
 # Dating Platform — Trust & Safety Console
 
-A white-label dating product: a public website, a member app, an admin console and
-the REST API its mobile clients use. The product carries no fixed brand — the
-name, logo, colours, currency, prices and every word a member reads are rows in
-the database, edited from the console.
+A white-label dating product: a public website, a member web app, a mobile app,
+an admin console and the REST API the apps use. The product carries no fixed
+brand — the name, logo, colours, currency, prices and every word a member reads
+are rows in the database, edited from the console.
 
-Laravel 12 · Livewire 3 · Tailwind v4 · MySQL · Sanctum
+This copy is set up for **India, with Tamil Nadu as the launch state**: every
+Indian city of 15,000 people or more is loaded, Tamil Nadu is the only state
+shown at sign-up, prices are in rupees, and the demo members live in Chennai,
+Coimbatore, Madurai, Tiruchirappalli and Salem. [Adding a state, a city or a
+whole country](#adding-a-country-state-or-city) is a console setting, not a
+code change.
+
+Laravel 12 · Livewire 3 · Tailwind v4 · MySQL · Sanctum · React Native (Expo)
 
 ---
 
 ## Documentation
 
-The mobile app lives in [`dating_app_mobile/`](dating_app_mobile/) with its own
-`package.json`, README, lint and typecheck; run `npm install` there separately.
-Its receipt contract for in-app purchase is
-[`dating_app_mobile/docs/premium-receipt-contract.md`](dating_app_mobile/docs/premium-receipt-contract.md).
-
-Three documents live in [`docs/`](docs/) and open in a browser, offline, from
-the folder:
-
 | Document | For | Covers |
 |---|---|---|
 | [The product](docs/product.html) | Owners, then operators, then engineers | What it is; the whole flow on one chart with the mobile app as a lane; every app-to-console round trip; and, collapsed underneath, twelve engineering diagrams cited to file and line |
-| [User manual](docs/user-manual.html) | The people running it | Every console screen with screenshots, plus a go-live checklist and common questions |
+| [User manual](docs/user-manual.html) | The people running it | Every console screen with screenshots, the locations set-up, a go-live checklist and common questions |
 | [API reference](docs/api.html) | Tools and app developers | Every `/api/v1` endpoint from [`docs/openapi.yaml`](docs/openapi.yaml), which `OpenApiSpecTest` keeps in step with the routes |
+| [Audit, September 2026](docs/audit-2026-09.md) | Engineers | The findings of the last code audit and what was done about each |
+| [Mobile app](dating_app_mobile/README.md) | App developers | How the app is built, run and checked; its in-app purchase [receipt contract](dating_app_mobile/docs/premium-receipt-contract.md) |
 
-All are written to be printed: open one and press Ctrl+P → Save as PDF.
-`node scripts/docs-screenshots.mjs` re-takes the screenshots from the running
-product with seeded data; `node scripts/docs-verify.mjs` opens every page from
-`file://` and checks that diagrams, images and printing work. After editing
-`docs/openapi.yaml`, run `php artisan platform:embed-openapi` so the offline
-viewer picks it up (the test fails otherwise).
+The three HTML documents open in a browser, offline, from the folder, and are
+written to be printed (Ctrl+P → Save as PDF). `node scripts/docs-screenshots.mjs`
+re-takes the screenshots from the running product; `node scripts/docs-verify.mjs`
+opens every page from `file://` and checks that diagrams, images and printing
+work. After editing `docs/openapi.yaml`, run `php artisan platform:embed-openapi`
+so the offline viewer picks it up (the test fails otherwise).
 
 ---
 
-## Getting it running
+## Getting it running on a new machine
+
+The steps below are for Windows with XAMPP, which is how it is developed. On
+macOS or Linux the same commands work with your own PHP, Composer, Node and
+MySQL.
 
 ### What you need
 
-| | |
-|---|---|
-| PHP | 8.2 or newer, with `pdo_mysql`, `mbstring`, `openssl`, `gd`, `fileinfo`, `zip`, `bcmath`, `exif` |
-| Composer | 2.x |
-| Node | 20 or newer (only to build the CSS and JS) |
-| MySQL | 8.x (MariaDB 10.6+ works too) |
+| | | Where |
+|---|---|---|
+| XAMPP | PHP 8.2+ with `pdo_mysql`, `mbstring`, `openssl`, `gd`, `fileinfo`, `zip`, `bcmath`, `exif`; MariaDB/MySQL | <https://www.apachefriends.org> |
+| Composer | 2.x | <https://getcomposer.org/download/> |
+| Node.js | 20 or newer (builds the CSS and JS, runs the mobile app) | <https://nodejs.org> |
+| Git | any recent version | <https://git-scm.com> |
 
-XAMPP ships with everything except Composer and Node. Nothing else is needed
-to run it locally — no Redis, no Docker. A production deployment wants two
-background processes as well: the scheduler and a queue worker, both described
-under [Running it for real](#the-scheduler).
+Nothing else: no Redis, no Docker. In XAMPP's control panel, start **Apache**
+(optional) and **MySQL** before you begin. All the PHP extensions above are on
+by default in XAMPP's `php.ini`; `intl` is not needed.
 
-### Install
+### 1. The server
+
+Open a terminal (PowerShell or Git Bash) and:
 
 ```bash
+cd C:\xampp\htdocs
 git clone https://github.com/Aswin-0802/dating_app.git
 cd dating_app
-cp .env.example .env
-
-# Two databases: the app, and one the test suite is allowed to wipe.
-mysql -u root -e "CREATE DATABASE dating_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -e "CREATE DATABASE dating_app_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-composer setup   # install, app key, storage link, migrate, seed, npm install, build
-composer dev     # serve + queue + scheduler + vite, all in one terminal
+copy .env.example .env          # cp .env.example .env on macOS/Linux
 ```
 
-On Windows the `mysql` command lives at `C:\xampp\mysql\bin\mysql.exe`, or you
-can create the two databases in phpMyAdmin instead.
+Create the two databases — the product's, and one the test suite is allowed
+to wipe:
 
-Then open <http://localhost:8000>.
+```bash
+C:\xampp\mysql\bin\mysql.exe -u root -e "CREATE DATABASE dating_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+C:\xampp\mysql\bin\mysql.exe -u root -e "CREATE DATABASE dating_app_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+(or create them in phpMyAdmin). The defaults in `.env` are XAMPP's: database
+`dating_app`, user `root`, no password. Change `DB_USERNAME` / `DB_PASSWORD`
+if your MySQL account differs. Then:
+
+```bash
+composer setup    # composer install, app key, storage link, migrate + seed India, npm install, npm run build
+composer dev      # web server on :8000 + queue worker + scheduler + Vite, all in one terminal
+```
+
+Open <http://localhost:8000>. The console is at <http://localhost:8000/admin/login>.
+
+`composer setup` seeds the India install: reference data, the India geography
+and 80 demo members in Tamil Nadu. It is the same as running
+`php artisan platform:seed-country india --fresh` yourself, and either one
+rebuilds the database from scratch whenever you want a clean copy. Seeding
+downloads a portrait per demo member from Unsplash once (about a minute); set
+`PLATFORM_SEED_PHOTOS=generated` in `.env` to draw placeholders locally instead,
+or `none` to skip pictures.
 
 <details>
 <summary>If <code>composer setup</code> stops half way</summary>
 
-Run it by hand and you will see which step failed:
+Run the steps by hand and you will see which one failed:
 
 ```bash
 composer install
 php artisan key:generate
 php artisan storage:link
-php artisan migrate:fresh --seed
-npm install && npm run build
+php artisan platform:seed-country india --fresh
+npm install
+npm run build
 php artisan serve
 ```
 
 The usual causes: MySQL is not running, the two databases do not exist, or
 `DB_USERNAME` / `DB_PASSWORD` in `.env` do not match your MySQL account.
-Seeding downloads member photos once — set `PLATFORM_SEED_PHOTOS=generated` to
-draw them locally instead, or `none` to skip them.
 
 </details>
+
+<details>
+<summary>Running it under Apache instead of <code>php artisan serve</code></summary>
+
+The folder also works at <http://localhost/dating_app/public/> under XAMPP's
+Apache with no configuration, which is convenient for a phone on the same
+network (Apache binds to every interface). Set `APP_URL` in `.env` to that
+address so generated links are right. The documentation screenshot script
+needs `php artisan serve`, not Apache; nothing else cares.
+
+</details>
+
+### 2. The mobile app
+
+The app lives in [`dating_app_mobile/`](dating_app_mobile/) and has its own
+`package.json`. With the server running:
+
+```bash
+cd dating_app_mobile
+copy .env.example .env      # then set EXPO_PUBLIC_API_URL, see below
+npm install
+npx expo start              # press a for Android emulator, i for iOS simulator, w for the browser
+```
+
+`EXPO_PUBLIC_API_URL` is the API address **including `/api/v1`**:
+
+| Where the app runs | Value |
+|---|---|
+| Browser (`w`) or iOS simulator, server on `php artisan serve` | `http://127.0.0.1:8000/api/v1` |
+| Android emulator, server on `php artisan serve` | `http://10.0.2.2:8000/api/v1` |
+| Android emulator, server under XAMPP Apache | `http://10.0.2.2/dating_app/public/api/v1` |
+| A real phone on the same Wi-Fi | `http://<your PC's LAN address>:8000/api/v1` |
+
+Sign-in, onboarding, discovery, matches, messaging and verification run in
+**Expo Go** on a phone (install it from the app store, scan the QR code). Push
+notifications and in-app purchase need a development build; the
+[app README](dating_app_mobile/README.md) explains which and how. Before a
+device is involved, `npm run apicheck -- http://127.0.0.1:8000/api/v1
+revathi.49@outlook.com password` exercises the whole API from Node, and
+`npm run typecheck && npm run lint` must pass before a change is done.
+
+### 3. Sign in
+
+Every demo account, staff and member, uses the password **`password`**.
+
+| Console (`/admin/login`) | Role | What it can do |
+|---|---|---|
+| `admin@demo.test` | Super Admin | Everything |
+| `ops@demo.test` | Admin | Platform operations — but not message content, appeals, or safety policy |
+| `lead@demo.test` | T&S Lead | Safety policy, the restricted queue, appeals |
+| `senior1@demo.test`, `senior2@demo.test` | Senior Moderator | Full enforcement ladder, appeals |
+| `mod1@demo.test` … `mod5@demo.test` | Moderator | Cases and enforcement up to suspension |
+| `support1@demo.test`, `support2@demo.test` | Support | Member PII, no enforcement, no message content |
+| `analyst1@demo.test`, `analyst2@demo.test` | Analyst | Aggregates only, no PII |
+
+| Member (website `/login`, or the app) | Who |
+|---|---|
+| `revathi.49@outlook.com` | Revathi Shanmugam, Chennai — an active Premium member with matches and conversations |
+| any address in Users → Members | The list shows every seeded member; all take the same password |
+
+Signing in as more than one staff account is the quickest way to see how much
+of the console is permission-shaped — restricted areas are absent from the
+navigation rather than present and refused.
+
+**Delete these accounts before you launch.** They are published here with a
+known password; `php artisan platform:preflight` refuses to pass while any of
+them still takes it.
+
+### The database backup
+
+[`database/backups/dating_app_india.sql`](database/backups/) is a dump of the
+seeded India database — the same thing `composer setup` builds, kept so a copy
+can be restored without running the seeders:
+
+```bash
+C:\xampp\mysql\bin\mysql.exe -u root dating_app < database\backups\dating_app_india.sql
+```
+
+It holds the demo accounts above with the same `password`. Member photos are
+files under `storage/app/public/photos`, not rows, so a restored copy shows
+initials where the pictures would be; run the seed command instead when you
+want pictures. Take a fresh dump the same way when the data changes:
+
+```bash
+C:\xampp\mysql\bin\mysqldump.exe -u root --single-transaction --default-character-set=utf8mb4 dating_app > database\backups\dating_app_india.sql
+```
 
 ### Keep the clock running
 
@@ -102,7 +209,9 @@ that end, renewal warnings, campaigns waiting to go out:
 
 `composer dev` does this for you while you are developing. On Windows in
 production, a Task Scheduler task running `php artisan schedule:run` every
-minute does the same job.
+minute does the same job. Email and push are queued, so production also needs
+`php artisan queue:work --tries=3` under a process supervisor; see
+[The queue worker](#the-queue-worker).
 
 | URL | Who it is for |
 |---|---|
@@ -110,61 +219,120 @@ minute does the same job.
 | `/join`, `/login` | Member sign-up and sign-in |
 | `/app/*` | The member web app: discover, matches, messages, profile, verification |
 | `/admin/login` | Staff sign-in for the console |
+| `/api/v1/*` | The mobile app's API |
 
-Every seeded member signs in with the password `password`. Staff accounts:
+---
 
-| Account | Role | What it can do |
-|---|---|---|
-| `admin@demo.test` | Super Admin | Everything |
-| `ops@demo.test` | Admin | Platform operations — but not message content, appeals, or safety policy |
-| `lead@demo.test` | T&S Lead | Safety policy, the restricted queue, appeals |
-| `senior1@demo.test` | Senior Moderator | Full enforcement ladder, appeals |
-| `mod1@demo.test` | Moderator | Cases and enforcement up to suspension |
-| `support1@demo.test` | Support | Member PII, no enforcement, no message content |
-| `analyst1@demo.test` | Analyst | Aggregates only, no PII |
+## India and Tamil Nadu
 
-Password for all of them: `password`.
+`php artisan platform:seed-country india --fresh` produces the launch state:
 
-Signing in as more than one of these is the quickest way to see how much of the
-console is permission-shaped — restricted areas are absent from the navigation
-rather than present and refused. The [user manual](docs/user-manual.html) has a
-table of exactly which menus each role gets.
+| | |
+|---|---|
+| Countries | India, shown. No other country is loaded. |
+| States | All 28 states and 8 union territories that have a city of 15,000+ people (35 rows). **Tamil Nadu is shown; the others are hidden** and one click away in Masters → Locations. |
+| Cities | 3,739 Indian cities with coordinates, from GeoNames; 496 in Tamil Nadu are selectable at sign-up. |
+| Currency and plans | Rupees. Plus ₹299 / ₹2,499 a year, Gold ₹599 / ₹4,999 a year, editable under Billing → Subscription plans. |
+| Demo members | 80, in Chennai (about half), Coimbatore, Madurai, Tiruchirappalli, Salem, Tirunelveli and Vellore, with Tamil names, `+91` numbers and Indian email domains. |
+| Demo staff | The accounts above, with Indian names. |
 
-**Delete these accounts before you launch.** They are published here with a
-known password.
+The pieces, so you can change any of them:
+
+- [`database/data/geonames-cities.csv`](database/data/geonames-cities.csv) — the
+  city dataset (see [Where the cities come from](#where-the-cities-come-from)).
+- [`database/seeders/India/IndiaGeographySeeder.php`](database/seeders/India/IndiaGeographySeeder.php)
+  — imports the Indian rows and sets the switches the first time it runs.
+- [`database/seeders/India/IndiaProfile.php`](database/seeders/India/IndiaProfile.php)
+  — the focus cities and their weights, the names, phone format and email
+  domains the demo members are drawn from.
+- [`database/seeders/India/IndiaDemoSeeder.php`](database/seeders/India/IndiaDemoSeeder.php)
+  — rupees, plan prices, staff names, member count, then the generic demo pipeline.
+- [`app/Console/Commands/SeedCountry.php`](app/Console/Commands/SeedCountry.php)
+  — the command that strings them together; `--no-demo` gives geography and
+  reference data only, for a production database.
+
+### Adding a country, state or city
+
+Where the product is offered is a console setting. Everything hidden is still
+in the table, so showing it is one click; members already in a hidden place
+keep it.
+
+**Another Tamil Nadu city.** Masters → Locations → India → Tamil Nadu. Every
+city of 15,000+ people is already there; use **Show at sign-up** on one that is
+hidden, or **Add city** with its latitude and longitude for a smaller place
+(the distance filter measures from them).
+
+**Another Indian state.** Masters → Locations → India → the state → **Show at
+sign-up**. Its cities are already loaded and selectable, so members there can
+sign up immediately. Hide individual cities if you want a narrower footprint.
+
+**Another country.** Three ways, from quickest to most complete:
+
+1. *A handful of cities, by hand.* Masters → Locations → **Add country**
+   (name, ISO code, dial code), then its states if it has any, then cities with
+   coordinates. Fine for a pilot.
+2. *The whole country from the dataset.* The committed CSV already holds 24
+   countries (every city of 15,000+). Import one with
+
+   ```bash
+   php artisan platform:import-geography database/data/geonames-cities.csv --country=LK --dry-run
+   php artisan platform:import-geography database/data/geonames-cities.csv --country=LK
+   ```
+
+   then show it in Masters → Locations. The importer matches what is already
+   there, so it is safe to re-run, and it never changes a switch you have set.
+   A country not in the CSV: refresh the dataset (below) with `--country=XX`,
+   or write your own CSV in the same nine-column format — the command's help
+   documents it.
+3. *A launch like India's.* Copy `database/seeders/India/` to a folder for the
+   new country, adjust the geography seeder (which country and states to show),
+   the profile (cities, names, phones) and the demo seeder (currency, prices),
+   and list the pair in `SeedCountry::COUNTRIES`. Then
+   `php artisan platform:seed-country <name> --fresh`.
+
+The user manual's [Masters → Locations](docs/user-manual.html#masters) section
+has the same steps with screenshots for the console side.
+
+### Where the cities come from
+
+The city data is [GeoNames](https://www.geonames.org/) `cities15000`
+(every place with a population of 15,000 or more), licensed
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The attribution
+travels in the first line of the CSV and must stay on any copy you publish.
+`php artisan platform:convert-geonames --fetch` downloads the current GeoNames
+files (about 12 MB), filters them to the countries already in your database,
+maps regions to your states, reports any it could not match, and rewrites the
+CSV; commit the result. Without `--fetch` it converts files already under
+`storage/app/geonames`.
 
 ### Seeding
 
-`PLATFORM_SEED_SCALE` controls the demo population:
+`platform:seed-country india` builds 80 members. For a larger population the
+worldwide demo dataset is still there — it is what the test suite and the
+documentation counts were built on:
 
-| Value | Members | Rows | Roughly |
-|---|---|---|---|
-| `tiny` | 50 | ~2,500 | ~15 seconds — **the default** |
-| `small` | 1,200 | 46,127 | ~90 seconds |
-| `demo` | 12,000 | | several minutes |
-| `large` | 48,000 | | considerably longer |
+```bash
+PLATFORM_SEED_SCALE=small php artisan db:seed --class="Database\Seeders\DemoDataSeeder"
+```
 
-Row counts are measured, and `tiny` includes reference data (cities, permissions, settings). `demo` and `large` are left blank
-because they are not run often enough to quote honestly.
+| Value | Members | Roughly |
+|---|---|---|
+| `tiny` | 50 | ~15 seconds |
+| `small` | 1,200 | ~90 seconds |
+| `demo` | 12,000 | several minutes |
+| `large` | 48,000 | considerably longer |
 
-`tiny` is the default deliberately. The dataset is here to exercise the console,
-not to demo it, and 50 members rebuild fast enough that reseeding is not a
-decision. Every queue, chart and filter still has rows in it at that size — run
-the invariant check below to see them counted.
+Without a country profile the demo members are drawn from every city in the
+table, with whatever names Faker produces, so this is for load and for the
+console's analytics rather than for showing the India product.
 
 Below roughly 50 members the matching graph is the binding constraint: mutual
 likes need a pool to draw from, and without matches there are no conversations,
-no reports anchored to real evidence, and no cases. That is the floor, not the
-seeder's.
-
-One trade-off worth knowing about at `tiny`: rare states are *dealt* rather than
-rolled. Shadow-banned is 1.2% of the account mix, which over 50 members is a
-coin that comes up empty more often than not — and a category that rounds to
-nobody takes a whole screen down with it. So the seeder guarantees a minimum of
-each (two overdue shadow bans, two restricted-queue verifications, two cases
-past SLA) instead of leaving it to chance. The proportions are therefore less
-realistic at 50 members than at 12,000. `small` and up are unaffected: the
-minimums are far below what those populations produce naturally.
+no reports anchored to real evidence, and no cases. At small sizes rare states
+are *dealt* rather than rolled — the seeder guarantees a minimum of each (two
+overdue shadow bans, two restricted-queue verifications, two cases past SLA) so
+no screen opens empty; run `VerifyInvariants` (under [Testing](#testing)) to see
+them counted.
 
 `PLATFORM_SEED_PHOTOS` controls member photos. The default, `stock`, gives each
 seeded member a real portrait from Unsplash (free licence), downloaded once
@@ -195,9 +363,9 @@ Other settings worth knowing:
 - **Currency** (Settings → Branding): US Dollar, Indian Rupee, Euro or British
   Pound. Every price and payment amount follows it; rupees use Indian digit
   grouping (₹1,23,456.00).
-- **Locations** (Settings → Locations): the countries and cities members can
-  choose from. Hide a country to take it off sign-up without affecting
-  existing members.
+- **Locations** (Masters → Locations): the countries, states and cities members
+  can choose from, each with its own switch. See
+  [Adding a country, state or city](#adding-a-country-state-or-city).
 - **Mail** (System → Mail): the SMTP server used for every email, including
   password resets. Set *Delivery* to "Send with SMTP" once the details are
   right; until then messages are written to the log.
@@ -227,15 +395,16 @@ console, with no code changes:
   statement sent to the member. Changes apply to new decisions only. Reasons the
   system records itself, such as appeal outcomes and expiry, cannot be turned
   off.
+- **Locations**: countries, states and cities, each with a show/hide switch. A
+  hidden place cannot be chosen anywhere — sign-up, the website, the app — but
+  members already there keep it. A city must name its state wherever the
+  country has any; members choose a city grouped as "India · Tamil Nadu", and
+  staff can filter and export members by state. The screen warns in red if a
+  change leaves no selectable city at all.
 
-Countries, **states** and cities live in Settings → Locations: India ships with
-all 28 states and 8 union territories, and a city must name its state wherever
-the country has any. Members choose a city grouped as "India · Maharashtra",
-and staff can filter and export members by state.
-
-Plans, interests and profile questions need `edit_general_settings`. Report
-categories and reasons need `edit_moderation_settings`. Notification templates
-can now be added and deleted as well; enforcement notices are protected.
+Plans, interests, profile questions and locations need `edit_general_settings`.
+Report categories and reasons need `edit_moderation_settings`. Notification
+templates can be added and deleted as well; enforcement notices are protected.
 Every change is recorded in the audit log.
 
 Password reset is available to staff (`/admin/forgot-password`) and members
@@ -343,6 +512,10 @@ and a mailer that swallows everything. It exits non-zero when any of those are
 true, so it can sit in a deploy pipeline. Warnings (environment name, missing
 queue worker, push switched off) do not block it.
 
+For a production database, seed geography and reference data without the demo
+members: `php artisan platform:seed-country india --fresh --no-demo`, then
+create your own staff account under Staff and delete the demo ones.
+
 ### The website and member app
 
 A public marketing site, plus a web version of the dating app: sign-up,
@@ -363,6 +536,16 @@ Things worth knowing:
   member can, in the App Store or Google Play; they are told so on the deletion
   screen, and a renewal that still arrives is recorded and ignored.
 
+### The mobile app
+
+[`dating_app_mobile/`](dating_app_mobile/) is a React Native (Expo) client:
+sign-in and sign-up, onboarding with a city type-ahead, discovery, matches,
+messaging, profile and photos, selfie verification, reporting and blocking,
+Premium through in-app purchase, and push notifications. It holds no business
+rules — every limit and entitlement comes from `/config` and `/me` — and every
+screen branches on the API's error codes rather than on message text. Three
+screenshots are in the [product document](docs/product.html).
+
 ### The console
 
 | Area | Notes |
@@ -377,15 +560,18 @@ Things worth knowing:
 | Appeals | Routed away from the original decider |
 | Notifications | Campaigns needing second-person approval, templates, delivery logs |
 | Staff, Roles, Audit, Settings | Permission matrix, immutable audit trail, operator-tunable settings |
+| Masters | Plans, interests, profile questions, report categories, enforcement reasons, locations |
 | System | Mail/SMTP, payment and SMS gateways, delivery and payment logs, database backup |
 
 ### The API
 
 41 endpoints under `/api/v1`, authenticated with Sanctum bearer tokens. Auth,
-profile and photos, discovery deck, swipes, matches and who-liked-you,
-conversations, messages, reports, blocks, verification, push devices, phone
-verification, account deletion, and in-app purchase (plans and receipts). Every list endpoint is cursor-paginated, and
-every endpoint calls the same services as the website, so the two cannot drift.
+profile and photos, cities (type-ahead search), discovery deck, swipes, matches
+and who-liked-you, conversations, messages, reports, blocks, verification, push
+devices, phone verification, account deletion, and in-app purchase (plans and
+receipts). Every list endpoint is cursor-paginated, and every endpoint calls
+the same services as the website, so the two cannot drift. The full reference
+is [docs/api.html](docs/api.html).
 
 ---
 
@@ -422,6 +608,13 @@ badge, including for a score calculated months ago under weights since retuned.
 **Appeals are never decided by the original decider.** Enforced in the model,
 the assignment action, and the seeder. That last one matters: a seeder allowed
 to violate the rule would let the test guarding it pass against bad data.
+
+**Where the product is offered is one rule.** `App\Rules\SelectableCity` is the
+only thing that decides whether a city can be saved, and every place a city is
+written — sign-up, onboarding, the profile, the web app, the API — uses it. A
+test scans the code for `city_id` validation sites so a new one cannot quietly
+skip the rule. The importer never touches a switch, so an operator's decision
+survives every data refresh.
 
 **Settings and System are separate menus.** Settings is product and safety
 policy — SLA windows, risk weights, matching rules. System is infrastructure —
@@ -472,12 +665,15 @@ new screen.
 ## Testing
 
 ```bash
-php artisan test          # 148 tests, including the UAT suites in tests/Uat
+php artisan test          # the whole suite, including the UAT walkthroughs in tests/Uat
 ./vendor/bin/pint --test  # formatting
 
 # Checks the seeded database itself, rather than a fixture
 php artisan db:seed --class="Database\Seeders\VerifyInvariants"
 ```
+
+The suite needs the `dating_app_testing` database from the install steps; it
+is wiped on every run, and `dating_app` is never touched.
 
 `VerifyInvariants` runs against whatever is actually in the database. It asserts
 eight structural rules — canonical match ordering, every shadow ban carrying a
@@ -490,5 +686,9 @@ screen with nothing to render, which no unit test would notice.
 The suite concentrates on the things that would be expensive to get wrong: the
 enforcement ladder writes its three records together, moderation actions cannot
 be edited, a shadow ban is undetectable through the API, another member's profile
-never carries private fields, and reports against one member fold into a single
-case.
+never carries private fields, reports against one member fold into a single
+case, a hidden city cannot be saved from anywhere, and the API reference cannot
+drift from the routes.
+
+For the mobile app: `npm run typecheck`, `npm run lint` and
+`npm run apicheck` in `dating_app_mobile/`.
