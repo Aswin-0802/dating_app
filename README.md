@@ -11,6 +11,11 @@ Laravel 12 · Livewire 3 · Tailwind v4 · MySQL · Sanctum
 
 ## Documentation
 
+The mobile app lives in [`dating_app_mobile/`](dating_app_mobile/) with its own
+`package.json`, README, lint and typecheck; run `npm install` there separately.
+Its receipt contract for in-app purchase is
+[`dating_app_mobile/docs/premium-receipt-contract.md`](dating_app_mobile/docs/premium-receipt-contract.md).
+
 Three documents live in [`docs/`](docs/) and open in a browser, offline, from
 the folder:
 

@@ -1,6 +1,6 @@
 # Dating — mobile client
 
-A React Native (Expo SDK 57) client for the dating platform whose Laravel API lives in the sibling folder `../dating_app`. The app holds no business rules: every limit, threshold and entitlement comes from the server, and every outcome (a match, a refused swipe, a closed thread) is what the server said.
+A React Native (Expo SDK 57) client for the dating platform whose Laravel API lives one level up, in the root of this repository. The app holds no business rules: every limit, threshold and entitlement comes from the server, and every outcome (a match, a refused swipe, a closed thread) is what the server said.
 
 ## Running it
 
