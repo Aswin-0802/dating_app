@@ -24,3 +24,8 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Local AI-assistant configuration is never part of the repository.
+.claude/
+CLAUDE.md
+AGENTS.md
